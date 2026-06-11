@@ -1,0 +1,55 @@
+{
+  "name": "@index-ai/validator",
+  "version": "0.1.0",
+  "description": "Experimental free CLI validator for index-ai Level 1 and Level 2a.",
+  "type": "module",
+  "bin": {
+    "index-ai": "./dist/cli.js",
+    "index-ai-validator": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "check": "tsc --noEmit",
+    "build": "tsup",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "fixture:serve": "sirv fixtures/valid-level-2a/public --host 127.0.0.1 --port 4173",
+    "validate:fixture": "tsx src/cli.ts http://127.0.0.1:4173 --strict --verbose",
+    "pack:check": "pnpm check && pnpm test && pnpm build && node dist/cli.js --help",
+    "prepublishOnly": "pnpm pack:check"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.22.0",
+  "dependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "commander": "^15.0.0",
+    "kleur": "^4.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.8",
+    "sirv-cli": "^3.0.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  }
+}

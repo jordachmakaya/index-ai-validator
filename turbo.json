@@ -1,0 +1,40 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "ui": "tui",
+  "tasks": {
+    "check": {
+      "dependsOn": ["^check"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "tsconfig.json",
+        "../../tsconfig.base.json"
+      ]
+    },
+    "build": {
+      "dependsOn": ["^build", "check"],
+      "outputs": [
+        "dist/**",
+        ".vitepress/dist/**"
+      ]
+    },
+    "test": {
+      "dependsOn": ["check"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "fixtures/**",
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts"
+      ]
+    },
+    "test:coverage": {
+      "dependsOn": ["test"],
+      "outputs": [
+        "coverage/**"
+      ]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

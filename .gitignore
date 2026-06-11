@@ -1,0 +1,45 @@
+# dependencies
+node_modules/
+.pnpm-store/
+.pnpm/
+.bin/
+
+# builds
+dist/
+coverage/
+.turbo/
+.cache/
+
+# docs build/cache
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+
+# package outputs
+packages/*/dist/
+packages/*/coverage/
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# env
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+
+DOCUMENTATION_STYLE_RULES.md
+CODEX.md
+CODE_STYLES.md
+DOCS_IMPLEMENTATION_PLAN.md
+IMPLEMENTATION_PLAN.md
+RULES.md

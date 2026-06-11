@@ -1,0 +1,31 @@
+{
+  "name": "index-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "index-ai monorepo: validator, docs, and future tooling for AI-agent discoverability.",
+  "type": "module",
+  "packageManager": "pnpm@10.22.0",
+  "scripts": {
+    "dev": "turbo run dev",
+    "check": "turbo run check",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"!node_modules\" \"!**/dist/**\"",
+    "format": "prettier --write \"*.json\" \"*.md\" \"docs/**/*.md\" \"packages/validator/**/*.{ts,json,md}\"",
+    "docs:dev": "pnpm --filter docs dev",
+    "docs:build": "pnpm --filter docs build",
+    "validator:dev": "pnpm --filter @index-ai/validator dev",
+    "validator:build": "pnpm --filter @index-ai/validator build",
+    "validator:test": "pnpm --filter @index-ai/validator test"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.17.2",
+    "mermaid": "^11.15.0",
+    "prettier": "^3.8.4",
+    "turbo": "^2.9.18",
+    "vitepress": "^1.6.4",
+    "vitepress-plugin-mermaid": "^2.0.17",
+    "vue": "^3.5.38"
+  }
+}
