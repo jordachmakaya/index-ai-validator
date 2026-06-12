@@ -92,15 +92,20 @@ tested, but they are not yet connected to end-to-end Shadow Index validation.
 
 ## Current limitations
 
-At this checkpoint, `@index-ai/validator` does not yet validate:
+At this checkpoint, Level 1 AI Manifest validation is implemented through
+`validateIndexAi()`.
 
-- AI Manifest files
+The package does not yet validate:
+
 - Shadow Index files
-- `llm_url` clean endpoint content-types
-- `content_chars` declarations on a live website
-- HTML leaks
-- security findings
-- discovery hints
+- `llm_url` clean endpoint responses
+- `content_chars` declarations on live websites
+- graph structure
+- HTML leak detection
+- security scanning
+- discovery checks
+- fixture validation
+- CI behavior
 - Level 2b relations
 - Level 3 MCP
 

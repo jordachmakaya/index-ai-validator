@@ -72,6 +72,7 @@ export type IndexAiManifest = {
   $schema?: string
   spec_version?: string
   manifest_version?: number
+  level?: 'level-1' | 'level-2a'
   identity?: {
     name?: string
     description?: string
