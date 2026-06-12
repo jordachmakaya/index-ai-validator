@@ -9,8 +9,8 @@ It is intended to help developers check whether a public website exposes the
 files and clean endpoints required by those `index-ai` levels once the validation
 checks are added.
 
-At the current Sprint 1 checkpoint, the CLI shell is available. Validation logic
-is implemented progressively across later sprints.
+At the current Sprint 2 checkpoint, the CLI shell and runtime utility layer are
+available. Validation logic is implemented progressively across later sprints.
 
 ## Who is it for?
 
@@ -22,7 +22,8 @@ what warns, what fails, and which part of the implementation needs attention.
 
 ## What you get when you run it
 
-In Sprint 1, the CLI parses the URL and options, then prints shell output.
+In Sprint 2, the CLI still prints shell output, and the runtime foundations now
+exist behind the package.
 
 Human mode prints the target and a clear message that validation is not
 implemented yet.
@@ -30,16 +31,21 @@ implemented yet.
 JSON mode prints a small `not_implemented` JSON object containing the parsed
 options. This is shell output only, not the final validation result shape.
 
+The utility layer now includes URL normalization, HTTP timeout handling,
+redirect capping, private-host detection, Unicode `content_chars` counting, and
+concurrency limiting. These utilities have durable Vitest coverage from Mini
+Sprint 2.1.
+
 ## What it validates in 0.1.0
 
 The planned 0.1.0 scope is Level 1 and Level 2a only.
 
-For Doc Checkpoint 1, those checks are not implemented yet. Do not treat the
-current CLI output as a conformance result.
+For Doc Checkpoint 2, end-to-end validation checks are not implemented yet. Do
+not treat the current CLI output as a conformance result.
 
 ## What it does not validate
 
-In the current Sprint 1 state, the package does not validate:
+In the current Sprint 2 state, the package does not validate:
 
 - AI Manifest files
 - Shadow Index files
@@ -67,12 +73,19 @@ flowchart TD
   D --> E[Exit code]
 ```
 
-In Sprint 1, the `Validate` step is a placeholder. Later sprints add the
-validator orchestrator and checks.
+In Sprint 2, the `Validate` step is still a placeholder. Runtime utilities now
+exist for HTTP fetching, URL safety, Unicode character counting, and concurrency
+limiting. Later sprints add the validator orchestrator and checks.
+
+For the current runtime utility foundation, see:
+
+- [content_chars](/guide/content-chars)
 
 ## Next steps
 
-Start with installation, then review the CLI command shape:
+Start with installation, then review the CLI command shape and `content_chars`
+counting rules:
 
 - [Installation](/guide/installation)
 - [CLI](/guide/cli)
+- [content_chars](/guide/content-chars)

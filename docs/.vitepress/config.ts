@@ -27,6 +27,12 @@ export default withMermaid(
             { text: 'CLI', link: '/guide/cli' },
           ],
         },
+        {
+          text: 'Validator concepts',
+          items: [
+            { text: 'content_chars', link: '/guide/content-chars' },
+          ],
+        },
       ],
     },
   }),

@@ -57,6 +57,12 @@ pnpm exec index-ai https://example.com
 The CLI shell is available. Validation logic is implemented progressively across
 later sprints.
 
-This means the current Sprint 1 CLI can parse options and print shell output, but
-it does not yet fetch a site, inspect an AI Manifest, inspect a Shadow Index, or
+At the current Sprint 2 checkpoint, the CLI can parse options and print shell
+output. The runtime utility foundation also exists for HTTP fetch policy,
+timeouts, redirect caps, private-host blocking, URL normalization,
+same-origin checks, Unicode NFC `content_chars` counting, and concurrency
+limiting.
+
+Full validation logic is implemented progressively across later sprints. The
+current CLI does not yet inspect an AI Manifest, inspect a Shadow Index, or
 produce a real conformance result.
