@@ -10,46 +10,64 @@ hero:
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: CLI reference
-      link: /guide/cli
+      text: Level 2a Shadow Index
+      link: /guide/level-2a-shadow-index
 
 features:
-  - title: Current checkpoint scope
-    details: Sprint 3 adds Level 1 AI Manifest validation through the public validator entrypoint. Full Level 2a validation is implemented later.
+  - title: Implemented scope
+    details: Sprint 4 implements Level 1 AI Manifest validation and Level 2a Shadow Index validation through validateIndexAi().
   - title: Package and binary
     details: The npm package is @index-ai/validator. The CLI binary documented here is index-ai.
   - title: Honest limits
-    details: This is not production-grade compliance certification and does not guarantee AI traffic.
+    details: The CLI command itself is still not the final full validator CLI behavior, and this package is not production-grade compliance certification.
 ---
 
 ## What this is
 
-`@index-ai/validator` is being built as an experimental CLI package for checking
-public `index-ai` Level 1 and Level 2a implementations.
+`@index-ai/validator` is an experimental free CLI validator for public
+`index-ai` Level 1 and Level 2a implementations.
 
-At Doc Checkpoint 3, Sprint 1 has implemented the CLI shell and public
-TypeScript types. Sprint 2 has added the runtime utility layer for HTTP fetch
-policy, timeout behavior, redirect caps, private-host blocking, URL
-normalization, same-origin checks, Unicode NFC `content_chars` counting, and
-semaphore-based concurrency limiting.
+Sprint 4 implements Level 2a Shadow Index validation through the public
+`validateIndexAi()` entrypoint. That includes AI Manifest validation, Shadow
+Index graph fetch, graph schema validation, clean endpoint fetches, clean
+endpoint content-type checks, HTML leak detection, and `content_chars`
+validation.
 
-Mini Sprint 2.1 added durable Vitest tests for those Sprint 2 utilities.
-Sprint 3 adds Level 1 AI Manifest validation through `validateIndexAi()`.
+The CLI command itself is still not the final full validator CLI behavior. It
+can parse the documented command shape, but final CLI JSON output, final exit
+codes, and CI behavior are later work.
 
-The CLI can parse the documented command shape and print shell output. The
-public validator entrypoint can now validate Level 1 AI Manifest behavior. Full
-end-to-end CLI validation is still implemented progressively across later
-sprints.
+## Current capabilities
+
+The validator entrypoint can now check:
+
+- Level 1 AI Manifest fetch, JSON content type, JSON parse, and schema shape
+- manifest `access.shadow_layer`
+- Shadow Index graph fetch from the declared path
+- graph JSON content type and JSON parse
+- graph `nodes` array and deprecated `pages` rejection
+- required Level 2a node content fields
+- `llm_url` structure and fetch behavior
+- clean endpoint content type: `text/markdown` or `text/plain`
+- hard HTML leaks and tolerated soft inline HTML warnings
+- `content_chars_mode: exact`
+- `content_chars_mode: max`
+- Unicode NFC code-point counting
+- `level-2a` conformance when Level 1 and Level 2a checks pass
 
 ## Current limitations
 
-In the current Sprint 3 state, this package validates the Level 1 AI Manifest
-through the public validator entrypoint. It does not perform full end-to-end
-Level 2a validation yet.
+In the current Sprint 4 state, the package does not implement:
 
-Shadow Index validation, graph validation, `content_chars` comparison, HTML leak
-detection, security scanning, discovery checks, fixture validation, and CI
-validation are still later work.
+- final full CLI validation behavior
+- final CLI JSON output
+- final CLI exit-code behavior
+- security scanning
+- discovery checks
+- fixture validation
+- CI validation behavior
+- Level 2b relations
+- Level 3 MCP
 
-It also does not support Level 2b relations, Level 3 MCP, production-grade
-compliance certification, legal control over AI agents, or AI traffic guarantees.
+It does not certify compliance, guarantee AI traffic, provide legal control over
+AI agents, or perform production-grade security scanning.

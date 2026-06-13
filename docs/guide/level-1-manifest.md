@@ -4,22 +4,24 @@ Level 1 starts with the AI Manifest. It is a JSON document that describes the
 site identity, freshness metadata, and machine-readable entry points for an
 `index-ai` implementation.
 
-Sprint 3 implements Level 1 AI Manifest validation in the validator entrypoint.
-The CLI command is still not the final full validator CLI behavior.
+Sprint 4 still uses Level 1 as the base for Level 2a. The public
+`validateIndexAi()` entrypoint validates the AI Manifest before it attempts
+Shadow Index validation.
+
+The CLI command itself is still not the final full validator CLI behavior.
 
 ## What the AI Manifest is
 
-The AI Manifest is the first public file the validator checks for Level 1. It
-answers basic questions:
+The AI Manifest is the first public file the validator checks. It answers basic
+questions:
 
 - What site or publisher does this file describe?
 - Which `index-ai` spec version does it target?
 - When was the described content updated or generated?
 - Which URL fields point to related machine-readable resources?
 
-Level 1 is structural. It does not check Shadow Index content, clean endpoints,
-`content_chars` comparisons, security scanning, discovery hints, fixtures, or CI
-behavior.
+Level 1 is structural. Level 2a builds on it by using `access.shadow_layer` to
+find and validate the Shadow Index.
 
 ## Manifest location
 
@@ -49,12 +51,12 @@ flowchart TD
   D --> E
   E --> F["Parse JSON"]
   F --> G["Validate Level 1 schema"]
-  G --> H["Produce validation checks"]
+  G --> H["Use access.shadow_layer for Level 2a when present"]
 ```
 
 ## Required Level 1 fields
 
-The Sprint 3 schema requires:
+The current schema requires:
 
 | Field | Required | Rule |
 | --- | ---: | --- |
@@ -63,11 +65,22 @@ The Sprint 3 schema requires:
 | `identity` | Yes | Must include `name` and `description`. |
 | `freshness` | Yes | Must be an object. |
 
-If `level` is present, it must be `level-1` or `level-2a`. The field is not used
-to claim Level 2a validation during Sprint 3.
+If `level` is present, it must be `level-1` or `level-2a`.
 
 URL-like manifest fields are checked structurally. The current rule accepts
 absolute `http` or `https` URLs and root-relative paths.
+
+## Shadow Index declaration
+
+Level 2a validation uses:
+
+```txt
+access.shadow_layer
+```
+
+When present, the validator resolves this path against the target URL and tries
+to fetch the Shadow Index graph. `/ai-graph.json` is the expected graph target
+when a manifest declares that path.
 
 ## Content type and JSON
 
@@ -93,7 +106,7 @@ legal ownership check.
 
 ## Validation checks
 
-Sprint 3 maps manifest behavior into validation checks:
+Manifest behavior maps into validation checks:
 
 | Check | Meaning |
 | --- | --- |
@@ -108,7 +121,7 @@ Failures include actionable messages and fixes where possible.
 
 ## TypeScript entrypoint
 
-Sprint 3 exposes Level 1 validation through `validateIndexAi()`.
+Sprint 4 exposes Level 1 and Level 2a validation through `validateIndexAi()`.
 
 ```ts
 import { validateIndexAi } from '@index-ai/validator'
@@ -132,22 +145,22 @@ const result = await validateIndexAi({
 | `strictSecurity` | No | `false` | Reserved for later security checks. |
 | `failOnWarn` | No | `false` | Makes warnings fail the global result. |
 | `verbose` | No | `false` | Reserved for output detail. |
-| `timeoutMs` | No | `10000` | Manifest request timeout in milliseconds. |
-| `maxConcurrency` | No | `5` | Parsed option; endpoint concurrency is used in later checks. |
+| `timeoutMs` | No | `10000` | Request timeout in milliseconds. |
+| `maxConcurrency` | No | `5` | Maximum concurrent clean endpoint checks. |
 | `allowPrivateHosts` | No | `false` | Allows private/local hosts for trusted local development. |
 
 ## Current limitations
 
-Sprint 3 does not implement:
+Level 1 and Level 2a validation are implemented through `validateIndexAi()`.
 
-- Shadow Index validation
-- graph validation
-- `content_chars` comparison
-- HTML leak detection
+The current package does not implement:
+
 - security scanning
 - discovery checks
 - fixture validation
-- CI-specific behavior
+- final CI validation behavior
+- final CLI JSON output
+- final CLI exit-code behavior
 - Level 2b relations
 - Level 3 MCP
 

@@ -1,7 +1,7 @@
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
 
-import type { IndexAiManifest } from './types'
+import type { AiGraph, IndexAiManifest } from './types'
 
 export type SchemaValidationError = {
   path: string
@@ -13,6 +13,16 @@ export type ManifestSchemaValidationResult =
   | {
     valid: true
     manifest: IndexAiManifest
+  }
+  | {
+    valid: false
+    errors: SchemaValidationError[]
+  }
+
+export type GraphSchemaValidationResult =
+  | {
+    valid: true
+    graph: AiGraph
   }
   | {
     valid: false
@@ -130,7 +140,76 @@ export const manifestSchema = {
   },
 } as const
 
+export const graphSchema = {
+  $id: 'https://index-ai.dev/schemas/index-ai-graph.v1.json',
+  type: 'object',
+  required: ['generated', 'spec_version', 'nodes'],
+  additionalProperties: true,
+  properties: {
+    $schema: { type: 'string', minLength: 1 },
+    generated: { type: 'string', minLength: 1 },
+    spec_version: { const: '1.0' },
+    total_nodes: {
+      type: 'number',
+      minimum: 0,
+    },
+    pages: false,
+    nodes: {
+      type: 'array',
+      minItems: 1,
+      items: {
+        type: 'object',
+        required: ['id', 'type', 'label', 'description', 'content', 'meta'],
+        additionalProperties: true,
+        properties: {
+          id: { type: 'string', minLength: 1 },
+          type: { type: 'string', minLength: 1 },
+          label: { type: 'string', minLength: 1 },
+          description: { type: 'string', minLength: 1 },
+          content: {
+            type: 'object',
+            required: [
+              'llm_summary',
+              'llm_url',
+              'content_chars',
+              'content_chars_mode',
+              'summary_method',
+              'language',
+            ],
+            additionalProperties: true,
+            properties: {
+              llm_summary: { type: 'string', minLength: 1 },
+              llm_url: { type: 'string', minLength: 1 },
+              content_chars: {
+                type: 'integer',
+                minimum: 1,
+              },
+              content_chars_mode: { enum: ['exact', 'max'] },
+              summary_method: { enum: ['manual', 'truncate', 'llm'] },
+              language: { type: 'string', minLength: 1 },
+            },
+          },
+          meta: {
+            type: 'object',
+            required: ['updated', 'refresh_frequency'],
+            additionalProperties: true,
+            properties: {
+              updated: { type: 'string', minLength: 1 },
+              refresh_frequency: { type: 'string', minLength: 1 },
+              count: {
+                type: 'number',
+                minimum: 0,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const
+
 let cachedManifestValidator: ValidateFunction<IndexAiManifest> | null = null
+let cachedGraphValidator: ValidateFunction<AiGraph> | null = null
 
 export function validateManifestSchema(input: unknown): ManifestSchemaValidationResult {
   const validate = getManifestValidator()
@@ -139,6 +218,22 @@ export function validateManifestSchema(input: unknown): ManifestSchemaValidation
     return {
       valid: true,
       manifest: input,
+    }
+  }
+
+  return {
+    valid: false,
+    errors: formatAjvErrors(validate.errors),
+  }
+}
+
+export function validateGraphSchema(input: unknown): GraphSchemaValidationResult {
+  const validate = getGraphValidator()
+
+  if (validate(input)) {
+    return {
+      valid: true,
+      graph: input,
     }
   }
 
@@ -168,7 +263,21 @@ function getManifestValidator(): ValidateFunction<IndexAiManifest> {
   return cachedManifestValidator
 }
 
+function getGraphValidator(): ValidateFunction<AiGraph> {
+  cachedGraphValidator ??= createGraphValidator()
+
+  return cachedGraphValidator
+}
+
 function createManifestValidator(): ValidateFunction<IndexAiManifest> {
+  return createValidator().compile<IndexAiManifest>(manifestSchema)
+}
+
+function createGraphValidator(): ValidateFunction<AiGraph> {
+  return createValidator().compile<AiGraph>(graphSchema)
+}
+
+function createValidator(): Ajv {
   const ajv = new Ajv({
     allErrors: true,
     strict: false,
@@ -176,5 +285,5 @@ function createManifestValidator(): ValidateFunction<IndexAiManifest> {
 
   addFormats(ajv)
 
-  return ajv.compile<IndexAiManifest>(manifestSchema)
+  return ajv
 }

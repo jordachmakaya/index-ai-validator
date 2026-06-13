@@ -52,24 +52,24 @@ Then run the CLI through pnpm:
 pnpm exec index-ai https://example.com
 ```
 
+## Current implementation state
+
+Sprint 4 implements Level 1 AI Manifest validation and Level 2a Shadow Index
+validation through `validateIndexAi()`.
+
+The CLI command itself is still not the final full validator CLI behavior. Final
+CLI JSON output, final exit-code behavior, fixture validation, and CI behavior
+are later work.
+
 ## Current limitations
 
-The CLI shell is available. It can parse options and print shell output, but the
-CLI command itself is still not the final full validator CLI.
+The package does not yet implement:
 
-Sprint 2 added the runtime utility foundation for HTTP fetch policy, timeouts,
-redirect caps, private-host blocking, URL normalization, same-origin checks,
-Unicode NFC `content_chars` counting, and concurrency limiting.
-
-Sprint 3 adds Level 1 AI Manifest validation through `validateIndexAi()`.
-
-Later work still includes:
-
-- Shadow Index validation
-- full Level 2a validation
-- graph validation
-- `content_chars` comparison on live websites
-- security checks
+- security scanning
 - discovery checks
 - fixture validation
-- CI behavior
+- final CI validation behavior
+- final CLI JSON output
+- final CLI exit-code behavior
+- Level 2b relations
+- Level 3 MCP

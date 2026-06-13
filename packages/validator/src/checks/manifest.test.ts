@@ -228,7 +228,12 @@ describe('validateManifest', () => {
   it('returns Level 1 conformance from the public validator entrypoint', async () => {
     const server = await startServer({
       '/.well-known/index-ai.json': {
-        body: JSON.stringify(validManifest()),
+        body: JSON.stringify({
+          ...validManifest(),
+          access: {
+            llms_txt: '/llms.txt',
+          },
+        }),
       },
     })
 

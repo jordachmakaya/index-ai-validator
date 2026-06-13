@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validateManifestSchema } from './schemas'
+import { validateGraphSchema, validateManifestSchema } from './schemas'
 
 function validManifest(): Record<string, unknown> {
   return {
@@ -25,6 +25,34 @@ function validManifest(): Record<string, unknown> {
         topic: 'overview',
         description: 'A local entrypoint used by tests.',
         url: '/guide',
+      },
+    ],
+  }
+}
+
+function validGraph(): Record<string, unknown> {
+  return {
+    generated: '2026-06-12T00:00:00.000Z',
+    spec_version: '1.0',
+    total_nodes: 1,
+    nodes: [
+      {
+        id: 'home',
+        type: 'page',
+        label: 'Home',
+        description: 'The home page.',
+        content: {
+          llm_summary: 'Short summary for a clean endpoint.',
+          llm_url: '/clean/home.md',
+          content_chars: 35,
+          content_chars_mode: 'exact',
+          summary_method: 'manual',
+          language: 'en',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
       },
     ],
   }
@@ -125,3 +153,213 @@ describe('validateManifestSchema', () => {
     expect(result.errors.some((error) => error.path === '/entrypoints/0/url')).toBe(true)
   })
 })
+
+describe('validateGraphSchema', () => {
+  it('accepts a valid Level 2a graph shape', () => {
+    const result = validateGraphSchema(validGraph())
+
+    expect(result.valid).toBe(true)
+    if (!result.valid) {
+      throw new Error('Expected valid graph schema result')
+    }
+
+    expect(result.graph.spec_version).toBe('1.0')
+    expect(result.graph.nodes?.[0]?.content?.llm_url).toBe('/clean/home.md')
+  })
+
+  it('rejects a graph with no nodes array', () => {
+    const graph = validGraph()
+    delete graph.nodes
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors.some((error) => error.path === '/')).toBe(true)
+  })
+
+  it('rejects the deprecated pages array', () => {
+    const result = validateGraphSchema({
+      ...validGraph(),
+      pages: [],
+    })
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors.some((error) => error.path === '/pages')).toBe(true)
+  })
+
+  it('rejects nodes missing clean endpoint content fields', () => {
+    const graph = validGraph()
+    graph.nodes = [
+      {
+        id: 'home',
+        type: 'page',
+        label: 'Home',
+        description: 'The home page.',
+        content: {
+          llm_summary: 'Short summary.',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
+      },
+    ]
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors.some((error) => error.path === '/nodes/0/content')).toBe(true)
+  })
+
+  it('rejects nodes missing summary_method', () => {
+    const graph = validGraph()
+    deleteFirstNodeContentField(graph, 'summary_method')
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/nodes/0/content',
+          keyword: 'required',
+        }),
+      ]),
+    )
+  })
+
+  it('rejects nodes missing language', () => {
+    const graph = validGraph()
+    deleteFirstNodeContentField(graph, 'language')
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/nodes/0/content',
+          keyword: 'required',
+        }),
+      ]),
+    )
+  })
+
+  it('rejects content_chars zero because zero is only a placeholder', () => {
+    const graph = validGraph()
+    graph.nodes = [
+      {
+        id: 'home',
+        type: 'page',
+        label: 'Home',
+        description: 'The home page.',
+        content: {
+          llm_summary: 'Short summary.',
+          llm_url: '/clean/home.md',
+          content_chars: 0,
+          content_chars_mode: 'exact',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
+      },
+    ]
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/nodes/0/content/content_chars',
+          keyword: 'minimum',
+        }),
+      ]),
+    )
+  })
+
+  it('rejects decimal content_chars because counts must be integers', () => {
+    const graph = validGraph()
+    graph.nodes = [
+      {
+        id: 'home',
+        type: 'page',
+        label: 'Home',
+        description: 'The home page.',
+        content: {
+          llm_summary: 'Short summary.',
+          llm_url: '/clean/home.md',
+          content_chars: 1.5,
+          content_chars_mode: 'exact',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
+      },
+    ]
+
+    const result = validateGraphSchema(graph)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid graph schema result')
+    }
+
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/nodes/0/content/content_chars',
+          keyword: 'type',
+        }),
+      ]),
+    )
+  })
+})
+
+function deleteFirstNodeContentField(graph: Record<string, unknown>, field: string): void {
+  const nodes = graph.nodes
+
+  if (!Array.isArray(nodes)) {
+    throw new Error('Expected graph test fixture to include nodes')
+  }
+
+  const node = nodes[0]
+
+  if (typeof node !== 'object' || node === null) {
+    throw new Error('Expected graph test fixture node to be an object')
+  }
+
+  const content = (node as { content?: Record<string, unknown> }).content
+
+  if (!content) {
+    throw new Error('Expected graph test fixture node to include content')
+  }
+
+  delete content[field]
+}

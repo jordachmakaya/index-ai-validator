@@ -30,7 +30,9 @@ export default withMermaid(
         {
           text: 'Validator concepts',
           items: [
+            { text: 'Conformance vs Passed', link: '/guide/conformance-vs-passed' },
             { text: 'Level 1 Manifest', link: '/guide/level-1-manifest' },
+            { text: 'Level 2a Shadow Index', link: '/guide/level-2a-shadow-index' },
             { text: 'content_chars', link: '/guide/content-chars' },
           ],
         },
