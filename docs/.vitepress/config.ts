@@ -16,6 +16,7 @@ export default withMermaid(
       nav: [
         { text: 'Guide', link: '/guide/getting-started' },
         { text: 'CLI', link: '/guide/cli' },
+        { text: 'About', link: '/about' },
       ],
       sidebar: [
         {
