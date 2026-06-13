@@ -17,9 +17,12 @@
     "docs:build": "pnpm --filter docs build",
     "validator:dev": "pnpm --filter @index-ai/validator dev",
     "validator:build": "pnpm --filter @index-ai/validator build",
-    "validator:test": "pnpm --filter @index-ai/validator test"
+    "validator:test": "pnpm --filter @index-ai/validator test",
+    "changeset": "changeset",
+    "changeset:status": "changeset status --verbose"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
     "markdownlint-cli2": "^0.17.2",
     "mermaid": "^11.15.0",
     "prettier": "^3.8.4",
