@@ -1,6 +1,7 @@
 # Security Checks
 
-Sprint 5 adds conservative security checks through `validateIndexAi()`.
+The validator runs conservative security checks through `validateIndexAi()` and
+the `index-ai` CLI.
 
 These checks are heuristic. They look for obvious public leak signals in
 AI-facing clean endpoint text, but they are not a full security audit and they

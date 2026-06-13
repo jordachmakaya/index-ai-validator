@@ -5,12 +5,8 @@
 `@index-ai/validator` is an experimental free CLI validator for `index-ai` Level
 1 and Level 2a.
 
-It helps developers check whether a public website exposes the files and clean
-endpoints expected by the current Level 1 and Level 2a implementation.
-
-At the current Sprint 5 checkpoint, Level 1 AI Manifest validation, Level 2a
-Shadow Index validation, heuristic security checks, and shallow discovery checks
-are implemented through `validateIndexAi()`.
+It checks whether a public website exposes the files, Shadow Index graph, and
+clean endpoints expected by the current Level 1 and Level 2a implementation.
 
 ## Who is it for?
 
@@ -18,32 +14,66 @@ This package is for developers, maintainers, and technical reviewers working on
 public `index-ai` implementations.
 
 Use it when you need structured validation checks for the AI Manifest, Shadow
-Index graph, clean endpoint content types, HTML leaks, and `content_chars`
-behavior, plus conservative checks for obvious public leaks and discovery hints.
+Index graph, clean endpoint content types, HTML leaks, `content_chars`,
+conservative security heuristics, discovery hints, and CLI behavior.
 
-## What you get when you run it
+## STEP-1 - Run the CLI
 
-The public `validateIndexAi()` entrypoint returns a structured validation result
-with:
+```bash
+npx @index-ai/validator https://example.com
+```
+
+The package name is `@index-ai/validator`.
+
+The CLI binary is `index-ai`.
+
+## STEP-2 - Read the human report
+
+By default, the CLI prints a deterministic summary-first report:
+
+```txt
+index-ai validation result
+
+Target: https://example.com
+Duration: 42 ms
+Conformance: level-2a
+Passed: true
+
+Summary:
+- pass: 12
+- warn: 0
+- fail: 0
+- total: 12
+```
+
+Failures and warnings include check codes and fixes where available. Passing
+checks are included only when `--verbose` is used.
+
+## STEP-3 - Use JSON for automation
+
+```bash
+npx @index-ai/validator https://example.com --json
+```
+
+JSON mode writes JSON only to stdout. Normal validation results keep stderr
+empty. Usage, configuration, or runtime errors before a validation result use
+stderr and exit with code `2`.
+
+The top-level JSON fields include:
 
 - `schema_version`
 - `target`
 - `generated_at`
+- `duration_ms`
 - `conformance`
 - `passed`
 - `summary`
 - `metrics`
 - `checks`
 
-The CLI command itself is still not the final full validator CLI behavior. It
-can parse the documented command shape, but final CLI JSON output and final
-exit-code behavior are not implemented yet.
-
 ## What it validates in 0.1.0
 
-The current implemented scope is Level 1 plus Level 2a.
-
-Implemented through `validateIndexAi()`:
+Implemented scope:
 
 - canonical AI Manifest fetch at `/.well-known/index-ai.json`
 - fallback AI Manifest fetch at `/index-ai.json` with warning
@@ -70,10 +100,11 @@ Implemented through `validateIndexAi()`:
 - private/internal infrastructure reference checks
 - private `llm_url` blocking by default
 - shallow discovery hint checks for the homepage, `robots.txt`, and `/llms.txt`
+- CLI JSON output, human output, and exit codes
 
 ## What it does not validate
 
-The current Sprint 5 state does not implement:
+The package does not validate:
 
 - full security audits
 - vulnerability scanning
@@ -81,39 +112,28 @@ The current Sprint 5 state does not implement:
 - sitemap validation
 - DNS TXT discovery validation
 - fixture validation
-- final CI validation behavior
-- final CLI JSON output
-- final CLI exit-code behavior
 - Level 2b relations
 - Level 3 MCP
 
-It is experimental documentation for the current validator behavior, not
-compliance certification or a traffic promise.
+It is an experimental validator, not compliance certification or a traffic
+promise.
 
 ## Architecture overview
 
 ```mermaid
 flowchart TD
-  A["Target URL"] --> B["Fetch AI Manifest"]
-  B --> C["Read access.shadow_layer"]
-  C --> D["Fetch Shadow Index"]
-  D --> E["Validate graph nodes"]
-  E --> F["Fetch llm_url endpoints"]
-  F --> G["Validate clean content"]
-  G --> H["Compute conformance"]
+  A["Target URL"] --> B["Parse CLI flags"]
+  B --> C["Run validateIndexAi()"]
+  C --> D["Generate checks"]
+  D --> E["Compute conformance and passed"]
+  E --> F["Format human or JSON output"]
+  F --> G["Choose exit code"]
 ```
-
-The CLI command itself is still not the final full validator CLI behavior. Use
-the current docs to understand the implemented validation entrypoint and the
-planned CLI surface separately.
 
 ## Next steps
 
 - [Installation](/guide/installation)
 - [CLI](/guide/cli)
-- [Level 1 Manifest](/guide/level-1-manifest)
-- [Level 2a Shadow Index](/guide/level-2a-shadow-index)
-- [content_chars](/guide/content-chars)
-- [Security](/guide/security)
-- [Discovery](/guide/discovery)
+- [JSON Output](/guide/json-output)
 - [Conformance vs Passed](/guide/conformance-vs-passed)
+- [CI](/guide/ci)

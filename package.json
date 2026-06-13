@@ -1,8 +1,8 @@
 {
-  "name": "index-ai",
+  "name": "index-ai-validator",
   "version": "0.1.0",
   "private": true,
-  "description": "index-ai monorepo: validator, docs, and future tooling for AI-agent discoverability.",
+  "description": "index-ai-validator monorepo: validator package and docs for the experimental index-ai Level 1 and Level 2a specification.",
   "type": "module",
   "packageManager": "pnpm@10.22.0",
   "scripts": {

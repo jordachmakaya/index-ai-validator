@@ -3,7 +3,7 @@ import { withMermaid } from 'vitepress-plugin-mermaid'
 
 export default withMermaid(
   defineConfig({
-    title: 'index-ai',
+    title: 'index-ai-validator',
     description: 'Experimental free CLI validator for index-ai Level 1 and Level 2a.',
     cleanUrls: true,
     appearance: 'dark',
@@ -25,6 +25,7 @@ export default withMermaid(
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'CLI', link: '/guide/cli' },
+            { text: 'JSON Output', link: '/guide/json-output' },
           ],
         },
         {
@@ -36,6 +37,7 @@ export default withMermaid(
             { text: 'content_chars', link: '/guide/content-chars' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Discovery', link: '/guide/discovery' },
+            { text: 'CI', link: '/guide/ci' },
           ],
         },
       ],

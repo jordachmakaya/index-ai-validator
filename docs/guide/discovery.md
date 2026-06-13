@@ -1,6 +1,7 @@
 # Discovery Checks
 
-Sprint 5 adds shallow discovery checks through `validateIndexAi()`.
+The validator runs shallow discovery checks through `validateIndexAi()` and the
+`index-ai` CLI.
 
 These checks inspect explicit hints that help agents find the AI Manifest. They
 do not crawl a site, validate a sitemap, or check DNS TXT records.

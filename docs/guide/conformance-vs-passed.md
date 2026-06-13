@@ -10,7 +10,7 @@ be treated as successful under the current options.
 
 ## Conformance
 
-Sprint 5 can return:
+The current validator can return:
 
 | Value | Meaning |
 | --- | --- |
@@ -18,48 +18,51 @@ Sprint 5 can return:
 | `level-1` | Level 1 AI Manifest checks passed, but Level 2a did not fully pass. |
 | `level-2a` | Level 1 and Level 2a Shadow Index checks passed. |
 
-`validateIndexAi()` can return `level-2a` when the AI Manifest and Shadow Index
-checks pass.
-
-The package reserves types for Level 2b and Level 3, but it does not emit those
-levels in the current implementation.
+The package reserves TypeScript union members for Level 2b and Level 3, but the
+current validator does not emit those levels.
 
 ## Passed
 
-`passed` is based on validation severity and options.
-
-In the current implementation:
+`passed` is based on validation severity and options:
 
 - any `fail` check makes `passed` false
-- `failOnWarn` makes warnings fail the global result
-- `strict` can make SHOULD-level warnings fail the global result
+- `failOnWarn` makes any warning fail the global result
+- `strict` makes SHOULD-level warnings fail the global result
 - `strictSecurity` upgrades private/internal infrastructure heuristic findings from warn to fail
 - discovery warnings do not fail by default
 
-This means a target can have a structural conformance level while still failing
-the global result under stricter options.
+This means a target can have structural `level-2a` conformance while still
+returning `passed: false` under stricter options or fail-level security
+findings.
 
-Sprint 5 security and discovery checks do not raise or lower structural
-`conformance`. They can affect `passed` because security failures and stricter
-warning options are part of the global verdict.
+## CLI interaction
+
+The CLI exposes both fields in human and JSON output.
+
+Exit codes are based on `passed`, not directly on `conformance`:
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | A validation result exists and `passed` is `true`. |
+| `1` | A validation result exists and `passed` is `false`. |
+| `2` | No validation result exists because usage, configuration, or runtime setup failed. |
+
+`--no-exit-code` returns `0` for validation failures only. It does not hide
+usage, configuration, or runtime errors before a validation result exists.
 
 ## Decision model
 
 ```mermaid
 flowchart TD
   A["Checks generated"] --> B["Compute structural conformance"]
-  A --> C["Check failures and warning options"]
+  A --> C["Apply fail and warning policy"]
   B --> D["conformance"]
   C --> E["passed"]
+  E --> F["Choose exit code"]
 ```
 
 ## Current limitations
 
-The CLI command itself is still not the final full validator CLI behavior.
-Final CLI JSON output, final exit-code behavior, fixture validation, and CI
-validation behavior are not implemented yet.
-
-Full security audits, vulnerability scanning, discovery crawling, sitemap
-validation, and DNS TXT discovery validation are not implemented.
-
-The package does not implement Level 2b relations or Level 3 MCP.
+The validator does not validate Level 2b relations, Level 3 MCP, discovery
+crawling, sitemap entries, DNS TXT discovery, full security audits,
+vulnerability scanning, compliance certification, or AI traffic outcomes.

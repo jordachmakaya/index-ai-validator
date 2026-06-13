@@ -4,9 +4,8 @@ Level 2a extends Level 1 with a Shadow Index graph. The graph lists clean,
 AI-readable endpoints and declares the metadata needed to validate those
 endpoints.
 
-Sprint 5 implements Level 2a Shadow Index validation through `validateIndexAi()`.
-
-The CLI command itself is still not the final full validator CLI behavior.
+Level 2a Shadow Index validation is available through `validateIndexAi()` and
+the `index-ai` CLI.
 
 ## Level 2a scope
 
@@ -177,9 +176,6 @@ The current package does not implement:
 - sitemap validation
 - DNS TXT discovery validation
 - fixture validation
-- final CI validation behavior
-- final CLI JSON output
-- final CLI exit-code behavior
 - Level 2b relations
 - Level 3 MCP
 

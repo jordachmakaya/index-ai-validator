@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: index-ai
+  name: index-ai-validator
   text: Experimental validator docs
   tagline: Experimental free CLI validator for index-ai Level 1 and Level 2a.
   actions:
@@ -10,36 +10,46 @@ hero:
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: Level 2a Shadow Index
-      link: /guide/level-2a-shadow-index
+      text: CLI guide
+      link: /guide/cli
 
 features:
-  - title: Implemented scope
-    details: Sprint 5 implements Level 1, Level 2a, heuristic security checks, and shallow discovery checks through validateIndexAi().
-  - title: Package and binary
-    details: The npm package is @index-ai/validator. The CLI binary documented here is index-ai.
+  - title: Implemented CLI
+    details: The index-ai binary runs validateIndexAi(), prints deterministic human output, and supports stable JSON output.
+  - title: Machine-readable results
+    details: JSON mode includes duration_ms, conformance, passed, summary, metrics, and checks at the top level.
   - title: Honest limits
-    details: The CLI command itself is still not the final full validator CLI behavior, and this package is not production-grade compliance certification.
+    details: The validator checks Level 1 and Level 2a exposure. It is not certification, a traffic guarantee, or a security audit.
 ---
 
 ## What this is
 
+`index-ai-validator` is the repository for the experimental `@index-ai/validator`
+package and docs.
+
+- [`index-ai`](https://github.com/jordachmakaya/index-ai) is the experimental specification being validated.
+
 `@index-ai/validator` is an experimental free CLI validator for public
 `index-ai` Level 1 and Level 2a implementations.
 
-Sprint 5 implements Level 2a Shadow Index validation through the public
-`validateIndexAi()` entrypoint. That includes AI Manifest validation, Shadow
-Index graph fetch, graph schema validation, clean endpoint fetches, clean
-endpoint content-type checks, HTML leak detection, `content_chars` validation,
-heuristic security checks, and shallow discovery checks.
+The CLI binary is:
 
-The CLI command itself is still not the final full validator CLI behavior. It
-can parse the documented command shape, but final CLI JSON output, final exit
-codes, and CI behavior are later work.
+```txt
+index-ai
+```
+
+Run it with:
+
+```bash
+npx @index-ai/validator https://example.com
+```
+
+The command calls `validateIndexAi()`, produces a human-readable report by
+default, and can produce stable machine-readable JSON with `--json`.
 
 ## Current capabilities
 
-The validator entrypoint can now check:
+The validator checks:
 
 - Level 1 AI Manifest fetch, JSON content type, JSON parse, and schema shape
 - manifest `access.shadow_layer`
@@ -59,21 +69,18 @@ The validator entrypoint can now check:
 - private `llm_url` blocking by default
 - homepage, `robots.txt`, and `/llms.txt` discovery hints
 - `level-2a` conformance when Level 1 and Level 2a checks pass
+- CLI JSON output, human output, and exit codes
 
 ## Current limitations
 
-In the current Sprint 5 state, the package does not implement:
+The package does not validate:
 
-- final full CLI validation behavior
-- final CLI JSON output
-- final CLI exit-code behavior
 - full security audits
 - vulnerability scanning
 - discovery crawling
 - sitemap validation
 - DNS TXT discovery validation
 - fixture validation
-- CI validation behavior
 - Level 2b relations
 - Level 3 MCP
 

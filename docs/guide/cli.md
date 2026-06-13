@@ -7,9 +7,10 @@ Package: @index-ai/validator
 Binary:  index-ai
 ```
 
-## Basic command
+The `index-ai` binary calls `validateIndexAi()` and returns either a
+human-readable report or stable JSON.
 
-Run:
+## Basic command
 
 ```bash
 index-ai https://example.com
@@ -31,71 +32,122 @@ index-ai <url> [--json] [--verbose] [--strict] [--strict-security] [--fail-on-wa
 
 | Option | Required | Default | Description |
 | --- | ---: | --- | --- |
-| `<url>` | Yes | - | Target website URL to validate. Must be supplied as the positional argument. |
-| `--json` | No | `false` | Parsed by the CLI shell. Final machine-readable validation JSON output is not implemented yet. |
-| `--verbose` | No | `false` | Parsed by the CLI shell. Final detailed CLI output is not implemented yet. |
-| `--strict` | No | `false` | Available to `validateIndexAi()` for warning-sensitive `passed` behavior. |
-| `--strict-security` | No | `false` | Available to `validateIndexAi()`. Upgrades private/internal infrastructure heuristic findings from warn to fail. |
-| `--fail-on-warn` | No | `false` | Available to `validateIndexAi()` for warning-sensitive `passed` behavior. |
-| `--no-exit-code` | No | `false` | Parsed by the CLI shell. Final validation exit-code behavior is not implemented yet. |
-| `--timeout <ms>` | No | `10000` | Used by the validation entrypoint for manifest, graph, and endpoint fetches. |
-| `--max-concurrency <n>` | No | `5` | Used by the validation entrypoint to cap concurrent clean endpoint checks. |
-| `--allow-private-hosts` | No | `false` | Allows private/local target and `llm_url` hosts for trusted local development. Private `llm_url` hosts fail by default. |
+| `<url>` | Yes | - | Target website URL. Must use `http` or `https`. |
+| `--json` | No | `false` | Writes stable machine-readable JSON to stdout. |
+| `--verbose` | No | `false` | Includes passing checks in human-readable output. |
+| `--strict` | No | `false` | Makes SHOULD-level warnings fail the global verdict. |
+| `--strict-security` | No | `false` | Upgrades private infrastructure heuristic findings from warn to fail. |
+| `--fail-on-warn` | No | `false` | Makes any warning fail the global verdict. |
+| `--no-exit-code` | No | `false` | Returns exit code `0` for validation failures only. |
+| `--timeout <ms>` | No | `10000` | Request timeout in milliseconds. Must be a positive integer. |
+| `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
+| `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
 
-## STEP-1 - Run help
-
-```bash
-index-ai --help
-```
-
-This shows the current CLI command, options, and descriptions.
-
-## STEP-2 - Run against a URL
+## Examples
 
 ```bash
 index-ai https://example.com
+index-ai https://example.com --json
+index-ai https://example.com --strict
+index-ai https://example.com --fail-on-warn
+index-ai https://example.com --strict-security
+index-ai https://example.com --allow-private-hosts
+index-ai https://example.com --no-exit-code
+index-ai https://example.com --timeout 10000
+index-ai https://example.com --max-concurrency 5
 ```
 
-The CLI command itself is still not the final full validator CLI behavior. Do
-not use current CLI output as proof that a site passes `index-ai` Level 1 or
-Level 2a.
+## Human output
 
-## STEP-3 - Use the TypeScript entrypoint for current validation
+Human output is deterministic and summary-first:
 
-Sprint 5 validation is available through `validateIndexAi()`:
+```txt
+index-ai validation result
 
-```ts
-import { validateIndexAi } from '@index-ai/validator'
+Target: https://example.com
+Duration: 42 ms
+Conformance: level-2a
+Passed: true
 
-const result = await validateIndexAi({
-  target: 'https://example.com',
-  strict: false,
-  strictSecurity: false,
-  failOnWarn: false,
-  verbose: false,
-  timeoutMs: 10000,
-  maxConcurrency: 5,
-  allowPrivateHosts: false,
-})
+Summary:
+- pass: 12
+- warn: 0
+- fail: 0
+- total: 12
 ```
 
-`validateIndexAi()` can return `level-2a` when Level 1 and Level 2a checks pass.
+The report includes failures, warnings, and fixes where available. Passing
+checks are hidden unless `--verbose` is used.
+
+## JSON output
+
+```bash
+index-ai https://example.com --json
+```
+
+JSON mode writes JSON only to stdout. It does not print banners, colors,
+progress logs, or human prose around the JSON.
+
+Top-level fields include:
+
+- `schema_version`
+- `target`
+- `generated_at`
+- `duration_ms`
+- `conformance`
+- `passed`
+- `summary`
+- `metrics`
+- `checks`
+
+Normal validation results keep stderr empty. Usage, configuration, or runtime
+errors before a validation result use stderr.
+
+## Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | A validation result exists and `passed` is `true`. |
+| `1` | A validation result exists and `passed` is `false`. |
+| `2` | No validation result exists because usage, configuration, or runtime setup failed. |
+
+`--no-exit-code` changes validation failures from exit code `1` to exit code
+`0`. It does not hide usage, configuration, or runtime errors that happen before
+a validation result exists.
+
+## Warning-sensitive modes
+
+`conformance` is structural. It can be `level-2a` even when `passed` is false.
+
+`passed` is the global verdict under the current options:
+
+- `--strict` makes SHOULD-level warnings fail.
+- `--fail-on-warn` makes any warning fail.
+- `--strict-security` upgrades private infrastructure findings from warn to fail.
+
+## Private hosts
+
+Private and local hosts are blocked by default for public validation paths that
+could otherwise probe internal networks.
+
+Use this only for trusted local or private development:
+
+```bash
+index-ai http://localhost:3000 --allow-private-hosts
+```
+
+Do not use `--allow-private-hosts` as evidence that private endpoints are
+appropriate for public `index-ai` implementations.
 
 ## Current limitations
 
-The CLI command is still not the final full validator CLI behavior.
+The CLI does not validate:
 
-Not implemented yet:
-
-- final CLI validation report
-- final JSON CLI output
-- final CLI exit-code behavior
 - full security audits
 - vulnerability scanning
 - discovery crawling
 - sitemap validation
 - DNS TXT discovery validation
 - fixture validation
-- CI validation behavior
 - Level 2b relations
 - Level 3 MCP

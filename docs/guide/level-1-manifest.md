@@ -4,11 +4,9 @@ Level 1 starts with the AI Manifest. It is a JSON document that describes the
 site identity, freshness metadata, and machine-readable entry points for an
 `index-ai` implementation.
 
-Sprint 5 still uses Level 1 as the base for Level 2a. The public
-`validateIndexAi()` entrypoint validates the AI Manifest before it attempts
-Shadow Index validation.
-
-The CLI command itself is still not the final full validator CLI behavior.
+Level 1 is the base for Level 2a. The public `validateIndexAi()` entrypoint and
+the `index-ai` CLI validate the AI Manifest before attempting Shadow Index
+validation.
 
 ## What the AI Manifest is
 
@@ -121,8 +119,8 @@ Failures include actionable messages and fixes where possible.
 
 ## TypeScript entrypoint
 
-Sprint 5 exposes Level 1, Level 2a, heuristic security checks, and shallow
-discovery checks through `validateIndexAi()`.
+Level 1, Level 2a, heuristic security checks, and shallow discovery checks are
+available through `validateIndexAi()`.
 
 ```ts
 import { validateIndexAi } from '@index-ai/validator'
@@ -162,9 +160,6 @@ The current package does not implement:
 - sitemap validation
 - DNS TXT discovery validation
 - fixture validation
-- final CI validation behavior
-- final CLI JSON output
-- final CLI exit-code behavior
 - Level 2b relations
 - Level 3 MCP
 
