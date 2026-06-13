@@ -464,6 +464,74 @@ describe('Level 2a graph validation', () => {
     expect(findCheckForNode(result.checks, CHECK.L2A_LLM_URL_PROTOCOL, 'home').severity).toBe('fail')
   })
 
+  it('blocks private llm_url hosts by default for non-local targets', async () => {
+    const targetServer = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/ai-graph.json': graphRoute(graphWithNodes([
+        {
+          id: 'private',
+          llmUrl: 'http://127.0.0.1:1/clean/private.md',
+          contentChars: 500,
+          contentCharsMode: 'max',
+        },
+      ])),
+    })
+    const routedTarget = createRoutedTarget(targetServer.origin)
+    const restoreFetch = installFetchHostRewrite('example.test', targetServer.origin)
+
+    try {
+      const result = await validateIndexAi(createOptions(routedTarget))
+      const fetchCheck = findCheckForNode(result.checks, CHECK.L2A_LLM_URL_FETCH, 'private')
+
+      expect(result.passed).toBe(false)
+      expect(result.conformance).toBe('level-1')
+      expect(fetchCheck.severity).toBe('fail')
+      expect(fetchCheck.details).toEqual(
+        expect.objectContaining({
+          error_code: 'HTTP_PRIVATE_HOST_BLOCKED',
+        }),
+      )
+    }
+    finally {
+      restoreFetch()
+    }
+  })
+
+  it('allows private llm_url hosts when allowPrivateHosts is true', async () => {
+    const privateBody = 'Private local clean endpoint.'
+    const privateServer = await startServer({
+      '/clean/private.md': textRoute(privateBody),
+    })
+    const targetServer = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/ai-graph.json': graphRoute(graphWithNodes([
+        {
+          id: 'private',
+          llmUrl: `${privateServer.origin}/clean/private.md`,
+          contentChars: countContentChars(privateBody),
+          contentCharsMode: 'exact',
+        },
+      ])),
+    })
+    const routedTarget = createRoutedTarget(targetServer.origin)
+    const restoreFetch = installFetchHostRewrite('example.test', targetServer.origin)
+
+    try {
+      const result = await validateIndexAi({
+        ...createOptions(routedTarget),
+        allowPrivateHosts: true,
+      })
+
+      expect(result.passed).toBe(true)
+      expect(result.conformance).toBe('level-2a')
+      expect(findCheckForNode(result.checks, CHECK.L2A_LLM_URL_FETCH, 'private').severity).toBe('pass')
+      expect(findCheckForNode(result.checks, CHECK.L2A_CONTENT_CHARS_EXACT_MATCH, 'private').severity).toBe('pass')
+    }
+    finally {
+      restoreFetch()
+    }
+  })
+
   it('reports clean endpoints served with the wrong content type', async () => {
     const graph = graphWithNodes([
       {
@@ -651,4 +719,46 @@ function deleteFirstNodeContentField(graph: Record<string, unknown>, field: stri
   }
 
   delete content[field]
+}
+
+function createRoutedTarget(localOrigin: string): string {
+  const url = new URL(localOrigin)
+  url.hostname = 'example.test'
+
+  return url.toString()
+}
+
+function installFetchHostRewrite(hostname: string, replacementOrigin: string): () => void {
+  const originalFetch = globalThis.fetch
+
+  globalThis.fetch = (async (input, init) => {
+    const inputUrl = getFetchInputUrl(input)
+
+    if (inputUrl?.hostname === hostname) {
+      const replacementUrl = new URL(replacementOrigin)
+      inputUrl.protocol = replacementUrl.protocol
+      inputUrl.hostname = replacementUrl.hostname
+      inputUrl.port = replacementUrl.port
+
+      return originalFetch(inputUrl, init)
+    }
+
+    return originalFetch(input, init)
+  }) as typeof fetch
+
+  return () => {
+    globalThis.fetch = originalFetch
+  }
+}
+
+function getFetchInputUrl(input: Parameters<typeof fetch>[0]): URL | null {
+  if (typeof input === 'string' || input instanceof URL) {
+    return new URL(input)
+  }
+
+  if (input instanceof Request) {
+    return new URL(input.url)
+  }
+
+  return null
 }

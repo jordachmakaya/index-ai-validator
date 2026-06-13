@@ -52,7 +52,7 @@ export function detectHtmlLeak(input: string): HtmlLeakResult {
   return { kind: 'none' }
 }
 
-function stripMarkdownCode(input: string): string {
+export function stripMarkdownCode(input: string): string {
   return input
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`[^`\n]*`/g, '')

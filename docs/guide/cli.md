@@ -35,12 +35,12 @@ index-ai <url> [--json] [--verbose] [--strict] [--strict-security] [--fail-on-wa
 | `--json` | No | `false` | Parsed by the CLI shell. Final machine-readable validation JSON output is not implemented yet. |
 | `--verbose` | No | `false` | Parsed by the CLI shell. Final detailed CLI output is not implemented yet. |
 | `--strict` | No | `false` | Available to `validateIndexAi()` for warning-sensitive `passed` behavior. |
-| `--strict-security` | No | `false` | Parsed by the CLI shell. Security checks are not implemented yet. |
+| `--strict-security` | No | `false` | Available to `validateIndexAi()`. Upgrades private/internal infrastructure heuristic findings from warn to fail. |
 | `--fail-on-warn` | No | `false` | Available to `validateIndexAi()` for warning-sensitive `passed` behavior. |
 | `--no-exit-code` | No | `false` | Parsed by the CLI shell. Final validation exit-code behavior is not implemented yet. |
 | `--timeout <ms>` | No | `10000` | Used by the validation entrypoint for manifest, graph, and endpoint fetches. |
 | `--max-concurrency <n>` | No | `5` | Used by the validation entrypoint to cap concurrent clean endpoint checks. |
-| `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
+| `--allow-private-hosts` | No | `false` | Allows private/local target and `llm_url` hosts for trusted local development. Private `llm_url` hosts fail by default. |
 
 ## STEP-1 - Run help
 
@@ -62,7 +62,7 @@ Level 2a.
 
 ## STEP-3 - Use the TypeScript entrypoint for current validation
 
-Sprint 4 validation is available through `validateIndexAi()`:
+Sprint 5 validation is available through `validateIndexAi()`:
 
 ```ts
 import { validateIndexAi } from '@index-ai/validator'
@@ -90,8 +90,11 @@ Not implemented yet:
 - final CLI validation report
 - final JSON CLI output
 - final CLI exit-code behavior
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - CI validation behavior
 - Level 2b relations

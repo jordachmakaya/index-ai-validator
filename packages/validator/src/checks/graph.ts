@@ -1,6 +1,7 @@
 import { CHECK } from '../constants'
 import { fetchTextWithPolicy, type HttpResult } from '../http'
 import { validateGraphSchema, type SchemaValidationError } from '../schemas'
+import type { SecurityResource } from './security'
 import type {
   AiGraph,
   AiGraphNode,
@@ -29,7 +30,13 @@ type JsonParseResult =
 export type GraphValidationResult = {
   graph?: AiGraph
   graphUrl?: string
+  cleanEndpoints?: SecurityResource[]
   checks: ValidationCheck[]
+}
+
+type NodeValidationResult = {
+  checks: ValidationCheck[]
+  cleanEndpoints: SecurityResource[]
 }
 
 export async function validateGraph(
@@ -150,18 +157,19 @@ export async function validateGraph(
   )
   checks.push(createTotalNodesCheck(schemaResult.graph, graphUrl))
 
-  const nodeChecks = await validateGraphNodes({
+  const nodeResult = await validateGraphNodes({
     graph: schemaResult.graph,
     options,
     target,
     targetHost,
   })
 
-  checks.push(...nodeChecks)
+  checks.push(...nodeResult.checks)
 
   return {
     graph: schemaResult.graph,
     graphUrl,
+    cleanEndpoints: nodeResult.cleanEndpoints,
     checks,
   }
 }
@@ -262,9 +270,9 @@ async function validateGraphNodes(input: {
   options: ValidatorOptions
   target: string
   targetHost: string
-}): Promise<ValidationCheck[]> {
+}): Promise<NodeValidationResult> {
   const nodes = input.graph.nodes ?? []
-  const groupedChecks = await runWithConcurrency(
+  const groupedResults = await runWithConcurrency(
     nodes,
     input.options.maxConcurrency,
     (node) => validateGraphNode({
@@ -275,7 +283,10 @@ async function validateGraphNodes(input: {
     }),
   )
 
-  return groupedChecks.flat()
+  return {
+    checks: groupedResults.flatMap((result) => result.checks),
+    cleanEndpoints: groupedResults.flatMap((result) => result.cleanEndpoints),
+  }
 }
 
 async function validateGraphNode(input: {
@@ -283,7 +294,7 @@ async function validateGraphNode(input: {
   options: ValidatorOptions
   target: string
   targetHost: string
-}): Promise<ValidationCheck[]> {
+}): Promise<NodeValidationResult> {
   const nodeId = input.node.id ?? '(unknown)'
   const llmUrl = input.node.content?.llm_url ?? ''
   const checks: ValidationCheck[] = []
@@ -308,7 +319,7 @@ async function validateGraphNode(input: {
       }),
     )
 
-    return checks
+    return { checks, cleanEndpoints: [] }
   }
 
   checks.push(
@@ -346,7 +357,7 @@ async function validateGraphNode(input: {
       }),
     )
 
-    return checks
+    return { checks, cleanEndpoints: [] }
   }
 
   checks.push(
@@ -364,7 +375,16 @@ async function validateGraphNode(input: {
   checks.push(createHtmlLeakCheck(response.text, cleanUrl, nodeId))
   checks.push(createContentCharsCheck(input.node, response.text, cleanUrl, nodeId))
 
-  return checks
+  return {
+    checks,
+    cleanEndpoints: [
+      {
+        source: cleanUrl,
+        text: response.text,
+        nodeId,
+      },
+    ],
+  }
 }
 
 function createCleanContentTypeCheck(

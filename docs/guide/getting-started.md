@@ -8,8 +8,9 @@
 It helps developers check whether a public website exposes the files and clean
 endpoints expected by the current Level 1 and Level 2a implementation.
 
-At the current Sprint 4 checkpoint, Level 1 AI Manifest validation and Level 2a
-Shadow Index validation are implemented through `validateIndexAi()`.
+At the current Sprint 5 checkpoint, Level 1 AI Manifest validation, Level 2a
+Shadow Index validation, heuristic security checks, and shallow discovery checks
+are implemented through `validateIndexAi()`.
 
 ## Who is it for?
 
@@ -18,7 +19,7 @@ public `index-ai` implementations.
 
 Use it when you need structured validation checks for the AI Manifest, Shadow
 Index graph, clean endpoint content types, HTML leaks, and `content_chars`
-behavior.
+behavior, plus conservative checks for obvious public leaks and discovery hints.
 
 ## What you get when you run it
 
@@ -65,13 +66,20 @@ Implemented through `validateIndexAi()`:
 - soft inline HTML warning
 - `content_chars` exact and max validation
 - Unicode NFC code-point counting
+- obvious secret-shaped value checks outside Markdown code
+- private/internal infrastructure reference checks
+- private `llm_url` blocking by default
+- shallow discovery hint checks for the homepage, `robots.txt`, and `/llms.txt`
 
 ## What it does not validate
 
-The current Sprint 4 state does not implement:
+The current Sprint 5 state does not implement:
 
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - final CI validation behavior
 - final CLI JSON output
@@ -79,8 +87,8 @@ The current Sprint 4 state does not implement:
 - Level 2b relations
 - Level 3 MCP
 
-It is not production-grade compliance certification and does not guarantee AI
-traffic.
+It is experimental documentation for the current validator behavior, not
+compliance certification or a traffic promise.
 
 ## Architecture overview
 
@@ -106,4 +114,6 @@ planned CLI surface separately.
 - [Level 1 Manifest](/guide/level-1-manifest)
 - [Level 2a Shadow Index](/guide/level-2a-shadow-index)
 - [content_chars](/guide/content-chars)
+- [Security](/guide/security)
+- [Discovery](/guide/discovery)
 - [Conformance vs Passed](/guide/conformance-vs-passed)

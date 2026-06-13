@@ -54,8 +54,9 @@ pnpm exec index-ai https://example.com
 
 ## Current implementation state
 
-Sprint 4 implements Level 1 AI Manifest validation and Level 2a Shadow Index
-validation through `validateIndexAi()`.
+Sprint 5 implements Level 1 AI Manifest validation, Level 2a Shadow Index
+validation, heuristic security checks, and shallow discovery checks through
+`validateIndexAi()`.
 
 The CLI command itself is still not the final full validator CLI behavior. Final
 CLI JSON output, final exit-code behavior, fixture validation, and CI behavior
@@ -65,8 +66,11 @@ are later work.
 
 The package does not yet implement:
 
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - final CI validation behavior
 - final CLI JSON output

@@ -4,7 +4,7 @@ Level 2a extends Level 1 with a Shadow Index graph. The graph lists clean,
 AI-readable endpoints and declares the metadata needed to validate those
 endpoints.
 
-Sprint 4 implements Level 2a Shadow Index validation through `validateIndexAi()`.
+Sprint 5 implements Level 2a Shadow Index validation through `validateIndexAi()`.
 
 The CLI command itself is still not the final full validator CLI behavior.
 
@@ -26,6 +26,8 @@ Level 2a validation currently covers:
 - hard HTML leak failure
 - soft inline HTML warning
 - `content_chars` exact and max validation
+- private `llm_url` host blocking by default
+- heuristic security checks against fetched clean endpoint text
 - Level 2a conformance computation
 
 ## Shadow Index location
@@ -94,6 +96,9 @@ Each node `meta` object must include:
 ## Clean endpoint rules
 
 For each node, the validator resolves and fetches `content.llm_url`.
+
+Private or local `llm_url` hosts fail by default. Use `allowPrivateHosts` only
+for trusted local or private development targets.
 
 The clean endpoint must be served as:
 
@@ -166,8 +171,11 @@ is enabled. See [Conformance vs Passed](/guide/conformance-vs-passed).
 
 The current package does not implement:
 
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - final CI validation behavior
 - final CLI JSON output
@@ -175,5 +183,5 @@ The current package does not implement:
 - Level 2b relations
 - Level 3 MCP
 
-It does not certify compliance, guarantee AI traffic, or provide legal control
+It does not provide compliance certification, traffic promises, or legal control
 over AI agents.

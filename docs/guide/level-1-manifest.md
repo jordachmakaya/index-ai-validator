@@ -4,7 +4,7 @@ Level 1 starts with the AI Manifest. It is a JSON document that describes the
 site identity, freshness metadata, and machine-readable entry points for an
 `index-ai` implementation.
 
-Sprint 4 still uses Level 1 as the base for Level 2a. The public
+Sprint 5 still uses Level 1 as the base for Level 2a. The public
 `validateIndexAi()` entrypoint validates the AI Manifest before it attempts
 Shadow Index validation.
 
@@ -121,7 +121,8 @@ Failures include actionable messages and fixes where possible.
 
 ## TypeScript entrypoint
 
-Sprint 4 exposes Level 1 and Level 2a validation through `validateIndexAi()`.
+Sprint 5 exposes Level 1, Level 2a, heuristic security checks, and shallow
+discovery checks through `validateIndexAi()`.
 
 ```ts
 import { validateIndexAi } from '@index-ai/validator'
@@ -142,7 +143,7 @@ const result = await validateIndexAi({
 | --- | ---: | --- | --- |
 | `target` | Yes | - | Target website URL. Must use `http` or `https`. |
 | `strict` | No | `false` | Treats SHOULD-level warnings as failures in the global result. |
-| `strictSecurity` | No | `false` | Reserved for later security checks. |
+| `strictSecurity` | No | `false` | Upgrades private/internal infrastructure heuristic findings from warn to fail. |
 | `failOnWarn` | No | `false` | Makes warnings fail the global result. |
 | `verbose` | No | `false` | Reserved for output detail. |
 | `timeoutMs` | No | `10000` | Request timeout in milliseconds. |
@@ -155,8 +156,11 @@ Level 1 and Level 2a validation are implemented through `validateIndexAi()`.
 
 The current package does not implement:
 
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - final CI validation behavior
 - final CLI JSON output
@@ -164,5 +168,5 @@ The current package does not implement:
 - Level 2b relations
 - Level 3 MCP
 
-The package does not certify compliance, guarantee AI traffic, or provide legal
-control over AI agents.
+The package does not provide compliance certification, traffic promises, or
+legal control over AI agents.

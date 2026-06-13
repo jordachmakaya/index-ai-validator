@@ -10,7 +10,7 @@ be treated as successful under the current options.
 
 ## Conformance
 
-Sprint 4 can return:
+Sprint 5 can return:
 
 | Value | Meaning |
 | --- | --- |
@@ -33,9 +33,15 @@ In the current implementation:
 - any `fail` check makes `passed` false
 - `failOnWarn` makes warnings fail the global result
 - `strict` can make SHOULD-level warnings fail the global result
+- `strictSecurity` upgrades private/internal infrastructure heuristic findings from warn to fail
+- discovery warnings do not fail by default
 
 This means a target can have a structural conformance level while still failing
 the global result under stricter options.
+
+Sprint 5 security and discovery checks do not raise or lower structural
+`conformance`. They can affect `passed` because security failures and stricter
+warning options are part of the global verdict.
 
 ## Decision model
 
@@ -53,7 +59,7 @@ The CLI command itself is still not the final full validator CLI behavior.
 Final CLI JSON output, final exit-code behavior, fixture validation, and CI
 validation behavior are not implemented yet.
 
-Security scanning and discovery checks are also not implemented yet, so they do
-not currently affect `passed`.
+Full security audits, vulnerability scanning, discovery crawling, sitemap
+validation, and DNS TXT discovery validation are not implemented.
 
 The package does not implement Level 2b relations or Level 3 MCP.

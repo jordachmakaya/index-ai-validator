@@ -15,7 +15,7 @@ hero:
 
 features:
   - title: Implemented scope
-    details: Sprint 4 implements Level 1 AI Manifest validation and Level 2a Shadow Index validation through validateIndexAi().
+    details: Sprint 5 implements Level 1, Level 2a, heuristic security checks, and shallow discovery checks through validateIndexAi().
   - title: Package and binary
     details: The npm package is @index-ai/validator. The CLI binary documented here is index-ai.
   - title: Honest limits
@@ -27,11 +27,11 @@ features:
 `@index-ai/validator` is an experimental free CLI validator for public
 `index-ai` Level 1 and Level 2a implementations.
 
-Sprint 4 implements Level 2a Shadow Index validation through the public
+Sprint 5 implements Level 2a Shadow Index validation through the public
 `validateIndexAi()` entrypoint. That includes AI Manifest validation, Shadow
 Index graph fetch, graph schema validation, clean endpoint fetches, clean
-endpoint content-type checks, HTML leak detection, and `content_chars`
-validation.
+endpoint content-type checks, HTML leak detection, `content_chars` validation,
+heuristic security checks, and shallow discovery checks.
 
 The CLI command itself is still not the final full validator CLI behavior. It
 can parse the documented command shape, but final CLI JSON output, final exit
@@ -53,21 +53,29 @@ The validator entrypoint can now check:
 - `content_chars_mode: exact`
 - `content_chars_mode: max`
 - Unicode NFC code-point counting
+- obvious secret-shaped value detection outside Markdown code
+- sensitive variable-name reference warnings
+- private/internal infrastructure reference warnings
+- private `llm_url` blocking by default
+- homepage, `robots.txt`, and `/llms.txt` discovery hints
 - `level-2a` conformance when Level 1 and Level 2a checks pass
 
 ## Current limitations
 
-In the current Sprint 4 state, the package does not implement:
+In the current Sprint 5 state, the package does not implement:
 
 - final full CLI validation behavior
 - final CLI JSON output
 - final CLI exit-code behavior
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - CI validation behavior
 - Level 2b relations
 - Level 3 MCP
 
 It does not certify compliance, guarantee AI traffic, provide legal control over
-AI agents, or perform production-grade security scanning.
+AI agents, or prove that a site is safe.

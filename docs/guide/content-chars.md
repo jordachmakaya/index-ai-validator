@@ -3,7 +3,7 @@
 `content_chars` is the declared Unicode code point count for a clean `llm_url`
 response.
 
-Sprint 4 wires `content_chars` validation into Level 2a Shadow Index validation
+Sprint 5 keeps `content_chars` validation wired into Level 2a Shadow Index validation
 through `validateIndexAi()`.
 
 ## What is implemented now
@@ -92,8 +92,11 @@ endpoints through `validateIndexAi()`.
 
 The current package does not implement:
 
-- security scanning
-- discovery checks
+- full security audits
+- vulnerability scanning
+- discovery crawling
+- sitemap validation
+- DNS TXT discovery validation
 - fixture validation
 - final CI validation behavior
 - final CLI JSON output
@@ -101,5 +104,5 @@ The current package does not implement:
 - Level 2b relations
 - Level 3 MCP
 
-It is not production-grade compliance certification and does not guarantee AI
-traffic.
+It is experimental documentation for the current validator behavior, not
+compliance certification or a traffic promise.

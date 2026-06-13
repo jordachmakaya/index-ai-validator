@@ -1,6 +1,8 @@
 import { CHECK, SCHEMA_VERSION } from './constants'
+import { validateDiscovery } from './checks/discovery'
 import { validateGraph } from './checks/graph'
 import { validateManifest } from './checks/manifest'
+import { validateSecurity } from './checks/security'
 import type {
   ConformanceLevel,
   ValidationCheck,
@@ -15,9 +17,16 @@ export async function validateIndexAi(options: ValidatorOptions): Promise<Valida
   const graphResult = manifestResult.manifest
     ? await validateGraph(options, manifestResult.manifest)
     : undefined
+  const securityChecks = validateSecurity({
+    resources: graphResult?.cleanEndpoints ?? [],
+    strictSecurity: options.strictSecurity,
+  })
+  const discoveryChecks = await validateDiscovery(options)
   const checks = [
     ...manifestResult.checks,
     ...(graphResult?.checks ?? []),
+    ...securityChecks,
+    ...discoveryChecks,
   ]
   const summary = summarizeChecks(checks)
   const metrics = createMetrics(checks, graphResult?.graph?.nodes?.length ?? 0)
@@ -74,7 +83,8 @@ function createMetrics(
     valid_clean_endpoints: countPassingChecks(checks, CHECK.L2A_LLM_URL_CONTENT_TYPE),
     valid_content_chars: validContentChars,
     html_leaks: countNonPassingChecks(checks, CHECK.L2A_LLM_URL_HTML_LEAK),
-    secret_findings: 0,
+    secret_findings: countNonPassingChecks(checks, CHECK.SEC_SECRET_PATTERN)
+      + countNonPassingChecks(checks, CHECK.SEC_PRIVATE_INFRA_PATTERN),
     coverage: {
       llm_url_percent: percentage(nodesWithLlmUrl, totalNodes),
       content_chars_percent: percentage(validContentChars, totalNodes),
