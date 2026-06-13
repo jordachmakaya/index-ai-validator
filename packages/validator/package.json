@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "description": "Experimental free CLI validator for index-ai Level 1 and Level 2a.",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "index-ai": "./dist/cli.js",
     "index-ai-validator": "./dist/cli.js"
@@ -21,6 +23,7 @@
   "engines": {
     "node": ">=20"
   },
+  "sideEffects": false,
   "scripts": {
     "dev": "tsx src/cli.ts",
     "check": "tsc --noEmit",
@@ -31,11 +34,32 @@
     "fixture:serve": "sirv fixtures/valid-level-2a/public --host 127.0.0.1 --port 4173",
     "validate:fixture": "tsx src/cli.ts http://127.0.0.1:4173 --strict --verbose",
     "pack:check": "pnpm check && pnpm test && pnpm build && node dist/cli.js --help",
+    "pack:dry-run": "pnpm build && npm pack --dry-run",
+    "publish:npm": "pnpm publish --access public --provenance",
     "prepublishOnly": "pnpm pack:check"
   },
-  "keywords": [],
+  "keywords": [
+    "index-ai",
+    "validator",
+    "cli",
+    "ai-manifest",
+    "shadow-index"
+  ],
   "author": "",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordachmakaya/index-ai.git",
+    "directory": "packages/validator"
+  },
+  "bugs": {
+    "url": "https://github.com/jordachmakaya/index-ai/issues"
+  },
+  "homepage": "https://github.com/jordachmakaya/index-ai#readme",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "ajv": "^8.20.0",
