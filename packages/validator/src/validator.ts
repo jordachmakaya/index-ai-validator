@@ -13,6 +13,7 @@ import type {
 } from './types'
 
 export async function validateIndexAi(options: ValidatorOptions): Promise<ValidationResult> {
+  const startedAt = Date.now()
   const manifestResult = await validateManifest(options)
   const graphResult = manifestResult.manifest
     ? await validateGraph(options, manifestResult.manifest)
@@ -36,6 +37,7 @@ export async function validateIndexAi(options: ValidatorOptions): Promise<Valida
     schema_version: SCHEMA_VERSION,
     target: options.target,
     generated_at: new Date().toISOString(),
+    duration_ms: Date.now() - startedAt,
     conformance,
     passed: isPassed(checks, options),
     summary,

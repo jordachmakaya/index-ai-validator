@@ -61,6 +61,7 @@ export type ValidationResult = {
   schema_version: '0.1'
   target: string
   generated_at: string
+  duration_ms: number
   conformance: ConformanceLevel
   passed: boolean
   summary: ValidationSummary
