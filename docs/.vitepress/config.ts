@@ -1,10 +1,11 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
-const GITHUB_URL = 'https://github.com/jordachmakaya/index-ai'
+const GITHUB_URL = 'https://github.com/jordachmakaya/index-ai-validator'
 
 const config = withMermaid(
   defineConfig({
+    base: '/index-ai-validator/',
     title: 'index-ai-validator',
     description:
       'Free CLI that checks whether your site is readable by AI agents: index-ai manifest, Shadow Index, clean endpoints, and content_chars.',
