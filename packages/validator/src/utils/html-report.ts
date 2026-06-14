@@ -666,7 +666,7 @@ function renderTopbar(): string {
     <span class="topbar-divider">/</span>
     ${renderTextLink('index-ai project', 'https://jordach.dev/projects/index-ai')}
     <span class="topbar-divider">/</span>
-    ${renderTextLink('GitHub', 'https://github.com/jordachmakaya/index-ai')}
+    ${renderTextLink('GitHub', 'https://github.com/jordachmakaya/index-ai-validator')}
   </div>
 </div>`
 }
@@ -1068,7 +1068,7 @@ function renderSidebar(
           ${renderSidebarLink('index-ai project', 'https://jordach.dev/projects/index-ai')}
           ${renderSidebarLink('Validator tool', 'https://jordach.dev/tools/index-ai-validator')}
           ${renderSidebarLink('AI-readable audit service', 'https://jordach.dev/services/ai-readable-website-audit')}
-          ${renderSidebarLink('GitHub repository', 'https://github.com/jordachmakaya/index-ai')}
+          ${renderSidebarLink('GitHub repository', 'https://github.com/jordachmakaya/index-ai-validator')}
           ${renderSidebarLink('Contact Jordach Makaya', 'https://jordach.dev/contact')}
         </div>
       </div>
@@ -1098,7 +1098,7 @@ function renderLearnMore(): string {
     ${renderLearnCard('index-ai project', 'Read the project background and specification direction.', 'https://jordach.dev/projects/index-ai')}
     ${renderLearnCard('validator tool', 'Use the free CLI validator and share reports with your team.', 'https://jordach.dev/tools/index-ai-validator')}
     ${renderLearnCard('AI-readable website audit', 'Get help reviewing an agent-facing content layer.', 'https://jordach.dev/services/ai-readable-website-audit')}
-    ${renderLearnCard('GitHub repository', 'Inspect the validator source and issue history.', 'https://github.com/jordachmakaya/index-ai')}
+    ${renderLearnCard('GitHub repository', 'Inspect the validator source and issue history.', 'https://github.com/jordachmakaya/index-ai-validator')}
     ${renderLearnCard('Contact', 'Reach Jordach Makaya about AI-readable website infrastructure.', 'https://jordach.dev/contact')}
   </div>
 </section>`
