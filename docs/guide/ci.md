@@ -12,6 +12,17 @@ npx @index-ai/validator https://example.com --json
 JSON mode is recommended for CI because stdout contains only JSON when a
 validation result exists.
 
+HTML reports can be generated as local or CI artifacts for human review:
+
+```bash
+npx @index-ai/validator https://example.com --json --html report.html
+```
+
+JSON remains the automation format. HTML reports include a CI Verdict,
+Readiness score, and recommended next steps for human review. The readiness
+score is report-only and does not affect `passed`, `conformance`, JSON output,
+or exit codes.
+
 ## Exit codes
 
 | Code | Meaning |
@@ -66,9 +77,8 @@ root. That file defines the expected behavior coverage for CLI JSON output,
 stderr, exit codes, local HTTP servers, security heuristics, and durable
 validator tests.
 
-## Current limits
+## Scope
 
-The validator is useful as a CI gate for implemented Level 1 and Level 2a
-checks. It is not a security audit, vulnerability scanner, production
-certification, traffic guarantee, SEO ranking guarantee, Level 2b validator, or
-Level 3 MCP validator.
+The validator is useful as a CI gate for the implemented Level 1 and Level 2a
+checks. It is not a security audit or production certification, and the HTML
+report carries the same disclaimer. See [Scope](/guide/scope).
