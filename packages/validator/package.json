@@ -1,6 +1,6 @@
 {
   "name": "@hardmachinelabs/index-ai-validator",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Free, experimental CLI that makes a website's agent-facing layer testable: validates the index-ai AI Manifest, Agent Index, and clean endpoints.",
   "author": {
     "name": "Jordach Makaya",
@@ -50,7 +50,7 @@
     "prepublishOnly": "pnpm pack:check"
   },
   "keywords": [
-  "ai",
+    "ai",
     "ai-agents",
     "agentic-web",
     "llm",
