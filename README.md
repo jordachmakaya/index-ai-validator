@@ -34,7 +34,7 @@
 ![index-ai-validator explained](docs/index-ai-validator_explained.png)
 
 
-**Is your website readable by AI agents?** Most sites are built for browsers, so agents have to read browser-first HTML to understand them. `@hardmachinelabs/index-ai-validator` is a free, experimental CLI that makes the agent-facing layer of a website **testable**: point it at a public URL and it checks whether the site exposes the AI Manifest, Shadow Index, and clean Markdown or plain-text endpoints an agent needs — and flags obvious leaks in that public content.
+**Is your website readable by AI agents?** Most sites are built for browsers, so agents have to read browser-first HTML to understand them. `@hardmachinelabs/index-ai-validator` is a free, experimental CLI that makes the agent-facing layer of a website **testable**: point it at a public URL and it checks whether the site exposes the AI Manifest, Agent Index, and clean Markdown or plain-text endpoints an agent needs — and flags obvious leaks in that public content.
 
 One command:
 
@@ -93,7 +93,7 @@ See:
 The current validator checks public `index-ai` Level 1 and Level 2a behavior:
 
 - AI Manifest fetch, JSON parsing, content type, and schema shape
-- Shadow Index fetch, graph shape, node fields, and deprecated `pages` rejection
+- Agent Index fetch, graph shape, node fields, and deprecated `pages` rejection
 - clean endpoint fetches through `llm_url`
 - clean endpoint content type, HTML leak, and `content_chars` checks
 - conservative security heuristics
