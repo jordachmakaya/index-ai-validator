@@ -22,13 +22,13 @@
     "changeset:status": "changeset status --verbose"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "markdownlint-cli2": "^0.17.2",
-    "mermaid": "^11.15.0",
-    "prettier": "^3.8.4",
-    "turbo": "^2.9.18",
-    "vitepress": "^1.6.4",
-    "vitepress-plugin-mermaid": "^2.0.17",
-    "vue": "^3.5.38"
+    "@changesets/cli": "catalog:",
+    "markdownlint-cli2": "catalog:",
+    "mermaid": "catalog:",
+    "prettier": "catalog:",
+    "turbo": "catalog:",
+    "vitepress": "catalog:",
+    "vitepress-plugin-mermaid": "catalog:",
+    "vue": "catalog:"
   }
 }

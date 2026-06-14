@@ -4,33 +4,93 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@changesets/cli':
+      specifier: 2.31.0
+      version: 2.31.0
+    '@types/node':
+      specifier: 25.9.3
+      version: 25.9.3
+    '@vitest/coverage-v8':
+      specifier: 3.2.4
+      version: 3.2.4
+    ajv:
+      specifier: 8.20.0
+      version: 8.20.0
+    ajv-formats:
+      specifier: 3.0.1
+      version: 3.0.1
+    commander:
+      specifier: 15.0.0
+      version: 15.0.0
+    kleur:
+      specifier: 4.1.5
+      version: 4.1.5
+    markdownlint-cli2:
+      specifier: 0.17.2
+      version: 0.17.2
+    mermaid:
+      specifier: 11.15.0
+      version: 11.15.0
+    prettier:
+      specifier: 3.8.4
+      version: 3.8.4
+    sirv-cli:
+      specifier: 3.0.1
+      version: 3.0.1
+    tsup:
+      specifier: 8.5.1
+      version: 8.5.1
+    tsx:
+      specifier: 4.22.4
+      version: 4.22.4
+    turbo:
+      specifier: 2.9.18
+      version: 2.9.18
+    typescript:
+      specifier: 6.0.3
+      version: 6.0.3
+    vitepress:
+      specifier: 1.6.4
+      version: 1.6.4
+    vitepress-plugin-mermaid:
+      specifier: 2.0.17
+      version: 2.0.17
+    vitest:
+      specifier: 3.2.4
+      version: 3.2.4
+    vue:
+      specifier: 3.5.38
+      version: 3.5.38
+
 importers:
 
   .:
     devDependencies:
       '@changesets/cli':
-        specifier: ^2.31.0
+        specifier: 'catalog:'
         version: 2.31.0(@types/node@25.9.3)
       markdownlint-cli2:
-        specifier: ^0.17.2
+        specifier: 'catalog:'
         version: 0.17.2
       mermaid:
-        specifier: ^11.15.0
+        specifier: 'catalog:'
         version: 11.15.0
       prettier:
-        specifier: ^3.8.4
+        specifier: 'catalog:'
         version: 3.8.4
       turbo:
-        specifier: ^2.9.18
+        specifier: 'catalog:'
         version: 2.9.18
       vitepress:
-        specifier: ^1.6.4
+        specifier: 'catalog:'
         version: 1.6.4(@algolia/client-search@5.54.0)(@types/node@25.9.3)(postcss@8.5.15)(search-insights@2.17.3)(typescript@6.0.3)
       vitepress-plugin-mermaid:
-        specifier: ^2.0.17
+        specifier: 'catalog:'
         version: 2.0.17(mermaid@11.15.0)(vitepress@1.6.4(@algolia/client-search@5.54.0)(@types/node@25.9.3)(postcss@8.5.15)(search-insights@2.17.3)(typescript@6.0.3))
       vue:
-        specifier: ^3.5.38
+        specifier: 'catalog:'
         version: 3.5.38(typescript@6.0.3)
 
   docs: {}
@@ -38,38 +98,38 @@ importers:
   packages/validator:
     dependencies:
       ajv:
-        specifier: ^8.20.0
+        specifier: 'catalog:'
         version: 8.20.0
       ajv-formats:
-        specifier: ^3.0.1
+        specifier: 'catalog:'
         version: 3.0.1(ajv@8.20.0)
       commander:
-        specifier: ^15.0.0
+        specifier: 'catalog:'
         version: 15.0.0
       kleur:
-        specifier: ^4.1.5
+        specifier: 'catalog:'
         version: 4.1.5
     devDependencies:
       '@types/node':
-        specifier: ^25.9.3
+        specifier: 'catalog:'
         version: 25.9.3
       '@vitest/coverage-v8':
-        specifier: ^3.2.4
+        specifier: 'catalog:'
         version: 3.2.4(vitest@3.2.4(@types/debug@4.1.13)(@types/node@25.9.3))
       sirv-cli:
-        specifier: ^3.0.1
+        specifier: 'catalog:'
         version: 3.0.1
       tsup:
-        specifier: ^8.5.1
+        specifier: 'catalog:'
         version: 8.5.1(postcss@8.5.15)(tsx@4.22.4)(typescript@6.0.3)
       tsx:
-        specifier: ^4.22.4
+        specifier: 'catalog:'
         version: 4.22.4
       typescript:
-        specifier: ^6.0.3
+        specifier: 'catalog:'
         version: 6.0.3
       vitest:
-        specifier: ^3.2.4
+        specifier: 'catalog:'
         version: 3.2.4(@types/debug@4.1.13)(@types/node@25.9.3)
 
 packages:
