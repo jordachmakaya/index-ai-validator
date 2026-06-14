@@ -1,0 +1,38 @@
+name: Bug report
+description: Report a problem with index-ai-validator.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the command you ran and the relevant output.
+      placeholder: |
+        1. Run `index-ai ...`
+        2. See ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "@index-ai/validator 0.1.0"
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      placeholder: "20.x"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional context
+      description: Do not include real secrets, tokens, private URLs, or credentials.

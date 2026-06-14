@@ -1,11 +1,34 @@
 # @index-ai/validator
 
-Experimental free CLI validator for `index-ai` Level 1 and Level 2a.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@index-ai/validator">
+    <img src="https://img.shields.io/npm/v/@index-ai/validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
+  </a>
+  <a href="https://www.npmjs.com/package/@index-ai/validator">
+    <img src="https://img.shields.io/npm/dm/@index-ai/validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
+  </a>
+  <a href="https://github.com/jordachmakaya/index-ai-validator/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/jordachmakaya/index-ai-validator/ci.yml?style=for-the-badge&label=ci&color=378add" alt="CI status">
+  </a>
+  <a href="https://github.com/jordachmakaya/index-ai-validator">
+    <img src="https://img.shields.io/github/license/jordachmakaya/index-ai-validator?style=for-the-badge&label=license&color=7a8ba3" alt="License">
+  </a>
+</p>
 
-The package provides the `index-ai` binary and the `validateIndexAi()`
-TypeScript entrypoint. It checks whether a public website exposes the current
-agent-facing files and clean endpoints expected by `index-ai` Level 1 and Level
-2a.
+<p align="center">
+  <img src="https://img.shields.io/badge/AI--READINESS-VALIDATOR-378add?style=for-the-badge" alt="AI-readiness validator">
+  <img src="https://img.shields.io/badge/INDEX--AI-LEVEL%201%20%2B%202A-10b981?style=for-the-badge" alt="index-ai Level 1 and Level 2a">
+  <img src="https://img.shields.io/badge/CLI-NPX%20READY-378add?style=for-the-badge" alt="NPX ready CLI">
+  <img src="https://img.shields.io/badge/STATUS-EXPERIMENTAL-f59e0b?style=for-the-badge" alt="Experimental status">
+</p>
+
+![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/index-ai-validator_explained.png)
+
+**Is your website readable by AI agents?** Most sites are built for browsers — HTML, scripts, navigation, layout. Agents have to read that browser-first HTML to understand you. `@index-ai/validator` checks whether your site also exposes a clean, structured layer built for agents — and makes that layer **testable** from your terminal.
+
+Point it at a public URL. It checks whether the site exposes the files and clean endpoints an agent needs to understand it without scraping rendered HTML: the AI Manifest, the Shadow Index, clean Markdown or plain-text endpoints, and the declared content size of each node. It also flags obvious secret or private-infrastructure leaks in that public agent-facing content.
+
+It is a free, experimental developer CLI. It provides the `index-ai` binary and the `validateIndexAi()` TypeScript entrypoint, and it validates `index-ai` Level 1 and Level 2a.
 
 Naming:
 
@@ -258,3 +281,44 @@ The package does not validate:
 - SEO or GEO performance
 - production compliance certification
 - AI traffic outcomes
+
+
+## Need the layer built for you?
+
+The validator tells you what is missing. If you need the AI-readable layer implemented, audited, or documented for a public website, see the project documentation and contact links.
+
+Documentation: https://jordachmakaya.github.io/index-ai-validator/
+
+
+## About index-ai
+
+`index-ai` is an experimental specification for making public websites easier for AI agents to read, inspect, and budget before fetching content.
+
+It is built around three simple ideas:
+
+* an AI Manifest that describes the site and its machine-readable entry points;
+* a Shadow Index that maps important public content into structured nodes;
+* clean Markdown or plain-text endpoints designed for agents instead of browsers.
+
+`@index-ai/validator` is the free CLI validator for the current Level 1 and Level 2a implementation.
+
+It does not claim to be a formal standard. It is an experimental project built in public to explore how websites can expose cleaner, cheaper, and more reliable content surfaces for AI agents.
+
+## Built by Jordach Makaya
+
+`index-ai` and `@index-ai/validator` are created and maintained by Jordach Makaya.
+
+Jordach builds AI infrastructure for insurance claims workflows and developer tooling around reliable, inspectable AI systems.
+
+The validator is part of a broader effort to make AI-facing web infrastructure testable instead of vague.
+
+## Links
+
+- Documentation: https://jordachmakaya.github.io/index-ai-validator/
+- GitHub: https://github.com/jordachmakaya/index-ai-validator
+- npm: https://www.npmjs.com/package/@index-ai/validator
+- Author: https://github.com/jordachmakaya
+
+## License
+
+MIT

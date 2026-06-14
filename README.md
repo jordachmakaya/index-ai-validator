@@ -1,7 +1,54 @@
 # index-ai-validator
 
-This repository contains the experimental `@index-ai/validator` package and
-documentation for validating `index-ai` Level 1 and Level 2a implementations.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@index-ai/validator">
+    <img src="https://img.shields.io/npm/v/@index-ai/validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
+  </a>
+  <a href="https://www.npmjs.com/package/@index-ai/validator">
+    <img src="https://img.shields.io/npm/dm/@index-ai/validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
+  </a>
+  <a href="https://github.com/jordachmakaya/index-ai-validator/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/jordachmakaya/index-ai-validator/ci.yml?style=for-the-badge&label=ci&color=378add" alt="CI status">
+  </a>
+  <a href="https://github.com/jordachmakaya/index-ai-validator/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/jordachmakaya/index-ai-validator?style=for-the-badge&label=license&color=7a8ba3" alt="License">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/AI--READINESS-VALIDATOR-378add?style=for-the-badge" alt="AI-readiness validator">
+  <img src="https://img.shields.io/badge/INDEX--AI-LEVEL%201%20%2B%202A-10b981?style=for-the-badge" alt="index-ai Level 1 and Level 2a">
+  <img src="https://img.shields.io/badge/CLI-NPX%20READY-378add?style=for-the-badge" alt="NPX ready CLI">
+  <img src="https://img.shields.io/badge/STATUS-EXPERIMENTAL-f59e0b?style=for-the-badge" alt="Experimental status">
+</p>
+
+<p align="center">
+  <a href="https://jordachmakaya.github.io/index-ai-validator/">
+    <img src="https://img.shields.io/badge/DOCS-GITHUB%20PAGES-378add?style=for-the-badge" alt="Documentation">
+  </a>
+  <a href="https://github.com/jordachmakaya/index-ai-validator">
+    <img src="https://img.shields.io/badge/GITHUB-index--ai--validator-7a8ba3?style=for-the-badge" alt="GitHub repository">
+  </a>
+</p>
+
+![index-ai-validator explained](docs/index-ai-validator_explained.png)
+
+
+**Is your website readable by AI agents?** Most sites are built for browsers, so agents have to read browser-first HTML to understand them. `@index-ai/validator` is a free, experimental CLI that makes the agent-facing layer of a website **testable**: point it at a public URL and it checks whether the site exposes the AI Manifest, Shadow Index, and clean Markdown or plain-text endpoints an agent needs — and flags obvious leaks in that public content.
+
+One command:
+
+```bash
+npx @index-ai/validator https://example.com
+```
+
+It answers one practical question:
+
+```txt
+Does this public website correctly expose the current index-ai agent-facing content layer?
+```
+
+This repository contains the `@index-ai/validator` package and its documentation.
 
 Naming:
 
@@ -9,12 +56,6 @@ Naming:
 - [`index-ai`](https://github.com/jordachmakaya/index-ai) is the experimental specification being validated.
 - `@index-ai/validator` is the npm package.
 - `index-ai` is also the CLI binary name.
-
-The validator answers one practical question:
-
-```txt
-Does this public website correctly expose the current index-ai agent-facing content layer?
-```
 
 ## Validator package
 

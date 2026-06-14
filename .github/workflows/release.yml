@@ -1,0 +1,61 @@
+name: Manual npm release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    name: Publish @index-ai/validator
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test validator
+        run: pnpm --filter @index-ai/validator test
+
+      - name: Check validator
+        run: pnpm --filter @index-ai/validator check
+
+      - name: Build validator
+        run: pnpm --filter @index-ai/validator build
+
+      - name: Check workspace
+        run: pnpm check
+
+      - name: Build workspace
+        run: pnpm build
+
+      - name: Verify npm token
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN is missing. Add it as a GitHub Actions secret before releasing."
+            exit 1
+          fi
+
+      # Bump packages/validator/package.json before running this manual workflow.
+      - name: Publish validator package
+        working-directory: packages/validator
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm publish --access public --provenance

@@ -10,7 +10,7 @@ hero:
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: See a sample report
+      text: Fix your report
       link: /guide/fix-your-report
 
 features:

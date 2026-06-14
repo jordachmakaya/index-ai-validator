@@ -1,13 +1,13 @@
 /* index-ai-validator docs theme.
    Brand identity is shared with the CLI HTML report (utils/html-report.ts):
-   blue accent on a navy dark surface. Semantic colors (pass/warn/fail) match
+   amber accent on a navy dark surface. Semantic colors (pass/warn/fail) match
    the report so the docs and the generated report read as one product. */
 
 :root {
-  --vp-c-brand-1: #3b82f6;
-  --vp-c-brand-2: #60a5fa;
-  --vp-c-brand-3: #2563eb;
-  --vp-c-brand-soft: rgba(59, 130, 246, 0.14);
+  --vp-c-brand-1: #f59e0b;
+  --vp-c-brand-2: #fbb838;
+  --vp-c-brand-3: #c97e07;
+  --vp-c-brand-soft: rgba(245, 158, 11, 0.14);
 
   /* Semantic colors aligned with the HTML report */
   --vp-c-tip-1: #10b981;
@@ -26,8 +26,8 @@
   --vp-font-family-mono:
     "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Home hero: flat blue name, no gradient */
-  --vp-home-hero-name-color: #3b82f6;
+  /* Home hero: flat amber name, no gradient */
+  --vp-home-hero-name-color: #f59e0b;
   --vp-home-hero-name-background: transparent;
 }
 
@@ -108,6 +108,7 @@
 }
 
 .vp-doc code {
+  color: #fbbf24;
   border: 1px solid var(--vp-c-divider);
 }
 
@@ -164,7 +165,7 @@
 }
 
 .cta-band .cta-actions a.primary {
-  color: #04244a;
+  color: #2c1900;
   background: var(--vp-c-brand-1);
 }
 

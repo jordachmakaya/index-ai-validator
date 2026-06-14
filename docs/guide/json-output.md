@@ -45,20 +45,57 @@ Top-level fields:
   "conformance": "level-2a",
   "passed": true,
   "summary": {
-    "pass": 12,
+    "pass": 59,
     "warn": 0,
     "fail": 0,
-    "total": 12
+    "total": 59
   },
   "metrics": {
-    "manifest_found": true
+    "manifest_found": true,
+    "manifest_schema_valid": true,
+    "shadow_layer_found": true,
+    "shadow_layer_schema_valid": true,
+    "total_nodes": 6,
+    "nodes_with_llm_url": 6,
+    "nodes_with_content_chars": 6,
+    "nodes_with_content_chars_mode": 6,
+    "valid_clean_endpoints": 6,
+    "valid_content_chars": 6,
+    "html_leaks": 0,
+    "secret_findings": 0,
+    "coverage": {
+      "llm_url_percent": 100,
+      "content_chars_percent": 100
+    }
   },
-  "checks": []
+  "checks": [
+    {
+      "code": "L1_MANIFEST_FOUND",
+      "severity": "pass",
+      "requirement": "must",
+      "message": "An index-ai manifest was found at the canonical path.",
+      "url": "https://example.com/.well-known/index-ai.json"
+    },
+    {
+      "code": "L2A_CONTENT_CHARS_EXACT_MATCH",
+      "severity": "pass",
+      "requirement": "must",
+      "message": "The clean endpoint content_chars value matches exactly.",
+      "url": "https://example.com/about?format=markdown",
+      "details": {
+        "node_id": "about",
+        "declared": 2100,
+        "measured": 2100,
+        "mode": "exact"
+      }
+    }
+  ]
 }
 ```
 
-The example is shortened. Real results include the full `metrics` object and
-all generated checks.
+The `metrics` object above is complete. The `checks` array is shortened to two
+representative entries — a real result lists every generated check. In this
+passing example the summary totals 59 checks.
 
 ## Reading the result quickly
 
