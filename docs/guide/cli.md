@@ -3,7 +3,7 @@
 The package and binary names are different:
 
 ```txt
-Package: @index-ai/validator
+Package: @hardmachinelabs/index-ai-validator
 Binary:  index-ai
 ```
 
@@ -19,7 +19,7 @@ index-ai https://example.com
 When running directly from the package:
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 ## Full command shape

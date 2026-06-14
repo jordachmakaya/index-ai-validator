@@ -15,9 +15,9 @@
     "format": "prettier --write \"*.json\" \"*.md\" \"docs/**/*.md\" \"packages/validator/**/*.{ts,json,md}\"",
     "docs:dev": "pnpm --filter docs dev",
     "docs:build": "pnpm --filter docs build",
-    "validator:dev": "pnpm --filter @index-ai/validator dev",
-    "validator:build": "pnpm --filter @index-ai/validator build",
-    "validator:test": "pnpm --filter @index-ai/validator test",
+    "validator:dev": "pnpm --filter @hardmachinelabs/index-ai-validator dev",
+    "validator:build": "pnpm --filter @hardmachinelabs/index-ai-validator build",
+    "validator:test": "pnpm --filter @hardmachinelabs/index-ai-validator test",
     "changeset": "changeset",
     "changeset:status": "changeset status --verbose"
   },

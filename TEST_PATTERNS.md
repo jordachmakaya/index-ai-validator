@@ -2,7 +2,7 @@
 
 Testing governance for the `index-ai` repository.
 
-This file defines how tests must be written for `@index-ai/validator`. It is not a generic testing guide. It is the project-specific contract for durable tests, especially before Sprint 6 final CLI behavior.
+This file defines how tests must be written for `@hardmachinelabs/index-ai-validator`. It is not a generic testing guide. It is the project-specific contract for durable tests, especially before Sprint 6 final CLI behavior.
 
 ## Purpose
 
@@ -884,10 +884,10 @@ A sprint cannot receive GO from a report alone.
 For validator implementation sprints:
 
 ```bash
-pnpm --filter @index-ai/validator test
-pnpm --filter @index-ai/validator test:coverage
-pnpm --filter @index-ai/validator check
-pnpm --filter @index-ai/validator build
+pnpm --filter "./packages/validator" test
+pnpm --filter "./packages/validator" test:coverage
+pnpm --filter "./packages/validator" check
+pnpm --filter "./packages/validator" build
 pnpm check
 pnpm build
 ```

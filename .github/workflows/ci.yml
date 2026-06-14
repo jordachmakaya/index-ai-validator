@@ -31,13 +31,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test validator
-        run: pnpm --filter @index-ai/validator test
+        run: pnpm --filter @hardmachinelabs/index-ai-validator test
 
       - name: Check validator
-        run: pnpm --filter @index-ai/validator check
+        run: pnpm --filter @hardmachinelabs/index-ai-validator check
 
       - name: Build validator
-        run: pnpm --filter @index-ai/validator build
+        run: pnpm --filter @hardmachinelabs/index-ai-validator build
 
       - name: Build docs
         run: pnpm --filter docs build

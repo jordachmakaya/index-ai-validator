@@ -1,8 +1,8 @@
 # Getting Started
 
-## What is @index-ai/validator?
+## What is @hardmachinelabs/index-ai-validator?
 
-`@index-ai/validator` is an experimental free CLI validator for `index-ai` Level
+`@hardmachinelabs/index-ai-validator` is an experimental free CLI validator for `index-ai` Level
 1 and Level 2a.
 
 It checks whether a public website exposes the files, Shadow Index graph, and
@@ -20,10 +20,10 @@ conservative security heuristics, discovery hints, and CLI behavior.
 ## STEP-1 - Run the CLI
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-The package name is `@index-ai/validator`.
+The package name is `@hardmachinelabs/index-ai-validator`.
 
 The CLI binary is `index-ai`.
 
@@ -64,7 +64,7 @@ checks are included only when `--verbose` is used.
 ## STEP-3 - Use JSON for automation
 
 ```bash
-npx @index-ai/validator https://example.com --json
+npx @hardmachinelabs/index-ai-validator https://example.com --json
 ```
 
 JSON mode writes JSON only to stdout. Normal validation results keep stderr

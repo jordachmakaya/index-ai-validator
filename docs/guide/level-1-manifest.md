@@ -123,7 +123,7 @@ Level 1, Level 2a, heuristic security checks, and shallow discovery checks are
 available through `validateIndexAi()`.
 
 ```ts
-import { validateIndexAi } from '@index-ai/validator'
+import { validateIndexAi } from '@hardmachinelabs/index-ai-validator'
 
 const result = await validateIndexAi({
   target: 'https://example.com',

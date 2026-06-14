@@ -1,11 +1,11 @@
-# @index-ai/validator
+# @hardmachinelabs/index-ai-validator
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@index-ai/validator">
-    <img src="https://img.shields.io/npm/v/@index-ai/validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
+  <a href="https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator">
+    <img src="https://img.shields.io/npm/v/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
   </a>
-  <a href="https://www.npmjs.com/package/@index-ai/validator">
-    <img src="https://img.shields.io/npm/dm/@index-ai/validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
+  <a href="https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator">
+    <img src="https://img.shields.io/npm/dm/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
   </a>
   <a href="https://github.com/jordachmakaya/index-ai-validator/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/jordachmakaya/index-ai-validator/ci.yml?style=for-the-badge&label=ci&color=378add" alt="CI status">
@@ -24,7 +24,7 @@
 
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/index-ai-validator_explained.png)
 
-**Is your website readable by AI agents?** Most sites are built for browsers — HTML, scripts, navigation, layout. Agents have to read that browser-first HTML to understand you. `@index-ai/validator` checks whether your site also exposes a clean, structured layer built for agents — and makes that layer **testable** from your terminal.
+**Is your website readable by AI agents?** Most sites are built for browsers — HTML, scripts, navigation, layout. Agents have to read that browser-first HTML to understand you. `@hardmachinelabs/index-ai-validator` checks whether your site also exposes a clean, structured layer built for agents — and makes that layer **testable** from your terminal.
 
 Point it at a public URL. It checks whether the site exposes the files and clean endpoints an agent needs to understand it without scraping rendered HTML: the AI Manifest, the Shadow Index, clean Markdown or plain-text endpoints, and the declared content size of each node. It also flags obvious secret or private-infrastructure leaks in that public agent-facing content.
 
@@ -33,7 +33,7 @@ It is a free, experimental developer CLI. It provides the `index-ai` binary and 
 Naming:
 
 - Repository: `index-ai-validator`
-- Package: `@index-ai/validator`
+- Package: `@hardmachinelabs/index-ai-validator`
 - CLI binary: `index-ai`
 - Specification validated: `index-ai`
 
@@ -43,22 +43,24 @@ scanner.
 
 ## Installation / run with npx
 
+The npm package is published under the HardMachine Labs scope. The CLI binary remains `index-ai`.
+
 Run without installing:
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 Or with pnpm:
 
 ```bash
-pnpm dlx @index-ai/validator https://example.com
+pnpm dlx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 Local install:
 
 ```bash
-pnpm add -D @index-ai/validator
+pnpm add -D @hardmachinelabs/index-ai-validator
 pnpm exec index-ai https://example.com
 ```
 
@@ -201,7 +203,7 @@ a validation result exists.
 ## TypeScript Usage
 
 ```ts
-import { validateIndexAi } from '@index-ai/validator'
+import { validateIndexAi } from '@hardmachinelabs/index-ai-validator'
 
 const result = await validateIndexAi({
   target: 'https://example.com',
@@ -300,13 +302,13 @@ It is built around three simple ideas:
 * a Shadow Index that maps important public content into structured nodes;
 * clean Markdown or plain-text endpoints designed for agents instead of browsers.
 
-`@index-ai/validator` is the free CLI validator for the current Level 1 and Level 2a implementation.
+`@hardmachinelabs/index-ai-validator` is the free CLI validator for the current Level 1 and Level 2a implementation.
 
 It does not claim to be a formal standard. It is an experimental project built in public to explore how websites can expose cleaner, cheaper, and more reliable content surfaces for AI agents.
 
 ## Built by Jordach Makaya
 
-`index-ai` and `@index-ai/validator` are created and maintained by Jordach Makaya.
+`index-ai` and `@hardmachinelabs/index-ai-validator` are created and maintained by Jordach Makaya.
 
 Jordach builds AI infrastructure for insurance claims workflows and developer tooling around reliable, inspectable AI systems.
 
@@ -316,7 +318,7 @@ The validator is part of a broader effort to make AI-facing web infrastructure t
 
 - Documentation: https://jordachmakaya.github.io/index-ai-validator/
 - GitHub: https://github.com/jordachmakaya/index-ai-validator
-- npm: https://www.npmjs.com/package/@index-ai/validator
+- npm: https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator
 - Author: https://github.com/jordachmakaya
 
 ## License

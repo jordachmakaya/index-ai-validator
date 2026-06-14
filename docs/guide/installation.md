@@ -1,11 +1,11 @@
 # Installation
 
-`@index-ai/validator` requires Node.js 20 or newer.
+`@hardmachinelabs/index-ai-validator` requires Node.js 20 or newer.
 
 The package name is:
 
 ```txt
-@index-ai/validator
+@hardmachinelabs/index-ai-validator
 ```
 
 The CLI binary is:
@@ -29,13 +29,13 @@ Use Node.js 20 or newer.
 Use `npx`:
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 Or use `pnpm dlx`:
 
 ```bash
-pnpm dlx @index-ai/validator https://example.com
+pnpm dlx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 ## STEP-3 - Install locally
@@ -43,7 +43,7 @@ pnpm dlx @index-ai/validator https://example.com
 Install the package as a development dependency:
 
 ```bash
-pnpm add -D @index-ai/validator
+pnpm add -D @hardmachinelabs/index-ai-validator
 ```
 
 Then run the CLI through pnpm:

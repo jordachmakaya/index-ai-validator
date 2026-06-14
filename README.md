@@ -1,11 +1,11 @@
 # index-ai-validator
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/@index-ai/validator">
-    <img src="https://img.shields.io/npm/v/@index-ai/validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
+  <a href="https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator">
+    <img src="https://img.shields.io/npm/v/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=npm&color=378add" alt="npm version">
   </a>
-  <a href="https://www.npmjs.com/package/@index-ai/validator">
-    <img src="https://img.shields.io/npm/dm/@index-ai/validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
+  <a href="https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator">
+    <img src="https://img.shields.io/npm/dm/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=downloads&color=10b981" alt="npm downloads">
   </a>
   <a href="https://github.com/jordachmakaya/index-ai-validator/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/jordachmakaya/index-ai-validator/ci.yml?style=for-the-badge&label=ci&color=378add" alt="CI status">
@@ -34,12 +34,12 @@
 ![index-ai-validator explained](docs/index-ai-validator_explained.png)
 
 
-**Is your website readable by AI agents?** Most sites are built for browsers, so agents have to read browser-first HTML to understand them. `@index-ai/validator` is a free, experimental CLI that makes the agent-facing layer of a website **testable**: point it at a public URL and it checks whether the site exposes the AI Manifest, Shadow Index, and clean Markdown or plain-text endpoints an agent needs — and flags obvious leaks in that public content.
+**Is your website readable by AI agents?** Most sites are built for browsers, so agents have to read browser-first HTML to understand them. `@hardmachinelabs/index-ai-validator` is a free, experimental CLI that makes the agent-facing layer of a website **testable**: point it at a public URL and it checks whether the site exposes the AI Manifest, Shadow Index, and clean Markdown or plain-text endpoints an agent needs — and flags obvious leaks in that public content.
 
 One command:
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 It answers one practical question:
@@ -48,13 +48,13 @@ It answers one practical question:
 Does this public website correctly expose the current index-ai agent-facing content layer?
 ```
 
-This repository contains the `@index-ai/validator` package and its documentation.
+This repository contains the `@hardmachinelabs/index-ai-validator` package and its documentation.
 
 Naming:
 
 - `index-ai-validator` is this validator repository.
 - [`index-ai`](https://github.com/jordachmakaya/index-ai) is the experimental specification being validated.
-- `@index-ai/validator` is the npm package.
+- `@hardmachinelabs/index-ai-validator` is the npm package.
 - `index-ai` is also the CLI binary name.
 
 ## Validator package
@@ -62,8 +62,10 @@ Naming:
 Package:
 
 ```txt
-@index-ai/validator
+@hardmachinelabs/index-ai-validator
 ```
+
+The npm package is published under the HardMachine Labs scope. The CLI binary remains `index-ai`.
 
 CLI binary:
 
@@ -74,7 +76,7 @@ index-ai
 Run the CLI with:
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
 The CLI calls `validateIndexAi()`, prints a deterministic human-readable report

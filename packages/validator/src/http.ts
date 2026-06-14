@@ -131,7 +131,7 @@ async function fetchOnce(url: string, input: FetchTextOptions): Promise<FetchOnc
     const response = await fetch(url, {
       headers: {
         Accept: input.accept ?? DEFAULT_ACCEPT_HEADER,
-        'User-Agent': '@index-ai/validator/0.1',
+        'User-Agent': '@hardmachinelabs/index-ai-validator/0.1',
       },
       redirect: 'manual',
       signal: controller.signal,

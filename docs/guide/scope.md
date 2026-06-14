@@ -1,6 +1,6 @@
 # Scope
 
-This is the single source of truth for what `@index-ai/validator` does, what it does not do, and what it deliberately is not. Other pages link here instead of repeating it.
+This is the single source of truth for what `@hardmachinelabs/index-ai-validator` does, what it does not do, and what it deliberately is not. Other pages link here instead of repeating it.
 
 The validator is honest by design. It measures a specific, public layer and reports what it found. It does not inflate that into a promise.
 
@@ -33,7 +33,7 @@ The package does not perform:
 
 ## What it is not
 
-`@index-ai/validator` does not:
+`@hardmachinelabs/index-ai-validator` does not:
 
 - certify compliance
 - guarantee AI traffic

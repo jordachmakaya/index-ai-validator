@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   release:
-    name: Publish @index-ai/validator
+    name: Publish @hardmachinelabs/index-ai-validator
     runs-on: ubuntu-latest
 
     steps:
@@ -30,13 +30,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test validator
-        run: pnpm --filter @index-ai/validator test
+        run: pnpm --filter @hardmachinelabs/index-ai-validator test
 
       - name: Check validator
-        run: pnpm --filter @index-ai/validator check
+        run: pnpm --filter @hardmachinelabs/index-ai-validator check
 
       - name: Build validator
-        run: pnpm --filter @index-ai/validator build
+        run: pnpm --filter @hardmachinelabs/index-ai-validator build
 
       - name: Check workspace
         run: pnpm check

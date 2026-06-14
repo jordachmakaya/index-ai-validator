@@ -30,15 +30,15 @@ Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a
 
 `index-ai` explores that layer through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, a [Shadow Index](/guide/level-2a-shadow-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
-`@index-ai/validator` makes that layer testable. One command tells you whether yours works.
+`@hardmachinelabs/index-ai-validator` makes that layer testable. One command tells you whether yours works.
 
 ## Run it
 
 ```bash
-npx @index-ai/validator https://example.com
+npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-The package name is `@index-ai/validator`. The CLI binary is `index-ai`. By default it prints a deterministic, summary-first report:
+The package name is `@hardmachinelabs/index-ai-validator`. The CLI binary is `index-ai`. By default it prints a deterministic, summary-first report:
 
 ```txt
 index-ai validation result

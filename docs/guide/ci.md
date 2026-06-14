@@ -1,12 +1,12 @@
 # CI
 
-`@index-ai/validator` can be used in CI when a project wants an executable check
+`@hardmachinelabs/index-ai-validator` can be used in CI when a project wants an executable check
 for public `index-ai` Level 1 and Level 2a exposure.
 
 ## Basic CI command
 
 ```bash
-npx @index-ai/validator https://example.com --json
+npx @hardmachinelabs/index-ai-validator https://example.com --json
 ```
 
 JSON mode is recommended for CI because stdout contains only JSON when a
@@ -15,7 +15,7 @@ validation result exists.
 HTML reports can be generated as local or CI artifacts for human review:
 
 ```bash
-npx @index-ai/validator https://example.com --json --html report.html
+npx @hardmachinelabs/index-ai-validator https://example.com --json --html report.html
 ```
 
 JSON remains the automation format. HTML reports include a CI Verdict,
@@ -37,7 +37,7 @@ Use `--no-exit-code` when CI should collect the JSON result without failing the
 job for validation findings:
 
 ```bash
-npx @index-ai/validator https://example.com --json --no-exit-code
+npx @hardmachinelabs/index-ai-validator https://example.com --json --no-exit-code
 ```
 
 `--no-exit-code` only changes validation failures. Usage, configuration, or
@@ -48,9 +48,9 @@ runtime errors before a validation result still exit with code `2`.
 Use stricter options when warnings should block the job:
 
 ```bash
-npx @index-ai/validator https://example.com --json --strict
-npx @index-ai/validator https://example.com --json --fail-on-warn
-npx @index-ai/validator https://example.com --json --strict-security
+npx @hardmachinelabs/index-ai-validator https://example.com --json --strict
+npx @hardmachinelabs/index-ai-validator https://example.com --json --fail-on-warn
+npx @hardmachinelabs/index-ai-validator https://example.com --json --strict-security
 ```
 
 | Option | CI effect |
@@ -64,7 +64,7 @@ npx @index-ai/validator https://example.com --json --strict-security
 Use private hosts only for trusted local or private development:
 
 ```bash
-npx @index-ai/validator http://localhost:3000 --json --allow-private-hosts
+npx @hardmachinelabs/index-ai-validator http://localhost:3000 --json --allow-private-hosts
 ```
 
 Do not use `--allow-private-hosts` as evidence that private endpoints are

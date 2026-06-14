@@ -375,7 +375,7 @@ describe('runCli', () => {
       expect(html).toContain('AI-readiness report')
       expect(html).toContain('index-ai<span')
       expect(html).toContain('/</span>validator')
-      expect(html).toContain('@index-ai/validator')
+      expect(html).toContain('@hardmachinelabs/index-ai-validator')
       expect(html).toContain('by Jordach Makaya')
       expect(html).toContain('Most websites are readable by browsers.')
       expect(html).toContain('This report checks whether yours is readable by AI agents.')

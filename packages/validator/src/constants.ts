@@ -1,4 +1,4 @@
-export const PACKAGE_NAME = '@index-ai/validator'
+export const PACKAGE_NAME = '@hardmachinelabs/index-ai-validator'
 
 export const CLI_NAME = 'index-ai'
 

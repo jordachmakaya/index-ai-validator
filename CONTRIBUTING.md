@@ -25,10 +25,10 @@ pnpm build
 For validator changes, also run:
 
 ```bash
-pnpm --filter @index-ai/validator test
-pnpm --filter @index-ai/validator test:coverage
-pnpm --filter @index-ai/validator check
-pnpm --filter @index-ai/validator build
+pnpm --filter "./packages/validator" test
+pnpm --filter "./packages/validator" test:coverage
+pnpm --filter "./packages/validator" check
+pnpm --filter "./packages/validator" build
 ```
 
 For documentation changes, also run:
