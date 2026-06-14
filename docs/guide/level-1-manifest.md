@@ -148,20 +148,7 @@ const result = await validateIndexAi({
 | `maxConcurrency` | No | `5` | Maximum concurrent clean endpoint checks. |
 | `allowPrivateHosts` | No | `false` | Allows private/local hosts for trusted local development. |
 
-## Current limitations
+## Scope
 
 Level 1 and Level 2a validation are implemented through `validateIndexAi()`.
-
-The current package does not implement:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
-
-The package does not provide compliance certification, traffic promises, or
-legal control over AI agents.
+For what the package does not implement, see [Scope](/guide/scope).

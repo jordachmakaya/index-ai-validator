@@ -61,15 +61,7 @@ index-ai --help
 The CLI calls `validateIndexAi()`, prints a deterministic human report by
 default, and supports stable JSON output with `--json`.
 
-## Current limitations
+## Scope
 
-The package does not validate:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
+The validator covers `index-ai` Level 1 and Level 2a. For what it does and does
+not check, see [Scope](/guide/scope).

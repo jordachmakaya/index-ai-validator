@@ -44,6 +44,18 @@ Summary:
 - warn: 0
 - fail: 0
 - total: 12
+
+Metrics:
+- manifest_found: true
+- shadow_layer_found: true
+- total_nodes: 6
+- valid_clean_endpoints: 6
+- valid_content_chars: 6
+
+No failures or warnings.
+
+Next:
+- No blocking validation fixes were found.
 ```
 
 Failures and warnings include check codes and fixes where available. Passing
@@ -104,19 +116,9 @@ Implemented scope:
 
 ## What it does not validate
 
-The package does not validate:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
-
-It is an experimental validator, not compliance certification or a traffic
-promise.
+This is an experimental validator, not compliance certification or a traffic
+promise. For the full list of what it does not do — security audits, crawling,
+sitemap and DNS validation, Level 2b, Level 3 MCP — see [Scope](/guide/scope).
 
 ## Architecture overview
 

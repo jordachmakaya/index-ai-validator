@@ -61,8 +61,7 @@ flowchart TD
   E --> F["Choose exit code"]
 ```
 
-## Current limitations
+## Scope
 
-The validator does not validate Level 2b relations, Level 3 MCP, discovery
-crawling, sitemap entries, DNS TXT discovery, full security audits,
-vulnerability scanning, compliance certification, or AI traffic outcomes.
+The highest structural level the validator emits is `level-2a`. For everything
+outside that, see [Scope](/guide/scope).

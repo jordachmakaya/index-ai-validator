@@ -1,5 +1,9 @@
 # content_chars
 
+`content_chars` is how an agent knows the token cost of a node before fetching
+it. If your declared count is wrong, agents budget wrong. This check keeps it
+honest.
+
 `content_chars` is the declared Unicode code point count for a clean `llm_url`
 response.
 
@@ -85,21 +89,9 @@ flowchart TD
   E --> F["Compare using exact or max"]
 ```
 
-## Current limitations
+## Scope
 
-`content_chars` validation is implemented for Level 2a Shadow Index clean
-endpoints through `validateIndexAi()`.
-
-The current package does not implement:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
-
-It is experimental documentation for the current validator behavior, not
-compliance certification or a traffic promise.
+`content_chars` validation runs on Level 2a Shadow Index clean endpoints through
+`validateIndexAi()`. This is experimental documentation of current validator
+behavior, not compliance certification or a traffic promise. See
+[Scope](/guide/scope).

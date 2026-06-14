@@ -166,18 +166,7 @@ when Level 1 checks pass and the Level 2a Shadow Index checks pass.
 Warnings can still affect `passed` when `failOnWarn` or strict warning behavior
 is enabled. See [Conformance vs Passed](/guide/conformance-vs-passed).
 
-## Current limitations
+## Scope
 
-The current package does not implement:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
-
-It does not provide compliance certification, traffic promises, or legal control
-over AI agents.
+Level 2a is the highest structural level the validator emits. For what it does
+not implement, see [Scope](/guide/scope).

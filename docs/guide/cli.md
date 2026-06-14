@@ -25,7 +25,7 @@ npx @index-ai/validator https://example.com
 ## Full command shape
 
 ```bash
-index-ai <url> [--json] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts]
+index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts]
 ```
 
 ## Options
@@ -42,6 +42,7 @@ index-ai <url> [--json] [--verbose] [--strict] [--strict-security] [--fail-on-wa
 | `--timeout <ms>` | No | `10000` | Request timeout in milliseconds. Must be a positive integer. |
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
+| `--html <path>` | No | - | Writes a standalone local HTML report to a `.html` file. |
 
 ## Examples
 
@@ -55,6 +56,7 @@ index-ai https://example.com --allow-private-hosts
 index-ai https://example.com --no-exit-code
 index-ai https://example.com --timeout 10000
 index-ai https://example.com --max-concurrency 5
+index-ai https://example.com --html report.html
 ```
 
 ## Human output
@@ -74,10 +76,23 @@ Summary:
 - warn: 0
 - fail: 0
 - total: 12
+
+Metrics:
+- manifest_found: true
+- shadow_layer_found: true
+- total_nodes: 6
+- valid_clean_endpoints: 6
+- valid_content_chars: 6
+
+No failures or warnings.
+
+Next:
+- No blocking validation fixes were found.
 ```
 
-The report includes failures, warnings, and fixes where available. Passing
-checks are hidden unless `--verbose` is used.
+After the summary, the report prints a `Metrics` block, then any `Failures` and
+`Warnings` with check codes and fixes, and a closing `Next` line. Passing checks
+are hidden unless `--verbose` is used.
 
 ## JSON output
 
@@ -102,6 +117,32 @@ Top-level fields include:
 
 Normal validation results keep stderr empty. Usage, configuration, or runtime
 errors before a validation result use stderr.
+
+## HTML report
+
+```bash
+index-ai https://example.com --html report.html
+```
+
+The HTML report is optional and intended for local or shareable human review.
+It is generated from the same validation result as the human and JSON output.
+It does not change validation semantics or exit codes.
+
+HTML reports include a `CI Verdict`, a `Readiness` score, and recommended next
+steps. The readiness score is report-only and does not affect `passed`,
+`conformance`, JSON output, or exit codes.
+
+The report path must be non-empty and end with `.html`. Parent directories are
+not created automatically.
+
+JSON remains the automation format. When used together, stdout stays JSON-only
+and the HTML report is written to the file:
+
+```bash
+index-ai https://example.com --json --html report.html
+```
+
+The HTML report is a review aid, not a guarantee — see [Scope](/guide/scope).
 
 ## Exit codes
 
@@ -139,15 +180,7 @@ index-ai http://localhost:3000 --allow-private-hosts
 Do not use `--allow-private-hosts` as evidence that private endpoints are
 appropriate for public `index-ai` implementations.
 
-## Current limitations
+## Scope
 
-The CLI does not validate:
-
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
+The CLI validates `index-ai` Level 1 and Level 2a. For the full list of what it
+does and does not check, see [Scope](/guide/scope).

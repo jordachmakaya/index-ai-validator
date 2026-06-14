@@ -79,3 +79,25 @@ The process exits with code `1` unless `--no-exit-code` is used.
 
 If no validation result exists because CLI usage or configuration failed, the
 command exits with code `2` and writes the diagnostic to stderr.
+
+## JSON with an HTML report
+
+JSON remains the automation format even when an HTML report is requested.
+
+```bash
+index-ai https://example.com --json --html report.html
+```
+
+With this combination:
+
+- stdout contains JSON only
+- the HTML report is written to the provided `.html` file
+- the HTML report includes a CI Verdict, Readiness score, and recommended next
+  steps for human review
+- validation semantics do not change
+- exit codes do not change
+
+The readiness score is report-only. It does not affect `passed`, `conformance`,
+JSON output, or exit codes.
+
+The HTML report is for local or shareable human review — see [Scope](/guide/scope).

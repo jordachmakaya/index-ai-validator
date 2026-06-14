@@ -1,5 +1,8 @@
 # Discovery Checks
 
+An agent can only use your AI Manifest if it can find it. These checks inspect
+the hints that point agents to it.
+
 The validator runs shallow discovery checks through `validateIndexAi()` and the
 `index-ai` CLI.
 
@@ -90,9 +93,8 @@ Discovery checks use SHOULD-level warnings.
 
 Discovery checks do not change structural `conformance`.
 
-## Current Limits
+## Scope
 
-The validator performs shallow explicit checks only. It does not crawl the site,
-validate sitemap entries, inspect DNS TXT records, prove agent adoption, provide
-compliance certification, create traffic promises, or validate Level 2b or Level
-3 MCP behavior.
+The validator performs shallow, explicit checks only. It does not crawl the
+site, validate sitemap entries, inspect DNS TXT records, or prove agent
+adoption. See [Scope](/guide/scope).

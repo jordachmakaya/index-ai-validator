@@ -1,5 +1,8 @@
 # Security Checks
 
+Your AI-facing endpoints are public. Anything you leak there, an agent can read.
+These checks catch the obvious leaks before that happens.
+
 The validator runs conservative security checks through `validateIndexAi()` and
 the `index-ai` CLI.
 
@@ -101,9 +104,9 @@ They can change `passed`:
 - `failOnWarn` makes any warning fail `passed`.
 - `strict` makes SHOULD-level warnings fail `passed`.
 
-## Current Limits
+## Scope
 
-The package does not prove that a site is safe. It does not perform a full
-security audit, vulnerability scanning, dependency scanning, penetration
-testing, privacy review, legal review, sitemap validation, DNS TXT discovery
-validation, Level 2b validation, or Level 3 MCP validation.
+These are conservative heuristics, not a security guarantee. The package does
+not prove that a site is safe, and does not perform a full security audit,
+vulnerability scanning, penetration testing, privacy review, or legal review.
+See [Scope](/guide/scope).

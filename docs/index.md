@@ -3,99 +3,93 @@ layout: home
 
 hero:
   name: index-ai-validator
-  text: Validate your AI-readable website layer
-  tagline: A free experimental CLI for checking index-ai manifests, Shadow Index graphs, clean endpoints, and agent-facing content quality.
+  text: Is your site readable by AI agents?
+  tagline: A free CLI that checks whether your site exposes a clean, agent-facing layer — index-ai manifest, Shadow Index, clean endpoints, and measured content size. Runs in your terminal. No signup.
   actions:
     - theme: brand
       text: Get started
       link: /guide/getting-started
     - theme: alt
-      text: CLI guide
-      link: /guide/cli
+      text: See a sample report
+      link: /guide/fix-your-report
 
 features:
-  - title: Find the manifest
-    details: Check whether a public site exposes an index-ai manifest and whether the file can be fetched, parsed, and validated.
-  - title: Validate the Shadow Index
-    details: Inspect the declared graph structure, Level 2a node fields, clean endpoint URLs, and content character declarations.
-  - title: Protect the public AI layer
-    details: Flag hard HTML leaks, obvious secret-shaped values outside code examples, private host references, and discovery gaps.
+  - title: Prove agents can find you
+    details: Checks the AI Manifest at /.well-known/index-ai.json and the discovery hints agents rely on — HTML link, HTTP Link header, robots.txt, llms.txt.
+  - title: Validate your Shadow Index
+    details: Inspects the Level 2a graph nodes, fetches each clean llm_url endpoint, and verifies content_chars against the Unicode NFC code-point count.
+  - title: Catch leaks before agents do
+    details: Flags secret-shaped values, sensitive variable names, and private infrastructure references in the public content you expose to agents.
 ---
 
-## What this is
+![index-ai-validator: from a public website through the AI Manifest, Shadow Index, and clean endpoints to a validation result](./index-ai-validator_explained.png)
 
-`index-ai-validator` is the repository for the experimental `@index-ai/validator`
-package and docs.
+## Most sites are readable by browsers. Is yours readable by agents?
 
-- [`index-ai`](https://github.com/jordachmakaya/index-ai) is the experimental specification being validated.
+Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a clean layer that says what a site is, where its content lives, how fresh it is, and how much text they will pay tokens for before fetching it.
 
-`@index-ai/validator` is an experimental free CLI validator for public
-`index-ai` Level 1 and Level 2a implementations.
+`index-ai` explores that layer through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, a [Shadow Index](/guide/level-2a-shadow-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
-The CLI binary is:
+`@index-ai/validator` makes that layer testable. One command tells you whether yours works.
 
-```txt
-index-ai
-```
-
-Run it with:
+## Run it
 
 ```bash
 npx @index-ai/validator https://example.com
 ```
 
-The command calls `validateIndexAi()`, produces a human-readable report by
-default, and can produce stable machine-readable JSON with `--json`.
+The package name is `@index-ai/validator`. The CLI binary is `index-ai`. By default it prints a deterministic, summary-first report:
 
-## Why this exists
+```txt
+index-ai validation result
 
-Most websites are optimized for browser rendering, analytics, and human
-navigation. AI agents need a different layer: clean metadata, inspectable graph
-structure, and content that can be read without scraping a visual page.
+Target: https://example.com
+Duration: 42 ms
+Conformance: level-2a
+Passed: true
 
-This validator checks whether a public site exposes a clean machine-readable
-content layer for `index-ai` Level 1 and Level 2a. It is meant to make that
-surface easier to test before other tools or agents depend on it.
+Summary:
+- pass: 12
+- warn: 0
+- fail: 0
+- total: 12
 
-The project does not promise traffic, certification, SEO ranking, or legal
-control over AI agents.
+Metrics:
+- manifest_found: true
+- shadow_layer_found: true
+- total_nodes: 6
+- valid_clean_endpoints: 6
+- valid_content_chars: 6
 
-## Current capabilities
+No failures or warnings.
 
-The validator checks:
+Next:
+- No blocking validation fixes were found.
+```
 
-- Level 1 AI Manifest fetch, JSON content type, JSON parse, and schema shape
-- manifest `access.shadow_layer`
-- Shadow Index graph fetch from the declared path
-- graph JSON content type and JSON parse
-- graph `nodes` array and deprecated `pages` rejection
-- required Level 2a node content fields
-- `llm_url` structure and fetch behavior
-- clean endpoint content type: `text/markdown` or `text/plain`
-- hard HTML leaks and tolerated soft inline HTML warnings
-- `content_chars_mode: exact`
-- `content_chars_mode: max`
-- Unicode NFC code-point counting
-- obvious secret-shaped value detection outside Markdown code
-- sensitive variable-name reference warnings
-- private/internal infrastructure reference warnings
-- private `llm_url` blocking by default
-- homepage, `robots.txt`, and `/llms.txt` discovery hints
-- `level-2a` conformance when Level 1 and Level 2a checks pass
-- CLI JSON output, human output, and exit codes
+Add `--json` for a stable machine-readable result, or `--html report.html` for a shareable visual report with a CI verdict, a readiness score, and recommended next steps.
 
-## Current limitations
+Checks Level 1 + Level 2a today. Not certification, not a traffic promise. → [See the full scope](/guide/scope)
 
-The package does not validate:
+## What it checks
 
-- full security audits
-- vulnerability scanning
-- discovery crawling
-- sitemap validation
-- DNS TXT discovery validation
-- fixture validation
-- Level 2b relations
-- Level 3 MCP
+- Level 1 AI Manifest: fetch, JSON content type, JSON parse, and schema shape
+- The `access.shadow_layer` declaration and the Shadow Index graph it points to
+- Level 2a node fields, `llm_url` structure, and clean endpoint content types
+- Hard HTML leaks, with tolerated soft inline markup reported as warnings
+- `content_chars` in `exact` and `max` modes, using Unicode NFC code-point counting
+- Secret-shaped values and private infrastructure references in public AI-facing content
+- Discovery hints on the homepage, `robots.txt`, and `/llms.txt`
 
-It does not certify compliance, guarantee AI traffic, provide legal control over
-AI agents, or prove that a site is safe.
+For what it deliberately does not do, see [Scope](/guide/scope).
+
+<div class="cta-band">
+  <div class="cta-copy">
+    <strong>Free tool. Need the layer built for you?</strong>
+    <span>Get your agent-facing layer reviewed and shipped by the maker of index-ai.</span>
+  </div>
+  <div class="cta-actions">
+    <a class="primary" href="https://jordach.dev/services/ai-readable-website-audit">AI-readable audit</a>
+    <a class="secondary" href="https://jordach.dev/contact">Contact</a>
+  </div>
+</div>
