@@ -22,6 +22,13 @@
   <img src="https://img.shields.io/badge/STATUS-EXPERIMENTAL-f59e0b?style=for-the-badge" alt="Experimental status">
 </p>
 
+<p align="center">
+  <img src="https://img.shields.io/badge/TypeScript-Ready-378add?style=for-the-badge" alt="TypeScript ready">
+  <img src="https://img.shields.io/badge/Node.js-20%2B-10b981?style=for-the-badge" alt="Node.js 20 plus">
+  <img src="https://img.shields.io/badge/Dependencies-4%20runtime-7a8ba3?style=for-the-badge" alt="4 runtime dependencies">
+  <img src="https://img.shields.io/badge/Surface-small-f59e0b?style=for-the-badge" alt="Small dependency surface">
+</p>
+
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/index-ai-validator_explained.png)
 
 **Is your website readable by AI agents?** Most sites are built for browsers — HTML, scripts, navigation, layout. Agents have to read that browser-first HTML to understand you. `@hardmachinelabs/index-ai-validator` checks whether your site also exposes a clean, structured layer built for agents — and makes that layer **testable** from your terminal.
@@ -40,6 +47,8 @@ Naming:
 It is a developer validator, not a production certification, legal compliance
 tool, traffic guarantee, SEO ranking tool, security audit, or vulnerability
 scanner.
+
+Designed for CI and local audits: deterministic output, stable JSON, standalone HTML reports, and a small runtime dependency surface.
 
 ## Installation / run with npx
 

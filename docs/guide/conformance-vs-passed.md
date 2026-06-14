@@ -16,7 +16,7 @@ The current validator can return:
 | --- | --- |
 | `none` | Level 1 required checks did not pass. |
 | `level-1` | Level 1 AI Manifest checks passed, but Level 2a did not fully pass. |
-| `level-2a` | Level 1 and Level 2a Shadow Index checks passed. |
+| `level-2a` | Level 1 and Level 2a Agent Index checks passed. |
 
 The package reserves TypeScript union members for Level 2b and Level 3, but the
 current validator does not emit those levels.

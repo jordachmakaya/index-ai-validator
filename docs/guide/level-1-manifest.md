@@ -5,7 +5,7 @@ site identity, freshness metadata, and machine-readable entry points for an
 `index-ai` implementation.
 
 Level 1 is the base for Level 2a. The public `validateIndexAi()` entrypoint and
-the `index-ai` CLI validate the AI Manifest before attempting Shadow Index
+the `index-ai` CLI validate the AI Manifest before attempting Agent Index
 validation.
 
 ## What the AI Manifest is
@@ -18,8 +18,8 @@ questions:
 - When was the described content updated or generated?
 - Which URL fields point to related machine-readable resources?
 
-Level 1 is structural. Level 2a builds on it by using `access.shadow_layer` to
-find and validate the Shadow Index.
+Level 1 is structural. Level 2a builds on it by using the current
+`access.shadow_layer` manifest field to find and validate the Agent Index.
 
 ## Manifest location
 
@@ -68,7 +68,7 @@ If `level` is present, it must be `level-1` or `level-2a`.
 URL-like manifest fields are checked structurally. The current rule accepts
 absolute `http` or `https` URLs and root-relative paths.
 
-## Shadow Index declaration
+## Agent Index declaration
 
 Level 2a validation uses:
 
@@ -77,8 +77,12 @@ access.shadow_layer
 ```
 
 When present, the validator resolves this path against the target URL and tries
-to fetch the Shadow Index graph. `/ai-graph.json` is the expected graph target
+to fetch the Agent Index graph. `/ai-graph.json` is the expected graph target
 when a manifest declares that path.
+
+`access.shadow_layer` is the current schema field name. The public docs use
+Agent Index for the Level 2a graph to avoid the negative meaning of "shadow" in
+AI and security contexts.
 
 ## Content type and JSON
 

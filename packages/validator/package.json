@@ -1,7 +1,23 @@
 {
   "name": "@hardmachinelabs/index-ai-validator",
   "version": "0.1.0",
-  "description": "Experimental free CLI validator for the index-ai Level 1 and Level 2a specification.",
+  "description": "Free, experimental CLI that makes a website's agent-facing layer testable: validates the index-ai AI Manifest, Agent Index, and clean endpoints.",
+  "author": {
+    "name": "Jordach Makaya",
+    "url": "https://jordach.dev"
+  },
+  "homepage": "https://jordachmakaya.github.io/index-ai-validator/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordachmakaya/index-ai-validator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jordachmakaya/index-ai-validator/issues"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "index-ai": "./dist/cli.js",
@@ -33,9 +49,25 @@
     "pack:check": "pnpm check && pnpm test && pnpm build && node dist/cli.js --help",
     "prepublishOnly": "pnpm pack:check"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+  "ai",
+    "ai-agents",
+    "agentic-web",
+    "llm",
+    "llms-txt",
+    "ai-readiness",
+    "agent-readable",
+    "geo",
+    "aeo",
+    "validator",
+    "cli",
+    "developer-tools",
+    "ci",
+    "index-ai",
+    "ai-manifest",
+    "agent-index",
+    "clean-markdown"
+  ],
   "packageManager": "pnpm@10.22.0",
   "dependencies": {
     "ajv": "^8.20.0",

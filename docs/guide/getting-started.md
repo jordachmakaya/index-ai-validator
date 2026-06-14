@@ -5,7 +5,7 @@
 `@hardmachinelabs/index-ai-validator` is an experimental free CLI validator for `index-ai` Level
 1 and Level 2a.
 
-It checks whether a public website exposes the files, Shadow Index graph, and
+It checks whether a public website exposes the files, Agent Index graph, and
 clean endpoints expected by the current Level 1 and Level 2a implementation.
 
 ## Who is it for?
@@ -13,7 +13,7 @@ clean endpoints expected by the current Level 1 and Level 2a implementation.
 This package is for developers, maintainers, and technical reviewers working on
 public `index-ai` implementations.
 
-Use it when you need structured validation checks for the AI Manifest, Shadow
+Use it when you need structured validation checks for the AI Manifest, Agent
 Index graph, clean endpoint content types, HTML leaks, `content_chars`,
 conservative security heuristics, discovery hints, and CLI behavior.
 
@@ -94,7 +94,7 @@ Implemented scope:
 - pragmatic AJV Level 1 schema validation
 - `identity.domain` host mismatch warning
 - manifest `access.shadow_layer`
-- Shadow Index graph fetch
+- Agent Index graph fetch
 - graph JSON content-type check
 - graph JSON parse check
 - graph schema validation

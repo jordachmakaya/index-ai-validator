@@ -8,7 +8,7 @@ const config = withMermaid(
     base: '/index-ai-validator/',
     title: 'index-ai-validator',
     description:
-      'Free CLI that checks whether your site is readable by AI agents: index-ai manifest, Shadow Index, clean endpoints, and content_chars.',
+      'Free CLI that checks whether your site is readable by AI agents: index-ai manifest, Agent Index, clean endpoints, and content_chars.',
     cleanUrls: true,
     appearance: 'dark',
     vite: {
@@ -49,7 +49,7 @@ const config = withMermaid(
           text: 'What each check means',
           items: [
             { text: 'Level 1 Manifest', link: '/guide/level-1-manifest' },
-            { text: 'Level 2a Shadow Index', link: '/guide/level-2a-shadow-index' },
+            { text: 'Level 2a Agent Index', link: '/guide/level-2a-shadow-index' },
             { text: 'content_chars', link: '/guide/content-chars' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Discovery', link: '/guide/discovery' },

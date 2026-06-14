@@ -7,7 +7,7 @@ honest.
 `content_chars` is the declared Unicode code point count for a clean `llm_url`
 response.
 
-The validator checks `content_chars` as part of Level 2a Shadow Index
+The validator checks `content_chars` as part of Level 2a Agent Index
 validation through both `validateIndexAi()` and the `index-ai` CLI.
 
 ## What is implemented now
@@ -91,7 +91,7 @@ flowchart TD
 
 ## Scope
 
-`content_chars` validation runs on Level 2a Shadow Index clean endpoints through
+`content_chars` validation runs on Level 2a Agent Index clean endpoints through
 `validateIndexAi()`. This is experimental documentation of current validator
 behavior, not compliance certification or a traffic promise. See
 [Scope](/guide/scope).

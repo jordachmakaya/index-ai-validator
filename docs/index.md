@@ -4,7 +4,7 @@ layout: home
 hero:
   name: index-ai-validator
   text: Is your site readable by AI agents?
-  tagline: A free CLI that checks whether your site exposes a clean, agent-facing layer — index-ai manifest, Shadow Index, clean endpoints, and measured content size. Runs in your terminal. No signup.
+  tagline: A free CLI that checks whether your site exposes a clean, agent-facing layer — index-ai manifest, Agent Index, clean endpoints, and measured content size. Runs in your terminal. No signup.
   actions:
     - theme: brand
       text: Get started
@@ -16,19 +16,19 @@ hero:
 features:
   - title: Prove agents can find you
     details: Checks the AI Manifest at /.well-known/index-ai.json and the discovery hints agents rely on — HTML link, HTTP Link header, robots.txt, llms.txt.
-  - title: Validate your Shadow Index
+  - title: Validate your Agent Index
     details: Inspects the Level 2a graph nodes, fetches each clean llm_url endpoint, and verifies content_chars against the Unicode NFC code-point count.
   - title: Catch leaks before agents do
     details: Flags secret-shaped values, sensitive variable names, and private infrastructure references in the public content you expose to agents.
 ---
 
-![index-ai-validator: from a public website through the AI Manifest, Shadow Index, and clean endpoints to a validation result](./index-ai-validator_explained.png)
+![index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result](./index-ai-validator_explained.png)
 
 ## Most sites are readable by browsers. Is yours readable by agents?
 
 Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a clean layer that says what a site is, where its content lives, how fresh it is, and how much text they will pay tokens for before fetching it.
 
-`index-ai` explores that layer through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, a [Shadow Index](/guide/level-2a-shadow-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
+`index-ai` explores an Agent View through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, an [Agent Index](/guide/level-2a-shadow-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
 `@hardmachinelabs/index-ai-validator` makes that layer testable. One command tells you whether yours works.
 
@@ -74,7 +74,7 @@ Checks Level 1 + Level 2a today. Not certification, not a traffic promise. → [
 ## What it checks
 
 - Level 1 AI Manifest: fetch, JSON content type, JSON parse, and schema shape
-- The `access.shadow_layer` declaration and the Shadow Index graph it points to
+- The `access.shadow_layer` declaration and the Agent Index graph it points to
 - Level 2a node fields, `llm_url` structure, and clean endpoint content types
 - Hard HTML leaks, with tolerated soft inline markup reported as warnings
 - `content_chars` in `exact` and `max` modes, using Unicode NFC code-point counting

@@ -52,12 +52,12 @@ Add the discovery hints that fit your deployment:
 Discovery warnings do not replace the manifest itself. They help agents and
 tools find it.
 
-## If the Shadow Index is missing
+## If the Agent Index is missing
 
 Add `/ai-graph.json` and declare it in the AI Manifest under
 `access.shadow_layer`.
 
-The Shadow Index should list public pages or resources that have clean
+The Agent Index should list public pages or resources that have clean
 agent-facing content.
 
 ## If clean endpoints fail

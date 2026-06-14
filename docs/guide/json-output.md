@@ -31,7 +31,7 @@ Top-level fields:
 | `conformance` | Highest implemented structural level reached. |
 | `passed` | Global validation verdict under the selected options. |
 | `summary` | Counts of pass, warn, fail, and total checks. |
-| `metrics` | Implemented counters for manifest, Shadow Index, endpoint, and coverage behavior. |
+| `metrics` | Implemented counters for manifest, Agent Index, endpoint, and coverage behavior. |
 | `checks` | Detailed validation checks with stable codes and severities. |
 
 ## Example

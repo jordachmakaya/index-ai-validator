@@ -1,10 +1,10 @@
-# Level 2a Shadow Index
+# Level 2a Agent Index
 
-Level 2a extends Level 1 with a Shadow Index graph. The graph lists clean,
+Level 2a extends Level 1 with an Agent Index graph. The graph lists clean,
 AI-readable endpoints and declares the metadata needed to validate those
 endpoints.
 
-Level 2a Shadow Index validation is available through `validateIndexAi()` and
+Level 2a Agent Index validation is available through `validateIndexAi()` and
 the `index-ai` CLI.
 
 ## Level 2a scope
@@ -12,7 +12,7 @@ the `index-ai` CLI.
 Level 2a validation currently covers:
 
 - manifest `access.shadow_layer`
-- Shadow Index graph fetch
+- Agent Index graph fetch
 - graph JSON content-type check
 - graph JSON parse check
 - graph schema validation
@@ -29,9 +29,9 @@ Level 2a validation currently covers:
 - heuristic security checks against fetched clean endpoint text
 - Level 2a conformance computation
 
-## Shadow Index location
+## Agent Index location
 
-The AI Manifest declares the Shadow Index with:
+The AI Manifest declares the Agent Index with:
 
 ```txt
 access.shadow_layer
@@ -45,9 +45,12 @@ When the manifest uses this value:
 
 the validator resolves it against the target origin and fetches that graph.
 
+`access.shadow_layer` is the current manifest field name for compatibility with
+the implemented Level 2a schema. The public concept is Agent Index.
+
 ## Graph shape
 
-The Shadow Index must use a `nodes` array.
+The Agent Index must use a `nodes` array.
 
 The deprecated `pages` array must fail.
 
@@ -144,7 +147,7 @@ NFC before counting.
 
 ```mermaid
 flowchart TD
-  A["Manifest access.shadow_layer"] --> B["Fetch Shadow Index graph"]
+  A["Manifest access.shadow_layer"] --> B["Fetch Agent Index graph"]
   B --> C["Validate nodes"]
   C --> D["Fetch llm_url"]
   D --> E["Check content type"]
@@ -161,7 +164,7 @@ flowchart TD
 level-2a
 ```
 
-when Level 1 checks pass and the Level 2a Shadow Index checks pass.
+when Level 1 checks pass and the Level 2a Agent Index checks pass.
 
 Warnings can still affect `passed` when `failOnWarn` or strict warning behavior
 is enabled. See [Conformance vs Passed](/guide/conformance-vs-passed).

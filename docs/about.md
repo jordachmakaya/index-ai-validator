@@ -15,7 +15,7 @@ They need a clean, machine-readable layer that explains what a site is, where it
 `index-ai` explores that layer through three ideas:
 
 * an AI Manifest that describes the site;
-* a Shadow Index that maps public content into structured nodes;
+* an Agent Index that maps public content into structured nodes;
 * clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
 ## What this validator does
@@ -25,7 +25,7 @@ They need a clean, machine-readable layer that explains what a site is, where it
 It checks whether a public website exposes the expected Level 1 and Level 2a layer:
 
 * AI Manifest discovery and schema validation;
-* Shadow Index graph validation;
+* Agent Index graph validation;
 * clean `llm_url` endpoint checks;
 * `content_chars` consistency;
 * HTML leak detection;
