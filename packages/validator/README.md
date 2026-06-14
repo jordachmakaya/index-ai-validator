@@ -33,7 +33,7 @@
 
 **Is your website readable by AI agents?** Most sites are built for browsers — HTML, scripts, navigation, layout. Agents have to read that browser-first HTML to understand you. `@hardmachinelabs/index-ai-validator` checks whether your site also exposes a clean, structured layer built for agents — and makes that layer **testable** from your terminal.
 
-Point it at a public URL. It checks whether the site exposes the files and clean endpoints an agent needs to understand it without scraping rendered HTML: the AI Manifest, the Shadow Index, clean Markdown or plain-text endpoints, and the declared content size of each node. It also flags obvious secret or private-infrastructure leaks in that public agent-facing content.
+Point it at a public URL. It checks whether the site exposes the files and clean endpoints an agent needs to understand it without scraping rendered HTML: the AI Manifest, the Agent Index, clean Markdown or plain-text endpoints, and the declared content size of each node. It also flags obvious secret or private-infrastructure leaks in that public agent-facing content.
 
 It is a free, experimental developer CLI. It provides the `index-ai` binary and the `validateIndexAi()` TypeScript entrypoint, and it validates `index-ai` Level 1 and Level 2a.
 
@@ -269,7 +269,7 @@ default.
 Implemented in 0.1.0:
 
 - Level 1 AI Manifest validation
-- Level 2a Shadow Index validation
+- Level 2a Agent Index validation
 - clean endpoint content type checks
 - HTML leak checks
 - `content_chars` exact and max checks
@@ -308,7 +308,7 @@ Documentation: https://jordachmakaya.github.io/index-ai-validator/
 It is built around three simple ideas:
 
 * an AI Manifest that describes the site and its machine-readable entry points;
-* a Shadow Index that maps important public content into structured nodes;
+* an Agent Index that maps important public content into structured nodes;
 * clean Markdown or plain-text endpoints designed for agents instead of browsers.
 
 `@hardmachinelabs/index-ai-validator` is the free CLI validator for the current Level 1 and Level 2a implementation.
