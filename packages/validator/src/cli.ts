@@ -1,4 +1,5 @@
-import { resolve } from 'node:path'
+import { writeFile } from 'node:fs/promises'
+import { extname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
@@ -10,6 +11,7 @@ import {
 } from './constants'
 import type { ValidationResult, ValidatorOptions } from './types'
 import { formatHumanResult } from './utils/format'
+import { formatHtmlReport } from './utils/html-report'
 import { validateIndexAi } from './validator'
 
 type CliOptions = {
@@ -20,6 +22,7 @@ type CliOptions = {
   readonly failOnWarn?: boolean
   readonly allowPrivateHosts?: boolean
   readonly exitCode?: boolean
+  readonly html?: string
   readonly timeout: number
   readonly maxConcurrency: number
 }
@@ -53,7 +56,15 @@ export async function runCli(
     },
     runValidation: async (target, options) => {
       const validatorOptions = buildValidatorOptions(target, options)
+      if (options.html !== undefined) {
+        validateHtmlPath(options.html)
+      }
+
       const result = await validate(validatorOptions)
+
+      if (options.html !== undefined) {
+        await writeHtmlReport(options.html, result)
+      }
 
       stdout += options.json
         ? `${JSON.stringify(result, null, 2)}\n`
@@ -125,6 +136,7 @@ function createProgram(options: {
     .option('--fail-on-warn', 'Treat any warning as a failed validation result')
     .option('--allow-private-hosts', 'Allow private/internal hosts in target and llm_url fetches')
     .option('--no-exit-code', 'Return exit code 0 for validation failures')
+    .option('--html <path>', 'Write a standalone HTML report to the provided .html path')
     .option('--timeout <ms>', 'Request timeout in milliseconds', parsePositiveInteger, DEFAULT_TIMEOUT_MS)
     .option(
       '--max-concurrency <n>',
@@ -164,6 +176,26 @@ function buildValidatorOptions(target: string, options: CliOptions): ValidatorOp
     timeoutMs: options.timeout,
     maxConcurrency: options.maxConcurrency,
     allowPrivateHosts: options.allowPrivateHosts ?? false,
+  }
+}
+
+async function writeHtmlReport(path: string, result: ValidationResult): Promise<void> {
+  try {
+    await writeFile(path, formatHtmlReport(result), 'utf8')
+  }
+  catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
+    throw new Error(`Failed to write HTML report: ${message}`)
+  }
+}
+
+function validateHtmlPath(path: string): void {
+  if (path.trim().length === 0) {
+    throw new InvalidArgumentError('HTML report path must not be empty.')
+  }
+
+  if (extname(path).toLowerCase() !== '.html') {
+    throw new InvalidArgumentError('HTML report path must end with .html.')
   }
 }
 

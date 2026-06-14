@@ -59,6 +59,7 @@ index-ai https://example.com --allow-private-hosts
 index-ai https://example.com --no-exit-code
 index-ai https://example.com --timeout 10000
 index-ai https://example.com --max-concurrency 5
+index-ai https://example.com --html report.html
 ```
 
 | Option | Required | Default | Description |
@@ -73,6 +74,7 @@ index-ai https://example.com --max-concurrency 5
 | `--timeout <ms>` | No | `10000` | Request timeout in milliseconds. |
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
+| `--html <path>` | No | - | Writes a standalone local HTML report to a `.html` file. |
 
 ## JSON output
 
@@ -112,6 +114,32 @@ Example shape:
 The real `metrics` object contains the implemented validator counters. The real
 `checks` array contains check objects with stable codes, severity, messages,
 and fixes where available.
+
+## HTML report
+
+Use `--html <path>` when a local, shareable human review report is useful:
+
+```bash
+index-ai https://example.com --html report.html
+```
+
+The HTML report is optional. It is generated from the same `ValidationResult`
+as the human and JSON output, and it does not change validation semantics or
+exit codes.
+
+HTML reports include a CI Verdict, Readiness score, and recommended next steps.
+The readiness score is report-only and does not affect `passed`,
+`conformance`, JSON output, or exit codes.
+
+JSON remains the automation format. When JSON and HTML are combined, stdout
+still contains JSON only:
+
+```bash
+index-ai https://example.com --json --html report.html
+```
+
+The HTML report is not certification, legal compliance, a traffic guarantee,
+SEO ranking guarantee, security audit, or vulnerability scan.
 
 ## Human output
 
