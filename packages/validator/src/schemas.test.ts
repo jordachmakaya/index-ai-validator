@@ -17,7 +17,7 @@ function validManifest(): Record<string, unknown> {
       refresh_frequency: 'daily',
     },
     access: {
-      shadow_layer: '/ai-graph.json',
+      agent_index: '/agent-index.json',
       llms_txt: '/llms.txt',
     },
     entrypoints: [
@@ -129,7 +129,7 @@ describe('validateManifestSchema', () => {
     const manifest = {
       ...validManifest(),
       access: {
-        shadow_layer: 'ai-graph.json',
+        agent_index: 'agent-index.json',
         llms_txt: 'mailto:robots@example.test',
       },
       entrypoints: [
@@ -148,7 +148,7 @@ describe('validateManifestSchema', () => {
       throw new Error('Expected invalid manifest schema result')
     }
 
-    expect(result.errors.some((error) => error.path === '/access/shadow_layer')).toBe(true)
+    expect(result.errors.some((error) => error.path === '/access/agent_index')).toBe(true)
     expect(result.errors.some((error) => error.path === '/access/llms_txt')).toBe(true)
     expect(result.errors.some((error) => error.path === '/entrypoints/0/url')).toBe(true)
   })

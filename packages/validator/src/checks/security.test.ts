@@ -38,7 +38,7 @@ function validManifest(): Record<string, unknown> {
       refresh_frequency: 'daily',
     },
     access: {
-      shadow_layer: '/ai-graph.json',
+      agent_index: '/agent-index.json',
       llms_txt: '/llms.txt',
     },
   }
@@ -90,15 +90,15 @@ function baseRoutes(cleanBody: string): Record<string, RouteResponse> {
     '/': {
       contentType: 'text/html; charset=utf-8',
       headers: {
-        link: '</.well-known/index-ai.json>; rel=ai-index; type=application/json',
+        link: '</.well-known/index-ai.json>; rel=agent-manifest; type=application/json',
       },
-      body: '<html><head><link rel="ai-index" href="/.well-known/index-ai.json" type="application/json"></head></html>',
+      body: '<html><head><link rel="agent-manifest" href="/.well-known/index-ai.json" type="application/json"></head></html>',
     },
     '/.well-known/index-ai.json': jsonRoute(validManifest()),
-    '/ai-graph.json': jsonRoute(graphWithCleanEndpoint('/clean/home.md')),
+    '/agent-index.json': jsonRoute(graphWithCleanEndpoint('/clean/home.md')),
     '/clean/home.md': textRoute(cleanBody, 'text/markdown; charset=utf-8'),
-    '/robots.txt': textRoute('AI-Index: /.well-known/index-ai.json'),
-    '/llms.txt': textRoute('- AI-Index: /.well-known/index-ai.json'),
+    '/robots.txt': textRoute('Agent-Manifest: /.well-known/index-ai.json'),
+    '/llms.txt': textRoute('- Agent-Manifest: /.well-known/index-ai.json'),
   }
 }
 

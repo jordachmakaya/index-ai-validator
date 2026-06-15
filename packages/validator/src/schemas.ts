@@ -123,7 +123,7 @@ export const manifestSchema = {
       type: 'object',
       additionalProperties: true,
       properties: {
-        shadow_layer: urlReferenceSchema,
+        agent_index: urlReferenceSchema,
         llms_txt: urlReferenceSchema,
         mcp_server: urlReferenceSchema,
         mcp_auth: { type: 'string', minLength: 1 },

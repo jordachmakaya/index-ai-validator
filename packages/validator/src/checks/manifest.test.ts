@@ -36,7 +36,7 @@ function validManifest(): Record<string, unknown> {
       refresh_frequency: 'daily',
     },
     access: {
-      shadow_layer: '/ai-graph.json',
+      agent_index: '/agent-index.json',
       llms_txt: '/llms.txt',
     },
   }

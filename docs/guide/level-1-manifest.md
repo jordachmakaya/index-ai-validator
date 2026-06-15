@@ -19,7 +19,7 @@ questions:
 - Which URL fields point to related machine-readable resources?
 
 Level 1 is structural. Level 2a builds on it by using the current
-`access.shadow_layer` manifest field to find and validate the Agent Index.
+`access.agent_index` manifest field to find and validate the Agent Index.
 
 ## Manifest location
 
@@ -49,7 +49,7 @@ flowchart TD
   D --> E
   E --> F["Parse JSON"]
   F --> G["Validate Level 1 schema"]
-  G --> H["Use access.shadow_layer for Level 2a when present"]
+  G --> H["Use access.agent_index for Level 2a when present"]
 ```
 
 ## Required Level 1 fields
@@ -73,16 +73,15 @@ absolute `http` or `https` URLs and root-relative paths.
 Level 2a validation uses:
 
 ```txt
-access.shadow_layer
+access.agent_index
 ```
 
 When present, the validator resolves this path against the target URL and tries
-to fetch the Agent Index graph. `/ai-graph.json` is the expected graph target
+to fetch the Agent Index graph. `/agent-index.json` is the expected graph target
 when a manifest declares that path.
 
-`access.shadow_layer` is the current schema field name. The public docs use
-Agent Index for the Level 2a graph to avoid the negative meaning of "shadow" in
-AI and security contexts.
+`access.agent_index` is the manifest field name that points to the Agent Index
+graph.
 
 ## Content type and JSON
 

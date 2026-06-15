@@ -47,7 +47,7 @@ Summary:
 
 Metrics:
 - manifest_found: true
-- shadow_layer_found: true
+- agent_index_found: true
 - total_nodes: 6
 - valid_clean_endpoints: 6
 - valid_content_chars: 6
@@ -83,7 +83,7 @@ The top-level JSON fields include:
 - `metrics`
 - `checks`
 
-## What it validates in 0.1.0
+## What it validates in 0.2.0
 
 Implemented scope:
 
@@ -93,7 +93,7 @@ Implemented scope:
 - AI Manifest JSON parse check
 - pragmatic AJV Level 1 schema validation
 - `identity.domain` host mismatch warning
-- manifest `access.shadow_layer`
+- manifest `access.agent_index`
 - Agent Index graph fetch
 - graph JSON content-type check
 - graph JSON parse check

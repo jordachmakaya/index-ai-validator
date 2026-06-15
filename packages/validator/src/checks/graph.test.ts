@@ -44,7 +44,7 @@ function validManifest(): Record<string, unknown> {
       refresh_frequency: 'daily',
     },
     access: {
-      shadow_layer: '/ai-graph.json',
+      agent_index: '/agent-index.json',
       llms_txt: '/llms.txt',
     },
   }
@@ -208,7 +208,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/markdown.md': textRoute(markdown, 'text/markdown; charset=utf-8'),
       '/clean/plain.txt': textRoute(plain, 'text/plain; charset=utf-8'),
     })
@@ -217,13 +217,13 @@ describe('Level 2a graph validation', () => {
 
     expect(result.passed).toBe(true)
     expect(result.conformance).toBe('level-2a')
-    expect(result.metrics.shadow_layer_found).toBe(true)
-    expect(result.metrics.shadow_layer_schema_valid).toBe(true)
+    expect(result.metrics.agent_index_found).toBe(true)
+    expect(result.metrics.agent_index_schema_valid).toBe(true)
     expect(result.metrics.total_nodes).toBe(2)
     expect(result.metrics.nodes_with_llm_url).toBe(2)
     expect(result.metrics.valid_clean_endpoints).toBe(2)
     expect(result.metrics.valid_content_chars).toBe(2)
-    expect(findCheck(result.checks, CHECK.L2A_SHADOW_FOUND).severity).toBe('pass')
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_FOUND).severity).toBe('pass')
     expect(findCheckForNode(result.checks, CHECK.L2A_LLM_URL_CONTENT_TYPE, 'markdown').severity).toBe('pass')
     expect(findCheckForNode(result.checks, CHECK.L2A_LLM_URL_CONTENT_TYPE, 'plain').severity).toBe('pass')
   })
@@ -236,7 +236,7 @@ describe('Level 2a graph validation', () => {
     const result = await validateIndexAi(createOptions(server.origin))
 
     expect(result.conformance).toBe('level-1')
-    expect(findCheck(result.checks, CHECK.L2A_SHADOW_FOUND).severity).toBe('fail')
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_FOUND).severity).toBe('fail')
   })
 
   it('reports wrong graph content type', async () => {
@@ -250,20 +250,20 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph, 'text/plain; charset=utf-8'),
+      '/agent-index.json': graphRoute(graph, 'text/plain; charset=utf-8'),
       '/clean/home.md': textRoute('Hello'),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
 
     expect(result.conformance).toBe('level-1')
-    expect(findCheck(result.checks, CHECK.L2A_SHADOW_CONTENT_TYPE).severity).toBe('fail')
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_CONTENT_TYPE).severity).toBe('fail')
   })
 
   it('reports malformed graph JSON before schema validation', async () => {
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': {
+      '/agent-index.json': {
         body: '{"nodes":',
       },
     })
@@ -271,14 +271,14 @@ describe('Level 2a graph validation', () => {
     const result = await validateIndexAi(createOptions(server.origin))
 
     expect(result.conformance).toBe('level-1')
-    expect(findCheck(result.checks, CHECK.L2A_SHADOW_JSON_VALID).severity).toBe('fail')
-    expect(result.checks.some((check) => check.code === CHECK.L2A_SHADOW_SCHEMA_VALID)).toBe(false)
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_JSON_VALID).severity).toBe('fail')
+    expect(result.checks.some((check) => check.code === CHECK.L2A_AGENT_INDEX_SCHEMA_VALID)).toBe(false)
   })
 
   it('reports invalid graph schema', async () => {
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute({
+      '/agent-index.json': graphRoute({
         generated: '2026-06-12T00:00:00.000Z',
         spec_version: '1.0',
       }),
@@ -287,7 +287,7 @@ describe('Level 2a graph validation', () => {
     const result = await validateIndexAi(createOptions(server.origin))
 
     expect(result.conformance).toBe('level-1')
-    expect(findCheck(result.checks, CHECK.L2A_SHADOW_SCHEMA_VALID).severity).toBe('fail')
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID).severity).toBe('fail')
   })
 
   it('rejects graph validation when content_chars is zero', async () => {
@@ -301,12 +301,12 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
-    const schemaCheck = findCheck(result.checks, CHECK.L2A_SHADOW_SCHEMA_VALID)
+    const schemaCheck = findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID)
 
     expect(result.conformance).toBe('level-1')
     expect(schemaCheck.severity).toBe('fail')
@@ -333,12 +333,12 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
-    const schemaCheck = findCheck(result.checks, CHECK.L2A_SHADOW_SCHEMA_VALID)
+    const schemaCheck = findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID)
 
     expect(result.conformance).toBe('level-1')
     expect(schemaCheck.severity).toBe('fail')
@@ -366,12 +366,12 @@ describe('Level 2a graph validation', () => {
     deleteFirstNodeContentField(graph, 'summary_method')
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
-    const schemaCheck = findCheck(result.checks, CHECK.L2A_SHADOW_SCHEMA_VALID)
+    const schemaCheck = findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID)
 
     expect(result.conformance).toBe('level-1')
     expect(schemaCheck.severity).toBe('fail')
@@ -399,12 +399,12 @@ describe('Level 2a graph validation', () => {
     deleteFirstNodeContentField(graph, 'language')
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
-    const schemaCheck = findCheck(result.checks, CHECK.L2A_SHADOW_SCHEMA_VALID)
+    const schemaCheck = findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID)
 
     expect(result.conformance).toBe('level-1')
     expect(schemaCheck.severity).toBe('fail')
@@ -434,7 +434,7 @@ describe('Level 2a graph validation', () => {
     }
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
@@ -455,7 +455,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
     })
 
     const result = await validateIndexAi(createOptions(server.origin))
@@ -467,7 +467,7 @@ describe('Level 2a graph validation', () => {
   it('blocks private llm_url hosts by default for non-local targets', async () => {
     const targetServer = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graphWithNodes([
+      '/agent-index.json': graphRoute(graphWithNodes([
         {
           id: 'private',
           llmUrl: 'http://127.0.0.1:1/clean/private.md',
@@ -504,7 +504,7 @@ describe('Level 2a graph validation', () => {
     })
     const targetServer = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graphWithNodes([
+      '/agent-index.json': graphRoute(graphWithNodes([
         {
           id: 'private',
           llmUrl: `${privateServer.origin}/clean/private.md`,
@@ -543,7 +543,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.html': textRoute('Hello', 'text/html; charset=utf-8'),
     })
 
@@ -565,7 +565,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute(html),
     })
 
@@ -587,7 +587,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute(body),
     })
 
@@ -607,7 +607,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
@@ -628,7 +628,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
@@ -648,7 +648,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/home.md': textRoute('Hello'),
     })
 
@@ -669,7 +669,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/emoji.md': textRoute('🚀'),
     })
 
@@ -689,7 +689,7 @@ describe('Level 2a graph validation', () => {
     ])
     const server = await startServer({
       '/.well-known/index-ai.json': manifestRoute(),
-      '/ai-graph.json': graphRoute(graph),
+      '/agent-index.json': graphRoute(graph),
       '/clean/accent.md': textRoute('e\u0301'),
     })
 

@@ -43,26 +43,26 @@ export async function validateGraph(
   options: ValidatorOptions,
   manifest: IndexAiManifest,
 ): Promise<GraphValidationResult> {
-  const shadowLayer = manifest.access?.shadow_layer
+  const agentIndex = manifest.access?.agent_index
 
-  if (!shadowLayer) {
+  if (!agentIndex) {
     return {
       checks: [
         createCheck({
-          code: CHECK.L2A_SHADOW_DECLARED,
+          code: CHECK.L2A_AGENT_INDEX_DECLARED,
           severity: manifest.level === 'level-2a' ? 'fail' : 'warn',
           requirement: manifest.level === 'level-2a' ? 'must' : 'should',
           message: manifest.level === 'level-2a'
-            ? 'The manifest declares Level 2a but does not declare access.shadow_layer.'
-            : 'The manifest does not declare a Shadow Index graph.',
-          fix: 'Declare access.shadow_layer when the site intends to provide Level 2a graph validation.',
+            ? 'The manifest declares Level 2a but does not declare access.agent_index.'
+            : 'The manifest does not declare an Agent Index graph.',
+          fix: 'Declare access.agent_index when the site intends to provide Level 2a graph validation.',
         }),
       ],
     }
   }
 
   const target = normalizeTarget(options.target)
-  const graphUrl = resolveUrl(shadowLayer, target)
+  const graphUrl = resolveUrl(agentIndex, target)
   const targetHost = new URL(target).hostname
   const graphResponse = await fetchTextWithPolicy({
     url: graphUrl,
@@ -74,10 +74,10 @@ export async function validateGraph(
   })
   const checks: ValidationCheck[] = [
     createCheck({
-      code: CHECK.L2A_SHADOW_DECLARED,
+      code: CHECK.L2A_AGENT_INDEX_DECLARED,
       severity: 'pass',
       requirement: 'must',
-      message: 'The manifest declares access.shadow_layer.',
+      message: 'The manifest declares access.agent_index.',
       url: graphUrl,
     }),
   ]
@@ -85,13 +85,13 @@ export async function validateGraph(
   if (!graphResponse.ok) {
     checks.push(
       createCheck({
-        code: CHECK.L2A_SHADOW_FOUND,
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
         severity: 'fail',
         requirement: 'must',
-        message: 'The declared Shadow Index graph could not be fetched.',
+        message: 'The declared Agent Index graph could not be fetched.',
         url: graphUrl,
         details: createHttpFailureDetails(graphResponse),
-        fix: 'Serve a reachable JSON Shadow Index graph at the access.shadow_layer URL.',
+        fix: 'Serve a reachable JSON Agent Index graph at the access.agent_index URL.',
       }),
     )
 
@@ -100,10 +100,10 @@ export async function validateGraph(
 
   checks.push(
     createCheck({
-      code: CHECK.L2A_SHADOW_FOUND,
+      code: CHECK.L2A_AGENT_INDEX_FOUND,
       severity: 'pass',
       requirement: 'must',
-      message: 'The declared Shadow Index graph was fetched.',
+      message: 'The declared Agent Index graph was fetched.',
       url: graphUrl,
       details: { status: graphResponse.status },
     }),
@@ -115,13 +115,13 @@ export async function validateGraph(
   if (!parsedJson.ok) {
     checks.push(
       createCheck({
-        code: CHECK.L2A_SHADOW_JSON_VALID,
+        code: CHECK.L2A_AGENT_INDEX_JSON_VALID,
         severity: 'fail',
         requirement: 'must',
-        message: 'The Shadow Index graph response is not valid JSON.',
+        message: 'The Agent Index graph response is not valid JSON.',
         url: graphUrl,
         details: { error: parsedJson.message },
-        fix: 'Return syntactically valid JSON from the Shadow Index graph URL.',
+        fix: 'Return syntactically valid JSON from the Agent Index graph URL.',
       }),
     )
 
@@ -130,10 +130,10 @@ export async function validateGraph(
 
   checks.push(
     createCheck({
-      code: CHECK.L2A_SHADOW_JSON_VALID,
+      code: CHECK.L2A_AGENT_INDEX_JSON_VALID,
       severity: 'pass',
       requirement: 'must',
-      message: 'The Shadow Index graph response is valid JSON.',
+      message: 'The Agent Index graph response is valid JSON.',
       url: graphUrl,
     }),
   )
@@ -148,10 +148,10 @@ export async function validateGraph(
 
   checks.push(
     createCheck({
-      code: CHECK.L2A_SHADOW_SCHEMA_VALID,
+      code: CHECK.L2A_AGENT_INDEX_SCHEMA_VALID,
       severity: 'pass',
       requirement: 'must',
-      message: 'The Shadow Index graph matches the Level 2a graph schema.',
+      message: 'The Agent Index graph matches the Level 2a graph schema.',
       url: graphUrl,
     }),
   )
@@ -177,23 +177,23 @@ export async function validateGraph(
 function createGraphContentTypeCheck(response: HttpResult, url: string): ValidationCheck {
   if (isJsonContentType(response.contentType)) {
     return createCheck({
-      code: CHECK.L2A_SHADOW_CONTENT_TYPE,
+      code: CHECK.L2A_AGENT_INDEX_CONTENT_TYPE,
       severity: 'pass',
       requirement: 'must',
-      message: 'The Shadow Index graph is served with a JSON content type.',
+      message: 'The Agent Index graph is served with a JSON content type.',
       url,
       details: { content_type: response.contentType },
     })
   }
 
   return createCheck({
-    code: CHECK.L2A_SHADOW_CONTENT_TYPE,
+    code: CHECK.L2A_AGENT_INDEX_CONTENT_TYPE,
     severity: 'fail',
     requirement: 'must',
-    message: 'The Shadow Index graph is not served with a JSON content type.',
+    message: 'The Agent Index graph is not served with a JSON content type.',
     url,
     details: { content_type: response.contentType },
-    fix: 'Serve the Shadow Index graph with Content-Type: application/json; charset=utf-8.',
+    fix: 'Serve the Agent Index graph with Content-Type: application/json; charset=utf-8.',
   })
 }
 
@@ -207,7 +207,7 @@ function createNoPagesArrayCheck(input: unknown, url: string): ValidationCheck {
       code: CHECK.L2A_NO_PAGES_ARRAY,
       severity: 'pass',
       requirement: 'must',
-      message: 'The Shadow Index graph does not use the deprecated pages array.',
+      message: 'The Agent Index graph does not use the deprecated pages array.',
       url,
     })
   }
@@ -216,7 +216,7 @@ function createNoPagesArrayCheck(input: unknown, url: string): ValidationCheck {
     code: CHECK.L2A_NO_PAGES_ARRAY,
     severity: 'fail',
     requirement: 'must',
-    message: 'The Shadow Index graph uses the deprecated pages array.',
+    message: 'The Agent Index graph uses the deprecated pages array.',
     url,
     fix: 'Replace the deprecated pages array with a nodes array.',
   })
@@ -227,10 +227,10 @@ function createSchemaFailureCheck(
   errors: readonly SchemaValidationError[],
 ): ValidationCheck {
   return createCheck({
-    code: CHECK.L2A_SHADOW_SCHEMA_VALID,
+    code: CHECK.L2A_AGENT_INDEX_SCHEMA_VALID,
     severity: 'fail',
     requirement: 'must',
-    message: 'The Shadow Index graph does not match the Level 2a graph schema.',
+    message: 'The Agent Index graph does not match the Level 2a graph schema.',
     url,
     details: { errors },
     fix: 'Add the required Level 2a graph fields, including nodes with clean endpoint metadata.',
@@ -247,8 +247,8 @@ function createTotalNodesCheck(graph: AiGraph, url: string): ValidationCheck {
       severity: 'pass',
       requirement: 'should',
       message: declared === undefined
-        ? 'The Shadow Index graph omits total_nodes; node count was derived from nodes.'
-        : 'The Shadow Index total_nodes value matches the nodes array length.',
+        ? 'The Agent Index graph omits total_nodes; node count was derived from nodes.'
+        : 'The Agent Index total_nodes value matches the nodes array length.',
       url,
       details: { declared, actual },
     })
@@ -258,7 +258,7 @@ function createTotalNodesCheck(graph: AiGraph, url: string): ValidationCheck {
     code: CHECK.L2A_TOTAL_NODES_MATCH,
     severity: 'warn',
     requirement: 'should',
-    message: 'The Shadow Index total_nodes value does not match the nodes array length.',
+    message: 'The Agent Index total_nodes value does not match the nodes array length.',
     url,
     details: { declared, actual },
     fix: 'Set total_nodes to the number of entries in nodes.',

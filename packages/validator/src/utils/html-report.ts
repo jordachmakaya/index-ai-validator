@@ -8,7 +8,7 @@ type RecommendedStep = {
   readonly severity: Severity
 }
 
-const PACKAGE_VERSION = '0.1.0'
+const PACKAGE_VERSION = '0.2.0'
 
 const SEVERITY_PRIORITY: Record<Severity, number> = {
   fail: 0,
@@ -828,16 +828,16 @@ function getRecommendedStep(check: ValidationCheck): RecommendedStep | null {
         'Publish a valid index-ai manifest at /.well-known/index-ai.json.',
       )
 
-    case CHECK.L2A_SHADOW_DECLARED:
-    case CHECK.L2A_SHADOW_FOUND:
-    case CHECK.L2A_SHADOW_CONTENT_TYPE:
-    case CHECK.L2A_SHADOW_JSON_VALID:
-    case CHECK.L2A_SHADOW_SCHEMA_VALID:
+    case CHECK.L2A_AGENT_INDEX_DECLARED:
+    case CHECK.L2A_AGENT_INDEX_FOUND:
+    case CHECK.L2A_AGENT_INDEX_CONTENT_TYPE:
+    case CHECK.L2A_AGENT_INDEX_JSON_VALID:
+    case CHECK.L2A_AGENT_INDEX_SCHEMA_VALID:
       return step(
         check,
         30,
-        'Add the Shadow Index',
-        'Publish /ai-graph.json and declare it in access.shadow_layer.',
+        'Add the Agent Index',
+        'Publish /agent-index.json and declare it in access.agent_index.',
       )
 
     case CHECK.L2A_LLM_URL_PROTOCOL:
@@ -868,7 +868,7 @@ function getRecommendedStep(check: ValidationCheck): RecommendedStep | null {
         check,
         20,
         'Add the HTML discovery link',
-        'Add <link rel="ai-index" href="/.well-known/index-ai.json" type="application/json"> to the homepage head.',
+        'Add <link rel="agent-manifest" href="/.well-known/index-ai.json" type="application/json"> to the homepage head.',
       )
 
     case CHECK.DISCOVERY_HTTP_LINK_HEADER:
@@ -876,15 +876,15 @@ function getRecommendedStep(check: ValidationCheck): RecommendedStep | null {
         check,
         21,
         'Add the HTTP Link discovery header',
-        'Add Link: </.well-known/index-ai.json>; rel="ai-index"; type="application/json".',
+        'Add Link: </.well-known/index-ai.json>; rel="agent-manifest"; type="application/json".',
       )
 
     case CHECK.DISCOVERY_ROBOTS_AI_INDEX:
       return step(
         check,
         22,
-        'Add the robots.txt AI-Index hint',
-        'Add AI-Index: /.well-known/index-ai.json to robots.txt.',
+        'Add the robots.txt Agent-Manifest hint',
+        'Add Agent-Manifest: /.well-known/index-ai.json to robots.txt.',
       )
 
     case CHECK.DISCOVERY_LLMS_TXT_CONTENT_TYPE:
@@ -984,8 +984,8 @@ function renderMetrics(metrics: ValidationMetrics): string {
   <div class="metrics-grid">
     ${renderMetric('Manifest found', metrics.manifest_found)}
     ${renderMetric('Manifest schema valid', metrics.manifest_schema_valid)}
-    ${renderMetric('Shadow layer found', metrics.shadow_layer_found)}
-    ${renderMetric('Shadow schema valid', metrics.shadow_layer_schema_valid)}
+    ${renderMetric('Agent index found', metrics.agent_index_found)}
+    ${renderMetric('Agent index schema valid', metrics.agent_index_schema_valid)}
     ${renderMetric('Total nodes', metrics.total_nodes)}
     ${renderMetric('Nodes with llm_url', metrics.nodes_with_llm_url)}
     ${renderMetric('Nodes with content_chars', metrics.nodes_with_content_chars)}
@@ -1142,11 +1142,11 @@ function getInterpretation(result: ValidationResult): string {
 
 function getConformanceHint(conformance: ValidationResult['conformance']): string {
   if (conformance === 'level-2a') {
-    return 'Manifest and Shadow Index structure reached the current implemented Level 2a checks.'
+    return 'Manifest and Agent Index structure reached the current implemented Level 2a checks.'
   }
 
   if (conformance === 'level-1') {
-    return 'A Level 1 manifest is present; Shadow Index and endpoint readiness may still need work.'
+    return 'A Level 1 manifest is present; Agent Index and endpoint readiness may still need work.'
   }
 
   return 'Level 1 required checks did not pass.'

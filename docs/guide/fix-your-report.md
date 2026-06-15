@@ -44,9 +44,9 @@ The manifest should describe the site identity, freshness, and available
 
 Add the discovery hints that fit your deployment:
 
-- a homepage `<link rel="ai-index">` element
+- a homepage `<link rel="agent-manifest">` element
 - an HTTP `Link` header
-- an `AI-Index` hint in `robots.txt`
+- an `Agent-Manifest` hint in `robots.txt`
 - a `/llms.txt` bridge that points to the AI Manifest
 
 Discovery warnings do not replace the manifest itself. They help agents and
@@ -54,8 +54,8 @@ tools find it.
 
 ## If the Agent Index is missing
 
-Add `/ai-graph.json` and declare it in the AI Manifest under
-`access.shadow_layer`.
+Add `/agent-index.json` and declare it in the AI Manifest under
+`access.agent_index`.
 
 The Agent Index should list public pages or resources that have clean
 agent-facing content.

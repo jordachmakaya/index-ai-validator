@@ -76,8 +76,8 @@ function createMetrics(
   return {
     manifest_found: hasPassingCheck(checks, CHECK.L1_MANIFEST_FOUND),
     manifest_schema_valid: hasPassingCheck(checks, CHECK.L1_MANIFEST_SCHEMA_VALID),
-    shadow_layer_found: hasPassingCheck(checks, CHECK.L2A_SHADOW_FOUND),
-    shadow_layer_schema_valid: hasPassingCheck(checks, CHECK.L2A_SHADOW_SCHEMA_VALID),
+    agent_index_found: hasPassingCheck(checks, CHECK.L2A_AGENT_INDEX_FOUND),
+    agent_index_schema_valid: hasPassingCheck(checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID),
     total_nodes: totalNodes,
     nodes_with_llm_url: nodesWithLlmUrl,
     nodes_with_content_chars: nodesWithContentChars,
@@ -101,8 +101,8 @@ function getConformance(
   if (
     metrics.manifest_found
     && metrics.manifest_schema_valid
-    && metrics.shadow_layer_found
-    && metrics.shadow_layer_schema_valid
+    && metrics.agent_index_found
+    && metrics.agent_index_schema_valid
     && metrics.total_nodes > 0
     && metrics.nodes_with_llm_url === metrics.total_nodes
     && metrics.valid_clean_endpoints === metrics.total_nodes

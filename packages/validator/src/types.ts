@@ -41,8 +41,8 @@ export type ValidationSummary = {
 export type ValidationMetrics = {
   manifest_found: boolean
   manifest_schema_valid: boolean
-  shadow_layer_found: boolean
-  shadow_layer_schema_valid: boolean
+  agent_index_found: boolean
+  agent_index_schema_valid: boolean
   total_nodes: number
   nodes_with_llm_url: number
   nodes_with_content_chars: number
@@ -103,7 +103,7 @@ export type IndexAiManifest = {
     params?: string[]
   }>
   access?: {
-    shadow_layer?: string
+    agent_index?: string
     llms_txt?: string
     mcp_server?: string
     mcp_auth?: string

@@ -21,12 +21,12 @@ flowchart TD
 
 ## Homepage HTML Link
 
-`DISCOVERY_HTML_LINK` checks the homepage HTML for an explicit `ai-index` link.
+`DISCOVERY_HTML_LINK` checks the homepage HTML for an explicit `agent-manifest` link.
 
 Recommended hint:
 
 ```html
-<link rel="ai-index" href="/.well-known/index-ai.json" type="application/json">
+<link rel="agent-manifest" href="/.well-known/index-ai.json" type="application/json">
 ```
 
 If the hint is present, the check passes. If it is missing or the homepage
@@ -35,23 +35,23 @@ cannot be fetched, the check warns.
 ## HTTP Link Header
 
 `DISCOVERY_HTTP_LINK_HEADER` checks the homepage response headers for an
-`ai-index` link.
+`agent-manifest` link.
 
 Recommended header:
 
 ```http
-Link: </.well-known/index-ai.json>; rel="ai-index"; type="application/json"
+Link: </.well-known/index-ai.json>; rel="agent-manifest"; type="application/json"
 ```
 
 If the header is present, the check passes. If it is missing or the homepage
 cannot be fetched, the check warns.
 
-## robots.txt AI-Index Hint
+## robots.txt Agent-Manifest Hint
 
 `DISCOVERY_ROBOTS_AI_INDEX` checks `/robots.txt` for:
 
 ```txt
-AI-Index: /.well-known/index-ai.json
+Agent-Manifest: /.well-known/index-ai.json
 ```
 
 This is a discovery hint. It does not replace crawler rules and does not create
@@ -75,7 +75,7 @@ Content-Type: text/plain; charset=utf-8
 Recommended text:
 
 ```txt
-- AI-Index: /.well-known/index-ai.json
+- Agent-Manifest: /.well-known/index-ai.json
 ```
 
 Mentioning `/.well-known/index-ai.json` directly also satisfies the bridge

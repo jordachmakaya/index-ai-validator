@@ -53,8 +53,8 @@ Top-level fields:
   "metrics": {
     "manifest_found": true,
     "manifest_schema_valid": true,
-    "shadow_layer_found": true,
-    "shadow_layer_schema_valid": true,
+    "agent_index_found": true,
+    "agent_index_schema_valid": true,
     "total_nodes": 6,
     "nodes_with_llm_url": 6,
     "nodes_with_content_chars": 6,
