@@ -79,7 +79,7 @@ Summary:
 
 Metrics:
 - manifest_found: true
-- shadow_layer_found: true
+- agent_index_found: true
 - total_nodes: 6
 - valid_clean_endpoints: 6
 - valid_content_chars: 6

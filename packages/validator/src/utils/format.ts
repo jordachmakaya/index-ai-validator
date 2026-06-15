@@ -24,7 +24,7 @@ export function formatHumanResult(
     '',
     'Metrics:',
     `- manifest_found: ${String(result.metrics.manifest_found)}`,
-    `- shadow_layer_found: ${String(result.metrics.shadow_layer_found)}`,
+    `- agent_index_found: ${String(result.metrics.agent_index_found)}`,
     `- total_nodes: ${result.metrics.total_nodes}`,
     `- valid_clean_endpoints: ${result.metrics.valid_clean_endpoints}`,
     `- valid_content_chars: ${result.metrics.valid_content_chars}`,

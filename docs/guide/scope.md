@@ -9,7 +9,7 @@ The validator is honest by design. It measures a specific, public layer and repo
 The current package validates `index-ai` Level 1 and Level 2a through `validateIndexAi()` and the `index-ai` CLI:
 
 - Level 1 AI Manifest: canonical fetch at `/.well-known/index-ai.json`, fallback at `/index-ai.json` (with a warning), JSON content type, JSON parse, schema shape, and an `identity.domain` host check
-- The manifest `access.shadow_layer` declaration
+- The manifest `access.agent_index` declaration
 - Agent Index graph: fetch, JSON content type, JSON parse, schema, `nodes` array, and rejection of the deprecated `pages` array
 - Per-node `llm_url`: structural validation, fetch, and clean endpoint content type (`text/markdown` or `text/plain`)
 - Hard HTML leak detection, with tolerated soft inline markup reported as a warning

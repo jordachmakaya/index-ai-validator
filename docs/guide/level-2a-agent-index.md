@@ -11,7 +11,7 @@ the `index-ai` CLI.
 
 Level 2a validation currently covers:
 
-- manifest `access.shadow_layer`
+- manifest `access.agent_index`
 - Agent Index graph fetch
 - graph JSON content-type check
 - graph JSON parse check
@@ -34,19 +34,19 @@ Level 2a validation currently covers:
 The AI Manifest declares the Agent Index with:
 
 ```txt
-access.shadow_layer
+access.agent_index
 ```
 
 When the manifest uses this value:
 
 ```txt
-/ai-graph.json
+/agent-index.json
 ```
 
 the validator resolves it against the target origin and fetches that graph.
 
-`access.shadow_layer` is the current manifest field name for compatibility with
-the implemented Level 2a schema. The public concept is Agent Index.
+`access.agent_index` is the manifest field name that points to the Agent Index
+graph.
 
 ## Graph shape
 
@@ -147,7 +147,7 @@ NFC before counting.
 
 ```mermaid
 flowchart TD
-  A["Manifest access.shadow_layer"] --> B["Fetch Agent Index graph"]
+  A["Manifest access.agent_index"] --> B["Fetch Agent Index graph"]
   B --> C["Validate nodes"]
   C --> D["Fetch llm_url"]
   D --> E["Check content type"]

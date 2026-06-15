@@ -40,8 +40,8 @@ describe('normalizeTarget', () => {
 
 describe('resolveUrl', () => {
   test('resolves relative paths against the target URL', () => {
-    expect(resolveUrl('/ai-graph.json', 'https://example.com/docs/page')).toBe(
-      'https://example.com/ai-graph.json',
+    expect(resolveUrl('/agent-index.json', 'https://example.com/docs/page')).toBe(
+      'https://example.com/agent-index.json',
     )
   })
 })

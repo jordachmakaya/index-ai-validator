@@ -49,7 +49,7 @@ const config = withMermaid(
           text: 'What each check means',
           items: [
             { text: 'Level 1 Manifest', link: '/guide/level-1-manifest' },
-            { text: 'Level 2a Agent Index', link: '/guide/level-2a-shadow-index' },
+            { text: 'Level 2a Agent Index', link: '/guide/level-2a-agent-index' },
             { text: 'content_chars', link: '/guide/content-chars' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Discovery', link: '/guide/discovery' },

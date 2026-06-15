@@ -49,16 +49,16 @@ function createHomeDiscoveryChecks(response: HttpResult): ValidationCheck[] {
         message: 'The homepage could not be fetched to inspect the HTTP Link discovery hint.',
         url: response.finalUrl,
         details,
-        fix: 'Serve the homepage successfully and include a Link header with rel="ai-index".',
+        fix: 'Serve the homepage successfully and include a Link header with rel="agent-manifest".',
       }),
       createCheck({
         code: CHECK.DISCOVERY_HTML_LINK,
         severity: 'warn',
         requirement: 'should',
-        message: 'The homepage could not be fetched to inspect the HTML ai-index link.',
+        message: 'The homepage could not be fetched to inspect the HTML agent-manifest link.',
         url: response.finalUrl,
         details,
-        fix: 'Serve the homepage successfully and add <link rel="ai-index" href="/.well-known/index-ai.json"> in the head.',
+        fix: 'Serve the homepage successfully and add <link rel="agent-manifest" href="/.well-known/index-ai.json"> in the head.',
       }),
     ]
   }
@@ -77,7 +77,7 @@ function createHttpLinkHeaderCheck(response: HttpResult): ValidationCheck {
       code: CHECK.DISCOVERY_HTTP_LINK_HEADER,
       severity: 'pass',
       requirement: 'should',
-      message: 'The homepage HTTP Link header advertises rel="ai-index".',
+      message: 'The homepage HTTP Link header advertises rel="agent-manifest".',
       url: response.finalUrl,
       details: { link_header: linkHeader },
     })
@@ -87,9 +87,9 @@ function createHttpLinkHeaderCheck(response: HttpResult): ValidationCheck {
     code: CHECK.DISCOVERY_HTTP_LINK_HEADER,
     severity: 'warn',
     requirement: 'should',
-    message: 'The homepage HTTP Link header does not advertise rel="ai-index".',
+    message: 'The homepage HTTP Link header does not advertise rel="agent-manifest".',
     url: response.finalUrl,
-    fix: 'Add a Link header such as </.well-known/index-ai.json>; rel="ai-index"; type="application/json".',
+    fix: 'Add a Link header such as </.well-known/index-ai.json>; rel="agent-manifest"; type="application/json".',
   })
 }
 
@@ -99,7 +99,7 @@ function createHtmlLinkCheck(response: HttpResult): ValidationCheck {
       code: CHECK.DISCOVERY_HTML_LINK,
       severity: 'pass',
       requirement: 'should',
-      message: 'The homepage HTML contains a rel="ai-index" link.',
+      message: 'The homepage HTML contains a rel="agent-manifest" link.',
       url: response.finalUrl,
     })
   }
@@ -108,9 +108,9 @@ function createHtmlLinkCheck(response: HttpResult): ValidationCheck {
     code: CHECK.DISCOVERY_HTML_LINK,
     severity: 'warn',
     requirement: 'should',
-    message: 'The homepage HTML does not contain a rel="ai-index" link.',
+    message: 'The homepage HTML does not contain a rel="agent-manifest" link.',
     url: response.finalUrl,
-    fix: 'Add <link rel="ai-index" href="/.well-known/index-ai.json" type="application/json"> to the homepage head.',
+    fix: 'Add <link rel="agent-manifest" href="/.well-known/index-ai.json" type="application/json"> to the homepage head.',
   })
 }
 
@@ -120,10 +120,10 @@ function createRobotsCheck(response: HttpResult): ValidationCheck {
       code: CHECK.DISCOVERY_ROBOTS_AI_INDEX,
       severity: 'warn',
       requirement: 'should',
-      message: 'robots.txt could not be fetched for the AI-Index discovery hint.',
+      message: 'robots.txt could not be fetched for the Agent-Manifest discovery hint.',
       url: response.finalUrl,
       details: createHttpFailureDetails(response),
-      fix: 'Serve /robots.txt and include AI-Index: /.well-known/index-ai.json as a discovery hint.',
+      fix: 'Serve /robots.txt and include Agent-Manifest: /.well-known/index-ai.json as a discovery hint.',
     })
   }
 
@@ -132,7 +132,7 @@ function createRobotsCheck(response: HttpResult): ValidationCheck {
       code: CHECK.DISCOVERY_ROBOTS_AI_INDEX,
       severity: 'pass',
       requirement: 'should',
-      message: 'robots.txt contains an AI-Index discovery hint.',
+      message: 'robots.txt contains an Agent-Manifest discovery hint.',
       url: response.finalUrl,
     })
   }
@@ -141,9 +141,9 @@ function createRobotsCheck(response: HttpResult): ValidationCheck {
     code: CHECK.DISCOVERY_ROBOTS_AI_INDEX,
     severity: 'warn',
     requirement: 'should',
-    message: 'robots.txt does not contain an AI-Index discovery hint.',
+    message: 'robots.txt does not contain an Agent-Manifest discovery hint.',
     url: response.finalUrl,
-    fix: 'Add AI-Index: /.well-known/index-ai.json to robots.txt as a discovery hint.',
+    fix: 'Add Agent-Manifest: /.well-known/index-ai.json to robots.txt as a discovery hint.',
   })
 }
 
@@ -165,7 +165,7 @@ function createLlmsTxtChecks(response: HttpResult): ValidationCheck[] {
         code: CHECK.DISCOVERY_LLMS_TXT_BRIDGE,
         severity: 'warn',
         requirement: 'should',
-        message: '/llms.txt could not be fetched to inspect the AI-Index bridge.',
+        message: '/llms.txt could not be fetched to inspect the Agent-Manifest bridge.',
         url: response.finalUrl,
         details,
         fix: 'Serve /llms.txt and reference /.well-known/index-ai.json from it.',
@@ -219,25 +219,25 @@ function createLlmsTxtBridgeCheck(response: HttpResult): ValidationCheck {
     requirement: 'should',
     message: '/llms.txt does not reference the AI Manifest.',
     url: response.finalUrl,
-    fix: 'Add an AI-Index entry that references /.well-known/index-ai.json.',
+    fix: 'Add an Agent-Manifest entry that references /.well-known/index-ai.json.',
   })
 }
 
 function hasAiIndexLinkHeader(value: string): boolean {
-  return /rel=(?:"ai-index"|'ai-index'|ai-index)/i.test(value)
+  return /rel=(?:"agent-manifest"|'agent-manifest'|agent-manifest)/i.test(value)
     && value.includes(MANIFEST_PATH)
 }
 
 function hasAiIndexHtmlLink(value: string): boolean {
-  return /<link\b(?=[^>]*\brel=["']ai-index["'])(?=[^>]*\bhref=["'][^"']*index-ai\.json["'])[^>]*>/i.test(value)
+  return /<link\b(?=[^>]*\brel=["']agent-manifest["'])(?=[^>]*\bhref=["'][^"']*index-ai\.json["'])[^>]*>/i.test(value)
 }
 
 function hasRobotsAiIndex(value: string): boolean {
-  return /^AI-Index:\s*(?:https?:\/\/\S+)?\/\.well-known\/index-ai\.json\s*$/im.test(value)
+  return /^Agent-Manifest:\s*(?:https?:\/\/\S+)?\/\.well-known\/index-ai\.json\s*$/im.test(value)
 }
 
 function hasLlmsTxtBridge(value: string): boolean {
-  return value.includes(MANIFEST_PATH) || /^-?\s*AI-Index:/im.test(value)
+  return value.includes(MANIFEST_PATH) || /^-?\s*Agent-Manifest:/im.test(value)
 }
 
 function isPlainTextContentType(contentType: string): boolean {

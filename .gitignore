@@ -17,7 +17,7 @@ docs/.vitepress/cache/
 # package outputs
 packages/*/dist/
 packages/*/coverage/
-
+docs/.vitepress/dist
 # logs
 *.log
 npm-debug.log*

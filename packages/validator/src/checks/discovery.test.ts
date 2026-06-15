@@ -38,7 +38,7 @@ function validManifest(): Record<string, unknown> {
       refresh_frequency: 'daily',
     },
     access: {
-      shadow_layer: '/ai-graph.json',
+      agent_index: '/agent-index.json',
       llms_txt: '/llms.txt',
     },
   }
@@ -89,10 +89,10 @@ function completeRoutes(homeRoute: RouteResponse): Record<string, RouteResponse>
   return {
     '/': homeRoute,
     '/.well-known/index-ai.json': jsonRoute(validManifest()),
-    '/ai-graph.json': jsonRoute(validGraph()),
+    '/agent-index.json': jsonRoute(validGraph()),
     '/clean/home.md': textRoute('Home clean endpoint'),
-    '/robots.txt': textRoute('AI-Index: /.well-known/index-ai.json'),
-    '/llms.txt': textRoute('- AI-Index: /.well-known/index-ai.json'),
+    '/robots.txt': textRoute('Agent-Manifest: /.well-known/index-ai.json'),
+    '/llms.txt': textRoute('- Agent-Manifest: /.well-known/index-ai.json'),
   }
 }
 
@@ -176,12 +176,12 @@ afterEach(async () => {
 })
 
 describe('validateDiscovery', () => {
-  it('passes all discovery hint checks when homepage, robots.txt, and llms.txt advertise AI-Index', async () => {
+  it('passes all discovery hint checks when homepage, robots.txt, and llms.txt advertise Agent-Manifest', async () => {
     const server = await startServer(completeRoutes({
-      body: '<html><head><link rel="ai-index" href="/.well-known/index-ai.json" type="application/json"></head></html>',
+      body: '<html><head><link rel="agent-manifest" href="/.well-known/index-ai.json" type="application/json"></head></html>',
       contentType: 'text/html; charset=utf-8',
       headers: {
-        link: '</.well-known/index-ai.json>; rel=ai-index; type=application/json',
+        link: '</.well-known/index-ai.json>; rel=agent-manifest; type=application/json',
       },
     }))
 
@@ -209,9 +209,9 @@ describe('validateDiscovery', () => {
 
   it('warns when llms.txt is served with the wrong content type', async () => {
     const server = await startServer({
-      '/': textRoute('<link rel="ai-index" href="/.well-known/index-ai.json">', 'text/html; charset=utf-8'),
-      '/robots.txt': textRoute('AI-Index: /.well-known/index-ai.json'),
-      '/llms.txt': textRoute('- AI-Index: /.well-known/index-ai.json', 'text/html; charset=utf-8'),
+      '/': textRoute('<link rel="agent-manifest" href="/.well-known/index-ai.json">', 'text/html; charset=utf-8'),
+      '/robots.txt': textRoute('Agent-Manifest: /.well-known/index-ai.json'),
+      '/llms.txt': textRoute('- Agent-Manifest: /.well-known/index-ai.json', 'text/html; charset=utf-8'),
     })
 
     const checks = await validateDiscovery(createOptions(server.origin))

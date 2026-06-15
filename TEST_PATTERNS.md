@@ -122,7 +122,7 @@ Good:
 
 ```ts
 describe('validateIndexAi', () => {
-  it('returns level-2a when manifest and shadow index checks pass', async () => {})
+  it('returns level-2a when manifest and agent index checks pass', async () => {})
   it('returns passed false when a clean endpoint leaks a secret', async () => {})
   it('keeps discovery warnings non-blocking by default', async () => {})
 })
@@ -195,13 +195,13 @@ function findCheck(checks: ValidationCheck[], code: string): ValidationCheck {
   return check
 }
 
-it('fails when the Shadow Index graph is missing', async () => {
+it('fails when the Agent Index graph is missing', async () => {
   // Arrange
   const server = await createTestServer({
     '/.well-known/index-ai.json': {
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(validManifest({ shadowLayer: '/missing.json' })),
+      body: JSON.stringify(validManifest({ agentIndex: '/missing.json' })),
     },
   })
 
@@ -219,11 +219,11 @@ it('fails when the Shadow Index graph is missing', async () => {
     })
 
     // Assert
-    const check = findCheck(result.checks, 'L2A_SHADOW_FOUND')
+    const check = findCheck(result.checks, 'L2A_AGENT_INDEX_FOUND')
 
     expect(check.severity).toBe('fail')
     expect(check.requirement).toBe('must')
-    expect(check.message).toContain('Shadow Index')
+    expect(check.message).toContain('Agent Index')
     expect(result.passed).toBe(false)
   } finally {
     await server.close()
@@ -250,14 +250,14 @@ Schema tests must cover valid data and specific invalid cases.
 Good:
 
 ```ts
-describe('shadowGraphSchema', () => {
+describe('graphSchema', () => {
   it('rejects nodes missing required summary_method', () => {
     // Arrange
     const graph = validGraph()
     delete graph.nodes[0].content.summary_method
 
     // Act
-    const result = validateShadowGraphSchema(graph)
+    const result = validateGraphSchema(graph)
 
     // Assert
     expect(result.valid).toBe(false)
@@ -577,9 +577,9 @@ it('redacts secret-shaped evidence in failure details', () => {
 Discovery tests must verify shallow hints only:
 
 ```txt
-homepage HTML rel="ai-index"
-HTTP Link header rel="ai-index"
-robots.txt AI-Index
+homepage HTML rel="agent-manifest"
+HTTP Link header rel="agent-manifest"
+robots.txt Agent-Manifest
 llms.txt content type
 llms.txt bridge to manifest
 missing hints warn

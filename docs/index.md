@@ -22,13 +22,17 @@ features:
     details: Flags secret-shaped values, sensitive variable names, and private infrastructure references in the public content you expose to agents.
 ---
 
-![index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result](./index-ai-validator_explained.png)
+<div class="hero-media">
+  <video src="/index-ai-validator.mp4" controls autoplay muted loop playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result">
+    Your browser does not support the video tag. The index-ai-validator demo shows a public website validated through the AI Manifest, Agent Index, and clean endpoints to a validation result.
+  </video>
+</div>
 
 ## Most sites are readable by browsers. Is yours readable by agents?
 
 Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a clean layer that says what a site is, where its content lives, how fresh it is, and how much text they will pay tokens for before fetching it.
 
-`index-ai` explores an Agent View through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, an [Agent Index](/guide/level-2a-shadow-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
+`index-ai` explores an Agent View through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, an [Agent Index](/guide/level-2a-agent-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
 `@hardmachinelabs/index-ai-validator` makes that layer testable. One command tells you whether yours works.
 
@@ -56,7 +60,7 @@ Summary:
 
 Metrics:
 - manifest_found: true
-- shadow_layer_found: true
+- agent_index_found: true
 - total_nodes: 6
 - valid_clean_endpoints: 6
 - valid_content_chars: 6
@@ -74,7 +78,7 @@ Checks Level 1 + Level 2a today. Not certification, not a traffic promise. → [
 ## What it checks
 
 - Level 1 AI Manifest: fetch, JSON content type, JSON parse, and schema shape
-- The `access.shadow_layer` declaration and the Agent Index graph it points to
+- The `access.agent_index` declaration and the Agent Index graph it points to
 - Level 2a node fields, `llm_url` structure, and clean endpoint content types
 - Hard HTML leaks, with tolerated soft inline markup reported as warnings
 - `content_chars` in `exact` and `max` modes, using Unicode NFC code-point counting
