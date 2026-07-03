@@ -213,14 +213,18 @@ describe('submitScan', () => {
   })
 
   test('retries once after a 429 with Retry-After and succeeds if the retry lands', async () => {
-    vi.useFakeTimers()
+    // Real timers on purpose: faking global setTimeout also breaks Node's
+    // real fetch (undici), which relies on it internally for connection
+    // management — the retry's real fetch would never resolve. A tiny real
+    // Retry-After keeps the wait ~0ms while still proving the client
+    // actually honors the header (fixture detail, not a behavior weakening).
     let requestCount = 0
 
     const server = await startServer((_request, response) => {
       requestCount += 1
 
       if (requestCount === 1) {
-        response.writeHead(429, { 'content-type': 'application/json', 'retry-after': '2' })
+        response.writeHead(429, { 'content-type': 'application/json', 'retry-after': '0' })
         response.end(JSON.stringify(SCAN_429_ERROR))
         return
       }
@@ -229,10 +233,7 @@ describe('submitScan', () => {
     })
 
     try {
-      const resultPromise = submitScan(TARGET_URL, { baseUrl: server.origin })
-
-      await vi.advanceTimersByTimeAsync(2_100)
-      const result = await resultPromise
+      const result = await submitScan(TARGET_URL, { baseUrl: server.origin })
 
       expect(result.status).toBe('queued')
       expect(requestCount).toBe(2)
@@ -298,21 +299,19 @@ describe('pollScan', () => {
   })
 
   test('fails cleanly with ScanRateLimitError when the retry also gets a 429 (no infinite loop, no multi-attempt backoff)', async () => {
-    vi.useFakeTimers()
+    // Real timers on purpose: see the matching comment on the submitScan
+    // 429-retry test above — fake timers break undici's real fetch, hanging
+    // the retry indefinitely. A tiny real Retry-After keeps this fast.
     let requestCount = 0
 
     const server = await startServer((_request, response) => {
       requestCount += 1
-      response.writeHead(429, { 'content-type': 'application/json', 'retry-after': '1' })
+      response.writeHead(429, { 'content-type': 'application/json', 'retry-after': '0' })
       response.end(JSON.stringify(SCAN_429_ERROR))
     })
 
     try {
-      const resultPromise = pollScan(SCAN_ID, { baseUrl: server.origin })
-      const assertion = expect(resultPromise).rejects.toBeInstanceOf(ScanRateLimitError)
-
-      await vi.advanceTimersByTimeAsync(1_100)
-      await assertion
+      await expect(pollScan(SCAN_ID, { baseUrl: server.origin })).rejects.toBeInstanceOf(ScanRateLimitError)
 
       expect(requestCount).toBe(2)
     }
