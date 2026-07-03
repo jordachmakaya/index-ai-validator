@@ -1,3 +1,5 @@
+import type { ScanProgressStep } from './client/scanner-client'
+
 export type Severity = 'pass' | 'warn' | 'fail'
 
 export type RequirementKind = 'must' | 'should' | 'heuristic' | 'experimental'
@@ -139,4 +141,13 @@ export type AiGraphNode = {
     refresh_frequency?: string
     count?: number
   }
+}
+
+export type ScanOptions = {
+  target: string
+  baseUrl?: string
+  timeoutMs?: number
+  intervalMs?: number
+  budgetMs?: number
+  onProgress?: (progress: { currentStep: ScanProgressStep }) => void
 }
