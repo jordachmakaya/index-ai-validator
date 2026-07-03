@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { validateGraphSchema, validateManifestSchema } from './schemas'
+import { validateGraphSchema, validateManifestSchema, validateScanResult } from './schemas'
 
 function validManifest(): Record<string, unknown> {
   return {
@@ -55,6 +55,41 @@ function validGraph(): Record<string, unknown> {
         },
       },
     ],
+  }
+}
+
+// Real "done" fixture from CONTRACT_SCANNER.md §9 (result section).
+function validScanResult(): Record<string, unknown> {
+  return {
+    url: 'https://example.com/',
+    score: 35,
+    verdict: 'Agent-readiness blocked or weak',
+    dimensions: [
+      { key: 'access', score: 0, max: 20 },
+      { key: 'extractability', score: 15, max: 30 },
+      { key: 'citability', score: 0, max: 20 },
+      { key: 'safety', score: 20, max: 20 },
+      { key: 'agent_layer', score: 0, max: 10 },
+    ],
+    findings: [
+      {
+        id: 'restore-public-access',
+        severity: 'P0',
+        title: 'Restore public access for the audited URL',
+        effort: 'medium',
+      },
+      {
+        id: 'add-llms-txt',
+        severity: 'P1',
+        title: 'Add a useful /llms.txt entrypoint',
+        effort: 'small',
+      },
+    ],
+    noiseRatio: 0.9952,
+    csrGapPercent: 98.1,
+    renderedComparison: { status: 'severe-gap' },
+    engineVersion: '1.0.0',
+    schemaVersion: '1.0',
   }
 }
 
@@ -339,6 +374,98 @@ describe('validateGraphSchema', () => {
         }),
       ]),
     )
+  })
+})
+
+describe('validateScanResult', () => {
+  it('accepts the real done fixture from CONTRACT_SCANNER.md §9', () => {
+    const result = validateScanResult(validScanResult())
+
+    expect(result.valid).toBe(true)
+    if (!result.valid) {
+      throw new Error('Expected valid scan result')
+    }
+
+    expect(result.result.url).toBe('https://example.com/')
+    expect(result.result.schemaVersion).toBe('1.0')
+  })
+
+  it('returns an explicit error instead of throwing when a required field is missing', () => {
+    const payload = validScanResult()
+    delete payload.score
+
+    expect(() => validateScanResult(payload)).not.toThrow()
+
+    const result = validateScanResult(payload)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid scan result')
+    }
+
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          path: '/score',
+          keyword: 'required',
+        }),
+      ]),
+    )
+  })
+
+  it('rejects a dimensions array that does not contain exactly the 5 expected keys', () => {
+    const payload = validScanResult()
+    payload.dimensions = [
+      { key: 'access', score: 0, max: 20 },
+      { key: 'extractability', score: 15, max: 30 },
+      { key: 'citability', score: 0, max: 20 },
+      { key: 'safety', score: 20, max: 20 },
+      // agent_layer intentionally omitted — only 4 of the 5 required keys present.
+    ]
+
+    const result = validateScanResult(payload)
+
+    expect(result.valid).toBe(false)
+    if (result.valid) {
+      throw new Error('Expected invalid scan result')
+    }
+
+    expect(result.errors.some((error) => error.path.startsWith('/dimensions'))).toBe(true)
+  })
+
+  it('tolerates an unknown additive field without raising an error', () => {
+    const payload = {
+      ...validScanResult(),
+      newField: true,
+    }
+
+    const result = validateScanResult(payload)
+
+    expect(result.valid).toBe(true)
+  })
+
+  it('rejects a major schemaVersion mismatch with an error distinct from a missing-field error', () => {
+    const versionMismatchPayload = {
+      ...validScanResult(),
+      schemaVersion: '2.0',
+    }
+    const missingFieldPayload = validScanResult()
+    delete missingFieldPayload.score
+
+    const versionResult = validateScanResult(versionMismatchPayload)
+    const missingFieldResult = validateScanResult(missingFieldPayload)
+
+    expect(versionResult.valid).toBe(false)
+    expect(missingFieldResult.valid).toBe(false)
+    if (versionResult.valid || missingFieldResult.valid) {
+      throw new Error('Expected both scan results to be invalid')
+    }
+
+    const versionError = versionResult.errors.find((error) => error.path === '/schemaVersion')
+
+    expect(versionError).toBeDefined()
+    expect(versionError?.keyword).not.toBe('required')
+    expect(missingFieldResult.errors.some((error) => error.path === '/schemaVersion')).toBe(false)
   })
 })
 
