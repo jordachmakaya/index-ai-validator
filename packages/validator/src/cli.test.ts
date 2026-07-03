@@ -1,14 +1,16 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { mkdir, mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { CHECK, SCHEMA_VERSION } from './constants'
-import { runCli, type CliValidationRunner } from './cli'
-import type { ValidationCheck, ValidationResult, ValidatorOptions } from './types'
+import { runCli, type CliScanRunner, type CliValidationRunner } from './cli'
+import { ScanRequestError, ScanTimeoutError, type ScanStatus } from './client/scanner-client'
+import { ScanFailedError, type ScanOutcome } from './scan'
+import type { ScanOptions, ValidationCheck, ValidationResult, ValidatorOptions } from './types'
 import { countContentChars } from './utils/content-chars'
 
 type RouteResponse = {
@@ -163,6 +165,62 @@ function validationResult(target: string, overrides?: Partial<ValidationResult>)
   return {
     ...result,
     ...overrides,
+  }
+}
+
+function scanStatusDone(overrides?: Partial<ScanStatus>): ScanStatus {
+  return {
+    scanId: 'scan_123',
+    status: 'done',
+    submittedAt: '2026-07-03T00:00:00.000Z',
+    completedAt: '2026-07-03T00:00:10.000Z',
+    result: {
+      url: 'https://example.com',
+      score: 82,
+      verdict: 'good',
+      dimensions: [],
+      findings: [
+        { id: 'F1', severity: 'P0', title: 'Missing manifest' },
+        { id: 'F2', severity: 'P1', title: 'Weak clean endpoint' },
+      ],
+      noiseRatio: null,
+      engineVersion: '1.0.0',
+      schemaVersion: '1.0',
+    },
+    meta: {
+      links: {
+        self: 'https://agent-view.com/scans/scan_123',
+        shareUrl: 'https://agent-view.com/s/scan_123',
+        audit: 'https://agent-view.com/audit/scan_123',
+      },
+    },
+    ...overrides,
+  }
+}
+
+function scanOutcome(overrides?: Partial<ScanStatus>): ScanOutcome {
+  return {
+    status: scanStatusDone(overrides),
+    auditLinks: {
+      html: 'https://agent-view.com/audit/scan_123?src=cli-report',
+      terminal: 'https://agent-view.com/audit/scan_123?src=cli-terminal',
+    },
+  }
+}
+
+function omitOnProgress(options: ScanOptions): Omit<ScanOptions, 'onProgress'> {
+  const { onProgress, ...rest } = options
+
+  return rest
+}
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await stat(path)
+    return true
+  }
+  catch {
+    return false
   }
 }
 
@@ -934,6 +992,202 @@ describe('runCli', () => {
     expect(result.stdout).toContain(CHECK.L2A_AGENT_INDEX_FOUND)
     expect(result.stdout).toContain('Fix: Add access.agent_index to the AI Manifest and serve the graph.')
     expect(result.stdout).toContain('Fix all fail checks')
+  })
+})
+
+describe('runCli scan subcommand', () => {
+  it('prints the raw scanner status as JSON for scan --json', async () => {
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async () => outcome
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toBe(`${JSON.stringify(outcome.status, null, 2)}\n`)
+    expect(result.stdout).not.toContain('\u001B[')
+  })
+
+  it('prints a compact human summary for scan without --json', async () => {
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async () => outcome
+
+    const result = await runCli(['scan', 'https://example.com'], { scan })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('https://example.com')
+    expect(result.stdout).toContain('Score: 82')
+    expect(result.stdout).toContain('Verdict: good')
+    expect(result.stdout).toContain('P0: 1')
+    expect(result.stdout).toContain('P1: 1')
+    expect(result.stdout).toContain('P2: 0')
+    expect(result.stdout.trim().startsWith('{')).toBe(false)
+  })
+
+  it('always prints the terminal audit link on stderr after a done scan, with or without --json', async () => {
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async () => outcome
+
+    const withJson = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const withoutJson = await runCli(['scan', 'https://example.com'], { scan })
+
+    for (const result of [withJson, withoutJson]) {
+      expect(result.stderr).toContain(outcome.auditLinks.terminal)
+      expect(result.stderr).not.toContain(outcome.auditLinks.html)
+    }
+  })
+
+  it('accepts --api-key without forwarding it to scan options', async () => {
+    const capturedOptions: ScanOptions[] = []
+    const scan: CliScanRunner = async (options) => {
+      capturedOptions.push(options)
+      return scanOutcome()
+    }
+
+    const withoutKey = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const withKey = await runCli(
+      ['scan', 'https://example.com', '--json', '--api-key', 'secret-key'],
+      { scan },
+    )
+
+    expect(withoutKey.exitCode).toBe(0)
+    expect(withKey.exitCode).toBe(0)
+    expect(capturedOptions).toHaveLength(2)
+    expect(capturedOptions[1]).not.toHaveProperty('apiKey')
+    expect(omitOnProgress(capturedOptions[1] as ScanOptions)).toStrictEqual(
+      omitOnProgress(capturedOptions[0] as ScanOptions),
+    )
+  })
+
+  it('writes a minimal HTML report and keeps stdout JSON-only for scan --json --html', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const outcome = scanOutcome()
+      const scan: CliScanRunner = async () => outcome
+
+      const result = await runCli(
+        ['scan', 'https://example.com', '--json', '--html', reportPath],
+        { scan },
+      )
+      const html = await readFile(reportPath, 'utf8')
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toBe(`${JSON.stringify(outcome.status, null, 2)}\n`)
+      expect(html).toContain('https://example.com')
+      expect(html).toContain(outcome.auditLinks.html)
+      expect(html).not.toContain(outcome.auditLinks.terminal)
+    })
+  })
+
+  it('rejects an invalid --html path before ever calling scan', async () => {
+    await withTempDir(async (directory) => {
+      let scanCalls = 0
+      const scan: CliScanRunner = async () => {
+        scanCalls += 1
+        return scanOutcome()
+      }
+
+      const emptyPath = await runCli(['scan', 'https://example.com', '--html', ''], { scan })
+      const nonHtmlPath = await runCli(
+        ['scan', 'https://example.com', '--html', join(directory, 'report.txt')],
+        { scan },
+      )
+
+      expect(emptyPath.exitCode).not.toBe(0)
+      expect(emptyPath.stdout).toBe('')
+      expect(emptyPath.stderr).toContain('HTML report path must not be empty')
+      expect(nonHtmlPath.exitCode).not.toBe(0)
+      expect(nonHtmlPath.stdout).toBe('')
+      expect(nonHtmlPath.stderr).toContain('HTML report path must end with .html')
+      expect(scanCalls).toBe(0)
+    })
+  })
+
+  it('fails cleanly and writes no HTML report when scan rejects with ScanFailedError', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const scan: CliScanRunner = async () => {
+        throw new ScanFailedError('SCAN-001')
+      }
+
+      const result = await runCli(
+        ['scan', 'https://example.com', '--json', '--html', reportPath],
+        { scan },
+      )
+
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stdout).toBe('')
+      expect(result.stderr).toContain('SCAN-001')
+      expect(await fileExists(reportPath)).toBe(false)
+    })
+  })
+
+  it('fails cleanly and writes no HTML report when scan rejects with a scanner transport error', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const requestError = new ScanRequestError('Scanner request failed with code SCAN-500', 'SCAN-500')
+      const scan: CliScanRunner = async () => {
+        throw requestError
+      }
+
+      const result = await runCli(
+        ['scan', 'https://example.com', '--json', '--html', reportPath],
+        { scan },
+      )
+
+      expect(result.exitCode).not.toBe(0)
+      expect(result.stdout).toBe('')
+      expect(result.stderr).toContain(requestError.message)
+      expect(await fileExists(reportPath)).toBe(false)
+    })
+  })
+
+  it('fails cleanly when scan rejects with a poll timeout error', async () => {
+    const timeoutError = new ScanTimeoutError('Scan polling timed out after 90000ms')
+    const scan: CliScanRunner = async () => {
+      throw timeoutError
+    }
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toContain(timeoutError.message)
+  })
+
+  it('writes scan progress steps to stderr in order and never to stdout', async () => {
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async (options) => {
+      options.onProgress?.({ currentStep: 'fetch' })
+      options.onProgress?.({ currentStep: 'render' })
+      return outcome
+    }
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toContain('Scan progress: fetch')
+    expect(result.stderr).toContain('Scan progress: render')
+    expect(result.stderr.indexOf('Scan progress: fetch')).toBeLessThan(
+      result.stderr.indexOf('Scan progress: render'),
+    )
+    expect(result.stdout).not.toContain('fetch')
+    expect(result.stdout).not.toContain('render')
+  })
+
+  it('forwards --timeout to ScanOptions.timeoutMs', async () => {
+    let capturedOptions: ScanOptions | undefined
+    const scan: CliScanRunner = async (options) => {
+      capturedOptions = options
+      return scanOutcome()
+    }
+
+    const result = await runCli(
+      ['scan', 'https://example.com', '--json', '--timeout', '5000'],
+      { scan },
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(capturedOptions?.timeoutMs).toBe(5000)
   })
 })
 
