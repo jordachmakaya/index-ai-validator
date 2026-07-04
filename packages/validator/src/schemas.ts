@@ -62,6 +62,7 @@ export type ScanResult = {
     title: string
     detail?: string
     effort?: 'small' | 'medium' | 'large'
+    fix_url?: string
   }>
   noiseRatio: number | null
   csrGapPercent?: number | null

@@ -3,8 +3,8 @@
  * type: test
  * title: HTML report format tests
  * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, and Plain Speech constraints.
- * job_ref: T3.1_scan-html-report_tester
- * functions: []
+ * job_ref: T3.9a_scan-finding-cta_tester
+ * functions: [makeScanResult]
  * classes: []
  * inputs: []
  * outputs: []
@@ -249,5 +249,127 @@ describe('formatScanHtmlReport', () => {
 
     // Exclamation mark check (ignoring HTML entities/tags)
     expect(uiText).not.toContain('!')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Helper — builds a minimal valid ScanResult with override support
+// ---------------------------------------------------------------------------
+function makeScanResult(overrides: Partial<{
+  findings: Array<{
+    id: string
+    severity: 'P0' | 'P1' | 'P2'
+    title: string
+    effort?: 'small' | 'medium' | 'large'
+    detail?: string
+    fix_url?: string
+  }>
+  dimensions: Array<{ key: string; score: number; max: number }>
+}> = {}): import('../schemas').ScanResult {
+  return {
+    url: 'https://example.com/',
+    score: 82,
+    verdict: 'Agent-ready',
+    dimensions: overrides.dimensions ?? [
+      { key: 'access', score: 18, max: 20 },
+      { key: 'extractability', score: 28, max: 30 },
+      { key: 'citability', score: 18, max: 20 },
+      { key: 'safety', score: 18, max: 20 },
+      { key: 'agent_layer', score: 0, max: 10 },
+    ],
+    findings: overrides.findings ?? [],
+    noiseRatio: null,
+    engineVersion: '1.0.0',
+    schemaVersion: '1.0',
+  } as import('../schemas').ScanResult
+}
+
+// ---------------------------------------------------------------------------
+// RED tests — T3.9a_scan-finding-cta
+// These tests are expected to FAIL until the implementation is added.
+// ---------------------------------------------------------------------------
+describe('formatScanHtmlReport — findings CTA', () => {
+  it('renders a fix link when the finding has a fix_url', () => {
+    const result = makeScanResult({
+      findings: [
+        {
+          id: 'add-llms-txt',
+          severity: 'P1',
+          title: 'Add a useful /llms.txt entrypoint',
+          effort: 'small',
+          detail: 'A /llms.txt file helps agents.',
+          fix_url: 'https://docs.example.com/llms-txt'
+        }
+      ]
+    })
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    expect(html).toContain('href="https://docs.example.com/llms-txt"')
+  })
+
+  it('does not render a fix link when the finding has no fix_url', () => {
+    const result = makeScanResult({
+      findings: [
+        {
+          id: 'add-llms-txt',
+          severity: 'P1',
+          title: 'Add a useful /llms.txt entrypoint',
+          effort: 'small',
+          detail: 'A /llms.txt file helps agents.'
+          // no fix_url
+        }
+      ]
+    })
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    // Should not contain a dangling empty href
+    expect(html).not.toContain('href=""')
+    expect(html).not.toContain('href="undefined"')
+  })
+
+  it('renders agent-view.com CTA when agent_layer score is 0', () => {
+    const result = makeScanResult({
+      dimensions: [
+        { key: 'access', score: 18, max: 20 },
+        { key: 'extractability', score: 28, max: 30 },
+        { key: 'citability', score: 18, max: 20 },
+        { key: 'safety', score: 18, max: 20 },
+        { key: 'agent_layer', score: 0, max: 10 }
+      ]
+    })
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    expect(html).toContain('agent-view.com')
+    expect(html).toContain('href="https://agent-view.com"')
+  })
+
+  it('does not render agent-view.com CTA when agent_layer score is high', () => {
+    const result = makeScanResult({
+      dimensions: [
+        { key: 'access', score: 18, max: 20 },
+        { key: 'extractability', score: 28, max: 30 },
+        { key: 'citability', score: 18, max: 20 },
+        { key: 'safety', score: 18, max: 20 },
+        { key: 'agent_layer', score: 7, max: 10 }
+      ]
+    })
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    // The CTA pointing to agent-view.com root must not be present
+    // (the audit link containing agent-view.com is expected, but not the promo CTA)
+    expect(html).not.toContain('href="https://agent-view.com"')
+  })
+
+  it('does not use marketing superlatives in agent_layer CTA text', () => {
+    const result = makeScanResult({
+      dimensions: [
+        { key: 'access', score: 10, max: 20 },
+        { key: 'extractability', score: 10, max: 30 },
+        { key: 'citability', score: 5, max: 20 },
+        { key: 'safety', score: 10, max: 20 },
+        { key: 'agent_layer', score: 0, max: 10 }
+      ]
+    })
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    const banned = ['best', 'revolutionary', 'premier', 'amazing', 'powerful', 'leading', 'world-class']
+    for (const word of banned) {
+      expect(html.toLowerCase()).not.toContain(word)
+    }
   })
 })

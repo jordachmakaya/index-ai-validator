@@ -3,8 +3,8 @@
  * type: utility
  * title: HTML validation report formatter
  * description: Formats AI-readiness validation results into a static HTML report with design system tokens and Google Fonts.
- * job_ref: T3.1_scan-html-report
- * functions: [formatHtmlReport, formatScanHtmlReport]
+ * job_ref: T3.9a_scan-finding-cta
+ * functions: [formatHtmlReport, formatScanHtmlReport, renderAgentLayerCta]
  * classes: []
  * inputs: [ValidationResult, ScanResult]
  * outputs: [string]
@@ -1702,6 +1702,42 @@ export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): str
       .readiness-row { align-items: flex-start; flex-direction: column; }
       .readiness-track { width: 100%; }
     }
+    .finding-fix-link {
+      display: inline-block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .finding-fix-link:hover {
+      text-decoration: underline;
+    }
+    .agent-layer-cta {
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--surface-1);
+      border: 1px solid var(--blue);
+      border-radius: var(--r-md);
+    }
+    .agent-layer-cta-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    .agent-layer-cta-desc {
+      font-size: 13px;
+      color: var(--dim);
+      margin-bottom: 10px;
+    }
+    .agent-layer-cta-link {
+      font-size: 13px;
+      color: var(--blue);
+      text-decoration: none;
+    }
+    .agent-layer-cta-link:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -1744,6 +1780,7 @@ export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): str
                     ${f.detail ? `<div class="step-desc">${escapeHtml(f.detail)}</div>` : ''}
                     ${f.effort ? `<div class="step-desc" style="margin-top: 4px; color: var(--dim);">Effort: ${escapeHtml(f.effort)}</div>` : ''}
                     <div class="step-desc" style="margin-top: 2px; font-family: var(--mono); font-size: 10px; color: var(--dim);">ID: ${escapeHtml(f.id)}</div>
+                    ${f.fix_url ? `<a class="finding-fix-link" href="${escapeHtml(f.fix_url)}" target="_blank" rel="noopener noreferrer">Fix this</a>` : ''}
                   </div>
                 </div>`
               }).join('\n')}
@@ -1766,6 +1803,7 @@ export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): str
         </div>
       </section>
 
+      ${renderAgentLayerCta(result.dimensions)}
       ${renderScanDetails(result)}
     </main>
 
@@ -1842,6 +1880,16 @@ function renderScanCta(score: number): string {
     <span class="conf-label">Recommendation</span>
     <span class="conf-value ${escapeHtml(ctaClass)}">${escapeHtml(ctaTitle)}</span>
     <span class="conf-hint">${escapeHtml(ctaDesc)}</span>
+  </div>`
+}
+
+function renderAgentLayerCta(dimensions: Array<{ key: string; score: number; max: number }>): string {
+  const agentLayer = dimensions.find(d => d.key === 'agent_layer')
+  if (!agentLayer || agentLayer.score >= 5) return ''
+  return `<div class="agent-layer-cta">
+    <div class="agent-layer-cta-title">Agent layer not implemented</div>
+    <div class="agent-layer-cta-desc">Your website does not yet expose an agent layer. Agent View provides structured agent-accessible endpoints.</div>
+    <a class="agent-layer-cta-link" href="https://agent-view.com" target="_blank" rel="noopener noreferrer">Learn about the agent layer</a>
   </div>`
 }
 
