@@ -2,9 +2,9 @@
  * @filemeta
  * type: test
  * title: HTML report format tests
- * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, and Plain Speech constraints.
- * job_ref: T3.9a_scan-finding-cta_tester
- * functions: [makeScanResult]
+ * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, Plain Speech, and content-regression snapshots.
+ * job_ref: T3.3_html-regression-tests_tester
+ * functions: [makeScanResult, extractContentText]
  * classes: []
  * inputs: []
  * outputs: []
@@ -18,6 +18,35 @@ import { describe, expect, it } from 'vitest'
 import type { ScanResult } from '../schemas'
 import type { ValidationResult } from '../types'
 import { formatHtmlReport, formatScanHtmlReport } from './html-report'
+
+/**
+ * Test-only helper (T3.3_html-regression-tests) — extracts human-visible text
+ * from a generated HTML report for content-regression snapshots.
+ *
+ * Strips the entire `<style>` block (all CSS/branding) and every remaining
+ * HTML tag, keeping only visible text: titles, verdicts, scores, labels, and
+ * finding details. Snapshots in this file must ONLY ever capture the output
+ * of this function — never raw HTML — so a future visual/CSS-only change
+ * (T3.9) never breaks these tests, and a future content change never passes
+ * unnoticed.
+ */
+function extractContentText(html: string): string {
+  const withoutStyle = html.replace(/<style[\s\S]*?<\/style>/gi, '')
+  const withoutTags = withoutStyle.replace(/<[^>]+>/g, '\n')
+  const decoded = withoutTags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'')
+
+  return decoded
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .join('\n')
+}
 
 describe('formatHtmlReport', () => {
   const targetUrl = 'https://example.com'
@@ -150,6 +179,22 @@ describe('formatHtmlReport', () => {
     expect(html).toMatch(/\.hero-title\s*{[^}]*letter-spacing:\s*-[0-9.]+(px|em)/i)
     expect(html).toMatch(/(h1|h2|h3|\.section-title|\.logo)\s*{[^}]*letter-spacing:\s*-[0-9.]+(px|em)/i)
   })
+
+  // -------------------------------------------------------------------------
+  // Content-regression snapshot — T3.3_html-regression-tests
+  // Captures extracted TEXT only (never raw HTML/CSS), so a future visual/CSS
+  // redesign (T3.9) can freely change markup and styling without breaking
+  // this test, while any real change to the reported content (score,
+  // verdict, checks) is caught immediately.
+  // -------------------------------------------------------------------------
+  it('preserves the extracted text content of formatHtmlReport across visual redesigns', () => {
+    // Act
+    const html = formatHtmlReport(fakeResult)
+    const text = extractContentText(html)
+
+    // Assert
+    expect(text).toMatchSnapshot()
+  })
 })
 
 describe('formatScanHtmlReport', () => {
@@ -250,12 +295,69 @@ describe('formatScanHtmlReport', () => {
     // Exclamation mark check (ignoring HTML entities/tags)
     expect(uiText).not.toContain('!')
   })
+
+  // -------------------------------------------------------------------------
+  // Content-regression snapshot — T3.3_html-regression-tests
+  // Rich, representative ScanResult (mid-range score, all 5 dimensions
+  // filled, findings across P0/P1/P2, one fix_url, agent_layer CTA
+  // triggered). Captures extracted TEXT only — see extractContentText.
+  // -------------------------------------------------------------------------
+  it('preserves the extracted text content of formatScanHtmlReport across visual redesigns', () => {
+    // Arrange
+    const richResult = makeScanResult({
+      score: 62,
+      verdict: 'Agent-readiness partially ready',
+      dimensions: [
+        { key: 'access', score: 14, max: 20 },
+        { key: 'extractability', score: 18, max: 30 },
+        { key: 'citability', score: 12, max: 20 },
+        { key: 'safety', score: 14, max: 20 },
+        { key: 'agent_layer', score: 4, max: 10 },
+      ],
+      findings: [
+        {
+          id: 'restore-public-access',
+          severity: 'P0',
+          title: 'Restore public access for the audited URL',
+          detail: 'The homepage returns a 403 response for automated agent user agents.',
+          effort: 'medium',
+        },
+        {
+          id: 'add-llms-txt',
+          severity: 'P1',
+          title: 'Add a useful /llms.txt entrypoint',
+          detail: 'A /llms.txt file helps agents discover the machine-readable content layer.',
+          effort: 'small',
+          fix_url: 'https://docs.example.com/llms-txt',
+        },
+        {
+          id: 'reduce-boilerplate-noise',
+          severity: 'P2',
+          title: 'Reduce navigation and boilerplate noise ratio',
+          effort: 'large',
+        },
+      ],
+      noiseRatio: 0.42,
+      csrGapPercent: 12.5,
+      renderedComparison: { status: 'gap' },
+    })
+    const auditUrl = 'https://agent-view.com/audit?src=cli-json&scanId=456'
+
+    // Act
+    const html = formatScanHtmlReport(richResult, auditUrl)
+    const text = extractContentText(html)
+
+    // Assert
+    expect(text).toMatchSnapshot()
+  })
 })
 
 // ---------------------------------------------------------------------------
 // Helper — builds a minimal valid ScanResult with override support
 // ---------------------------------------------------------------------------
 function makeScanResult(overrides: Partial<{
+  score: number
+  verdict: string
   findings: Array<{
     id: string
     severity: 'P0' | 'P1' | 'P2'
@@ -265,11 +367,14 @@ function makeScanResult(overrides: Partial<{
     fix_url?: string
   }>
   dimensions: Array<{ key: string; score: number; max: number }>
+  noiseRatio: number | null
+  csrGapPercent: number | null
+  renderedComparison: { status: 'match' | 'gap' | 'severe-gap' | 'unknown' }
 }> = {}): import('../schemas').ScanResult {
   return {
     url: 'https://example.com/',
-    score: 82,
-    verdict: 'Agent-ready',
+    score: overrides.score ?? 82,
+    verdict: overrides.verdict ?? 'Agent-ready',
     dimensions: overrides.dimensions ?? [
       { key: 'access', score: 18, max: 20 },
       { key: 'extractability', score: 28, max: 30 },
@@ -278,7 +383,9 @@ function makeScanResult(overrides: Partial<{
       { key: 'agent_layer', score: 0, max: 10 },
     ],
     findings: overrides.findings ?? [],
-    noiseRatio: null,
+    noiseRatio: overrides.noiseRatio ?? null,
+    csrGapPercent: overrides.csrGapPercent,
+    renderedComparison: overrides.renderedComparison,
     engineVersion: '1.0.0',
     schemaVersion: '1.0',
   } as import('../schemas').ScanResult
