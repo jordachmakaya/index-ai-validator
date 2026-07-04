@@ -1,3 +1,21 @@
+/**
+ * @filemeta
+ * type: script
+ * title: Command-line interface entrypoint
+ * description: Defines Commander CLI commands and runs validation/scanner checks to write terminal, JSON, or HTML reports.
+ * job_ref: T3.1_scan-html-report
+ * functions: [runCli, main, createProgram]
+ * classes: []
+ * inputs: [process.argv]
+ * outputs: [CliRunResult]
+ * relations:
+ *   - imports: packages/validator/src/utils/html-report.ts
+ *   - imports: packages/validator/src/validator.ts
+ *   - imports: packages/validator/src/scan.ts
+ *   - tested_by: packages/validator/src/cli.test.ts
+ * last_update: 2026-07-04
+ */
+
 import { writeFile } from 'node:fs/promises'
 import { extname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -13,7 +31,7 @@ import {
 import { scanUrl, type ScanOutcome } from './scan'
 import type { ScanOptions, ValidationResult, ValidatorOptions } from './types'
 import { formatHumanResult } from './utils/format'
-import { formatHtmlReport } from './utils/html-report'
+import { formatHtmlReport, formatScanHtmlReport } from './utils/html-report'
 import { validateIndexAi } from './validator'
 
 type CliOptions = {
@@ -297,45 +315,16 @@ function formatScanStderrMessage(outcome: ScanOutcome): string {
 
 async function writeScanHtmlReport(path: string, target: string, outcome: ScanOutcome): Promise<void> {
   try {
-    await writeFile(path, formatScanHtmlReport(target, outcome), 'utf8')
+    const result = outcome.status.result
+    if (!result) {
+      throw new Error('No scan result available to format')
+    }
+    await writeFile(path, formatScanHtmlReport(result, outcome.auditLinks.html), 'utf8')
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
     throw new Error(`Failed to write HTML report: ${message}`)
   }
-}
-
-// Minimal placeholder report — replaced by the branded scan report built in
-// T3.1_scan-html-report; intentionally unstyled, just a functional flag.
-function formatScanHtmlReport(target: string, outcome: ScanOutcome): string {
-  const result = outcome.status.result
-  const scoreLine = result
-    ? `<p>Score: ${escapeHtml(result.score)} — Verdict: ${escapeHtml(result.verdict)}</p>`
-    : `<p>Status: ${escapeHtml(outcome.status.status)}</p>`
-
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>Scan report — ${escapeHtml(target)}</title>
-</head>
-<body>
-<h1>Scan report</h1>
-<p>URL: ${escapeHtml(target)}</p>
-${scoreLine}
-<p><a href="${escapeHtml(outcome.auditLinks.html)}">Full audit report</a></p>
-</body>
-</html>
-`
-}
-
-function escapeHtml(value: string | number): string {
-  return String(value)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
 }
 
 function formatCliError(error: unknown): string {

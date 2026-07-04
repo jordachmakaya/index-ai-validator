@@ -3,10 +3,10 @@
  * type: utility
  * title: HTML validation report formatter
  * description: Formats AI-readiness validation results into a static HTML report with design system tokens and Google Fonts.
- * job_ref: T3.0_html-brand-tokens
- * functions: [formatHtmlReport]
+ * job_ref: T3.1_scan-html-report
+ * functions: [formatHtmlReport, formatScanHtmlReport]
  * classes: []
- * inputs: [ValidationResult]
+ * inputs: [ValidationResult, ScanResult]
  * outputs: [string]
  * relations:
  *   - imports: packages/validator/src/constants.ts
@@ -17,6 +17,8 @@
 
 import { CHECK } from '../constants'
 import type { Severity, ValidationCheck, ValidationMetrics, ValidationResult } from '../types'
+import { rewriteAttributionSrc } from './attribution'
+import type { ScanResult } from '../schemas'
 
 type RecommendedStep = {
   readonly title: string
@@ -1198,3 +1200,678 @@ function stringify(value: unknown): string {
 
   return JSON.stringify(value, null, 2) ?? ''
 }
+
+export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): string {
+  const readiness = result.score
+  const verdictWord = result.verdict
+  const verdictClass = result.score >= 80 ? 'pass' : (result.score >= 50 ? 'warn' : 'fail')
+  
+  let finalAuditUrl = ''
+  if (auditUrl) {
+    finalAuditUrl = rewriteAttributionSrc(auditUrl, 'cli-report')
+  }
+
+  const p0Count = result.findings.filter(f => f.severity === 'P0').length
+  const p1Count = result.findings.filter(f => f.severity === 'P1').length
+  const p2Count = result.findings.filter(f => f.severity === 'P2').length
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>index-ai scan report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #010102;
+      --surface-1: #0f1011;
+      --surface-2: #141516;
+      --surface-3: #18191a;
+      --hairline: #23252a;
+      --border: #23252a;
+      --border-2: #34343a;
+      --text: #e8edf5;
+      --muted: #7a8ba3;
+      --dim: #4a5a72;
+      --blue: #3b82f6;
+      --pass: #10b981;
+      --warn: #f59e0b;
+      --fail: #ef4444;
+      --pass-bg: rgba(16, 185, 129, 0.08);
+      --warn-bg: rgba(245, 158, 11, 0.08);
+      --fail-bg: rgba(239, 68, 68, 0.08);
+      --pass-border: rgba(16, 185, 129, 0.25);
+      --warn-border: rgba(245, 158, 11, 0.25);
+      --fail-border: rgba(239, 68, 68, 0.25);
+      --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --font-headings: 'Outfit', var(--sans);
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
+      --r-sm: 6px;
+      --r-md: 10px;
+      --r-lg: 14px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', var(--font-headings);
+      letter-spacing: -0.02em;
+    }
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    p { margin: 0; }
+    code {
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: var(--mono);
+      font-size: 0.9em;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      grid-template-areas:
+        "topbar topbar"
+        "main sidebar"
+        "footer footer";
+      max-width: 1280px;
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 0 24px;
+      gap: 0 32px;
+    }
+    .topbar {
+      grid-area: topbar;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar-left, .topbar-right, .footer-links {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .logo {
+      color: var(--text);
+      font-family: 'Outfit', var(--font-headings);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .logo-sep, .topbar-divider { color: var(--dim); }
+    .topbar-pill {
+      color: var(--muted);
+      background: var(--surface-1);
+      border: 1px solid var(--border-2);
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .topbar-right {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .topbar-right a { color: var(--muted); }
+    .topbar-right a:hover { color: var(--text); }
+    .main {
+      grid-area: main;
+      padding: 32px 0 48px;
+    }
+    .hero { margin-bottom: 38px; }
+    .hero-eyebrow {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .hero-title {
+      max-width: 700px;
+      margin: 0 0 10px;
+      color: var(--text);
+      font-family: 'Outfit', var(--font-headings);
+      font-size: clamp(2rem, 5vw, 3.6rem);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+    }
+    .hero-copy {
+      max-width: 680px;
+      margin-bottom: 18px;
+      color: var(--muted);
+      font-size: 15px;
+    }
+    .hero-target {
+      margin-bottom: 20px;
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+    .hero-target span { color: var(--blue); }
+    .verdict-display {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    .verdict-word {
+      font-family: var(--mono);
+      font-size: clamp(48px, 8vw, 80px);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .verdict-word.pass { color: var(--pass); }
+    .verdict-word.warn { color: var(--warn); }
+    .verdict-word.fail { color: var(--fail); }
+    .verdict-sub {
+      max-width: 500px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .readiness-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .readiness-label {
+      min-width: 84px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .readiness-track {
+      flex: 1;
+      height: 5px;
+      overflow: hidden;
+      background: var(--surface-3);
+      border-radius: 999px;
+    }
+    .readiness-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--fail), var(--warn));
+    }
+    .readiness-fill.mid { background: linear-gradient(90deg, var(--warn), #84cc16); }
+    .readiness-fill.high { background: linear-gradient(90deg, #84cc16, var(--pass)); }
+    .readiness-pct {
+      min-width: 40px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: right;
+    }
+    .score-note {
+      margin-bottom: 22px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .conformance-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 28px;
+      padding: 12px 16px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .conf-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .conf-value {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .conf-value.none { color: var(--fail); background: var(--fail-bg); border: 1px solid var(--fail-border); }
+    .conf-value.level-1 { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-border); }
+    .conf-value.level-2a { color: var(--pass); background: var(--pass-bg); border: 1px solid var(--pass-border); }
+    .conf-value.pass { color: var(--pass); background: var(--pass-bg); border: 1px solid var(--pass-border); }
+    .conf-value.warn { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-border); }
+    .conf-value.fail { color: var(--fail); background: var(--fail-bg); border: 1px solid var(--fail-border); }
+    .conf-hint { color: var(--muted); font-size: 12px; }
+    .section { margin-bottom: 32px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title {
+      color: var(--text);
+      font-family: 'Outfit', var(--font-headings);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .section-count {
+      color: var(--muted);
+      background: var(--surface-3);
+      border-radius: 999px;
+      padding: 2px 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .section-count.fail { color: var(--fail); background: var(--fail-bg); }
+    .section-count.warn { color: var(--warn); background: var(--warn-bg); }
+    .section-count.pass { color: var(--pass); background: var(--pass-bg); }
+    .steps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step-item {
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr);
+      gap: 12px 16px;
+      align-items: start;
+      padding: 14px 16px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .step-priority {
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .step-priority.p0 { color: var(--fail); background: var(--fail-bg); border: 1px solid var(--fail-border); }
+    .step-priority.p1 { color: var(--warn); background: var(--warn-bg); border: 1px solid var(--warn-border); }
+    .step-priority.p2 { color: var(--muted); background: var(--surface-3); border: 1px solid var(--border-2); }
+    .step-title {
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .step-desc {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .empty-state {
+      padding: 20px 16px;
+      color: var(--dim);
+      border: 1px dashed var(--border);
+      border-radius: var(--r-md);
+      font-size: 12px;
+      text-align: center;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+    }
+    .metric-card {
+      padding: 12px 14px;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .metric-label {
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .metric-value {
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .sidebar {
+      grid-area: sidebar;
+      padding-top: 32px;
+    }
+    .sidebar-sticky {
+      position: sticky;
+      top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .sidebar-card {
+      overflow: hidden;
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+    }
+    .sidebar-card-head {
+      padding: 12px 16px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .sidebar-card-body { padding: 14px 16px; }
+    .sidebar-verdict {
+      font-family: var(--mono);
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+    }
+    .sidebar-verdict.pass { color: var(--pass); }
+    .sidebar-verdict.warn { color: var(--warn); }
+    .sidebar-verdict.fail { color: var(--fail); }
+    .sidebar-sub {
+      margin-top: 3px;
+      color: var(--dim);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .summary-counts {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .count-tile {
+      padding: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      text-align: center;
+    }
+    .count-n {
+      display: block;
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .count-n.fail { color: var(--fail); }
+    .count-n.warn { color: var(--warn); }
+    .count-n.pass { color: var(--pass); }
+    .count-n.neutral { color: var(--text); }
+    .count-lbl {
+      display: block;
+      margin-top: 4px;
+      color: var(--dim);
+      font-size: 10px;
+      text-transform: uppercase;
+    }
+    .meta-pairs {
+      display: flex;
+      flex-direction: column;
+      gap: 9px;
+    }
+    .meta-pair {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+    .meta-key { color: var(--dim); }
+    .meta-val {
+      color: var(--muted);
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+    .sidebar-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .sidebar-link {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .sidebar-link:hover { color: var(--text); }
+    .footer {
+      grid-area: footer;
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 24px 0 32px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .footer-left { max-width: 720px; }
+    .footer strong { color: var(--text); }
+    .footer-links a { color: var(--muted); }
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "topbar"
+          "main"
+          "sidebar"
+          "footer";
+      }
+      .sidebar { padding: 0 0 32px; }
+      .sidebar-sticky { position: static; }
+      .topbar, .footer { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 640px) {
+      .layout { padding: 0 16px; }
+      .step-item { grid-template-columns: 1fr; }
+      .verdict-word { font-size: 46px; }
+      .readiness-row { align-items: flex-start; flex-direction: column; }
+      .readiness-track { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    ${renderTopbar()}
+    <main class="main">
+      <section class="hero">
+        <div class="hero-eyebrow">AI-readiness scan report</div>
+        <h1 class="hero-title">Is this website readable by AI agents?</h1>
+        <p class="hero-copy">Most websites are readable by browsers. This report checks whether yours is readable by AI agents.</p>
+        <p class="hero-target">Target <span>${escapeHtml(result.url)}</span></p>
+        <div class="verdict-display">
+          <div class="verdict-word ${escapeHtml(verdictClass)}">${escapeHtml(result.score)}%</div>
+          <p class="verdict-sub">${escapeHtml(result.verdict)}</p>
+        </div>
+        <div class="readiness-row">
+          <span class="readiness-label">Readiness</span>
+          <div class="readiness-track">
+            <div class="readiness-fill ${escapeHtml(getReadinessClass(readiness))}" style="width: ${escapeHtml(`${readiness}%`)}"></div>
+          </div>
+          <span class="readiness-pct">${escapeHtml(`${readiness}%`)}</span>
+        </div>
+        <p class="score-note">The readiness score is a human-readable progress indicator based on passed checks. The CI verdict remains Passed/Failed.</p>
+        ${renderScanCta(result.score)}
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-title">Findings</span>
+          <span class="section-count fail">${escapeHtml(result.findings.length)}</span>
+        </div>
+        ${result.findings.length > 0
+          ? `<div class="steps-list">
+              ${result.findings.map(f => {
+                const sevClass = f.severity.toLowerCase()
+                return `<div class="step-item">
+                  <span class="step-priority ${escapeHtml(sevClass)}">${escapeHtml(f.severity)}</span>
+                  <div>
+                    <div class="step-title">${escapeHtml(f.title)}</div>
+                    ${f.detail ? `<div class="step-desc">${escapeHtml(f.detail)}</div>` : ''}
+                    ${f.effort ? `<div class="step-desc" style="margin-top: 4px; color: var(--dim);">Effort: ${escapeHtml(f.effort)}</div>` : ''}
+                    <div class="step-desc" style="margin-top: 2px; font-family: var(--mono); font-size: 10px; color: var(--dim);">ID: ${escapeHtml(f.id)}</div>
+                  </div>
+                </div>`
+              }).join('\n')}
+            </div>`
+          : '<p class="empty-state">No findings detected.</p>'
+        }
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <span class="section-title">Dimensions</span>
+        </div>
+        <div class="metrics-grid">
+          ${result.dimensions.map(d => `
+            <div class="metric-card">
+              <div class="metric-label">${escapeHtml(d.key)}</div>
+              <div class="metric-value">${escapeHtml(`${d.score} / ${d.max}`)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+
+      ${renderScanDetails(result)}
+    </main>
+
+    <aside class="sidebar">
+      <div class="sidebar-sticky">
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">Scanner Verdict</div>
+          <div class="sidebar-card-body">
+            <div class="sidebar-verdict ${escapeHtml(verdictClass)}">${escapeHtml(result.verdict)}</div>
+            <div class="sidebar-sub">Score: ${escapeHtml(result.score)}%</div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">Findings Summary</div>
+          <div class="sidebar-card-body">
+            <div class="summary-counts">
+              ${renderCountTile('P0', p0Count, 'fail')}
+              ${renderCountTile('P1', p1Count, 'warn')}
+              ${renderCountTile('P2', p2Count, 'neutral')}
+              ${renderCountTile('Total', result.findings.length, 'neutral')}
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">Scan metadata</div>
+          <div class="sidebar-card-body">
+            <div class="meta-pairs">
+              ${renderMetaPair('Engine', result.engineVersion)}
+              ${renderMetaPair('Schema', result.schemaVersion)}
+              ${renderMetaPair('Target', result.url)}
+            </div>
+          </div>
+        </div>
+        <div class="sidebar-card">
+          <div class="sidebar-card-head">Resources</div>
+          <div class="sidebar-card-body">
+            <div class="sidebar-links">
+              ${finalAuditUrl ? renderSidebarLink('Full audit report', finalAuditUrl) : ''}
+              ${renderSidebarLink('index-ai project', 'https://jordach.dev/projects/index-ai')}
+              ${renderSidebarLink('Validator tool', 'https://jordach.dev/tools/index-ai-validator')}
+              ${renderSidebarLink('AI-readable audit service', 'https://jordach.dev/services/ai-readable-website-audit')}
+              ${renderSidebarLink('GitHub repository', 'https://github.com/jordachmakaya/index-ai-validator')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    ${renderFooter()}
+  </div>
+</body>
+</html>`
+}
+
+function renderScanCta(score: number): string {
+  let ctaClass = ''
+  let ctaTitle = ''
+  let ctaDesc = ''
+
+  if (score >= 80) {
+    ctaClass = 'pass'
+    ctaTitle = 'Readiness score high'
+    ctaDesc = 'This website is well prepared for AI agent exploration. It meets key readability criteria.'
+  } else if (score >= 50) {
+    ctaClass = 'warn'
+    ctaTitle = 'Readiness score moderate'
+    ctaDesc = 'We suggest further optimization to improve agent accessibility and content extraction.'
+  } else {
+    ctaClass = 'fail'
+    ctaTitle = 'Readiness score low'
+    ctaDesc = 'A critical alert: agent readability is blocked or very weak. Core entrypoints are not accessible.'
+  }
+
+  return `<div class="conformance-strip">
+    <span class="conf-label">Recommendation</span>
+    <span class="conf-value ${escapeHtml(ctaClass)}">${escapeHtml(ctaTitle)}</span>
+    <span class="conf-hint">${escapeHtml(ctaDesc)}</span>
+  </div>`
+}
+
+function renderScanDetails(result: ScanResult): string {
+  const noiseRatioStr = result.noiseRatio !== null ? `${(result.noiseRatio * 100).toFixed(1)}%` : 'N/A'
+  const csrGapStr = result.csrGapPercent !== null && result.csrGapPercent !== undefined ? `${result.csrGapPercent.toFixed(1)}%` : 'N/A'
+  const comparisonStr = result.renderedComparison?.status ?? 'N/A'
+
+  return `<section class="section">
+  <div class="section-header">
+    <span class="section-title">Scan analysis</span>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Noise ratio</div>
+      <div class="metric-value">${escapeHtml(noiseRatioStr)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">CSR gap</div>
+      <div class="metric-value">${escapeHtml(csrGapStr)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Render comparison</div>
+      <div class="metric-value">${escapeHtml(comparisonStr)}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Engine version</div>
+      <div class="metric-value">${escapeHtml(result.engineVersion)}</div>
+    </div>
+  </div>
+</section>`
+}
+
