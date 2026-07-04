@@ -1,7 +1,23 @@
+/**
+ * @filemeta
+ * type: test
+ * title: HTML report format tests
+ * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, and Plain Speech constraints.
+ * job_ref: T3.1_scan-html-report_tester
+ * functions: []
+ * classes: []
+ * inputs: []
+ * outputs: []
+ * relations:
+ *   - imports: packages/validator/src/utils/html-report.ts
+ * last_update: 2026-07-04
+ */
+
 import { describe, expect, it } from 'vitest'
 
+import type { ScanResult } from '../schemas'
 import type { ValidationResult } from '../types'
-import { formatHtmlReport } from './html-report'
+import { formatHtmlReport, formatScanHtmlReport } from './html-report'
 
 describe('formatHtmlReport', () => {
   const targetUrl = 'https://example.com'
@@ -133,5 +149,105 @@ describe('formatHtmlReport', () => {
     // Outfit headers or hero-title or h1/h2/h3 must have negative letter-spacing
     expect(html).toMatch(/\.hero-title\s*{[^}]*letter-spacing:\s*-[0-9.]+(px|em)/i)
     expect(html).toMatch(/(h1|h2|h3|\.section-title|\.logo)\s*{[^}]*letter-spacing:\s*-[0-9.]+(px|em)/i)
+  })
+})
+
+describe('formatScanHtmlReport', () => {
+  const targetUrl = 'https://example.com/'
+
+  const fakeScanResult: ScanResult = {
+    url: targetUrl,
+    score: 35,
+    verdict: 'Agent-readiness blocked or weak',
+    dimensions: [
+      { key: 'access', score: 0, max: 20 },
+      { key: 'extractability', score: 15, max: 30 },
+      { key: 'citability', score: 0, max: 20 },
+      { key: 'safety', score: 20, max: 20 },
+      { key: 'agent_layer', score: 0, max: 10 },
+    ],
+    findings: [
+      {
+        id: 'restore-public-access',
+        severity: 'P0',
+        title: 'Restore public access for the audited URL',
+        effort: 'medium',
+      },
+      {
+        id: 'add-llms-txt',
+        severity: 'P1',
+        title: 'Add a useful /llms.txt entrypoint',
+        effort: 'small',
+      },
+    ],
+    noiseRatio: 0.9952,
+    csrGapPercent: 98.1,
+    renderedComparison: { status: 'severe-gap' },
+    engineVersion: '1.0.0',
+    schemaVersion: '1.0',
+  }
+
+  it('preserves structure and contains target URL, score, verdict, and findings details', () => {
+    // Act
+    const html = formatScanHtmlReport(fakeScanResult)
+
+    // Assert
+    expect(html).toContain(targetUrl)
+    expect(html).toContain('35%')
+    expect(html).toContain('Agent-readiness blocked or weak')
+    expect(html).toContain('restore-public-access')
+    expect(html).toContain('Restore public access for the audited URL')
+    expect(html).toContain('add-llms-txt')
+    expect(html).toContain('Add a useful /llms.txt entrypoint')
+  })
+
+  it('generates contextual CTA recommendations corresponding to branding score ranges', () => {
+    // Arrange
+    const successResult: ScanResult = { ...fakeScanResult, score: 85 }
+    const warnResult: ScanResult = { ...fakeScanResult, score: 65 }
+    const dangerResult: ScanResult = { ...fakeScanResult, score: 25 }
+
+    // Act
+    const successHtml = formatScanHtmlReport(successResult)
+    const warnHtml = formatScanHtmlReport(warnResult)
+    const dangerHtml = formatScanHtmlReport(dangerResult)
+
+    // Assert
+    // Success: Positive message about AI readiness
+    expect(successHtml).toMatch(/(ready|prepared|preparation|positive|success)/i)
+    // Warn: Suggestion for improvement/optimization
+    expect(warnHtml).toMatch(/(improve|optimize|suggestion|warning|optimization)/i)
+    // Danger: Critical alert about AI unreadability
+    expect(dangerHtml).toMatch(/(critical|danger|unreadability|unreadable|blocked)/i)
+  })
+
+  it('rewrites the audit link with src=cli-report attribution', () => {
+    // Arrange
+    const auditUrl = 'https://agent-view.com/audit?src=cli-json&scanId=123'
+
+    // Act
+    const html = formatScanHtmlReport(fakeScanResult, auditUrl)
+
+    // Assert
+    expect(html).toContain('src=cli-report')
+    expect(html).not.toContain('src=cli-json')
+  })
+
+  it('respects Plain Speech and contains no banned words or exclamation marks in UI text', () => {
+    // Act
+    const html = formatScanHtmlReport(fakeScanResult)
+
+    // Assert
+    // Strip HTML tags for clean UI text validation
+    const uiText = html.replace(/<[^>]*>/g, ' ')
+
+    // Banned words
+    const banned = ['premier', 'meilleur', 'révolutionnaire', 'best', 'revolutionary', 'please', 'sorry', 'oops']
+    for (const word of banned) {
+      expect(uiText.toLowerCase()).not.toContain(word)
+    }
+
+    // Exclamation mark check (ignoring HTML entities/tags)
+    expect(uiText).not.toContain('!')
   })
 })
