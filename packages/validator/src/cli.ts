@@ -3,7 +3,7 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands and runs validation/scanner checks to write terminal, JSON, or HTML reports.
- * job_ref: T3.1_scan-html-report
+ * job_ref: T3.2_default-report-locations
  * functions: [runCli, main, createProgram]
  * classes: []
  * inputs: [process.argv]
@@ -12,12 +12,13 @@
  *   - imports: packages/validator/src/utils/html-report.ts
  *   - imports: packages/validator/src/validator.ts
  *   - imports: packages/validator/src/scan.ts
+ *   - imports: packages/validator/src/constants.ts
  *   - tested_by: packages/validator/src/cli.test.ts
  * last_update: 2026-07-04
  */
 
-import { writeFile } from 'node:fs/promises'
-import { extname, resolve } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { dirname, extname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
@@ -26,7 +27,9 @@ import { bold, cyan, green } from 'kleur/colors'
 import {
   CLI_NAME,
   DEFAULT_MAX_CONCURRENCY,
+  DEFAULT_SCAN_HTML_PATH,
   DEFAULT_TIMEOUT_MS,
+  DEFAULT_VALIDATE_HTML_PATH,
 } from './constants'
 import { scanUrl, type ScanOutcome } from './scan'
 import type { ScanOptions, ValidationResult, ValidatorOptions } from './types'
@@ -42,14 +45,14 @@ type CliOptions = {
   readonly failOnWarn?: boolean
   readonly allowPrivateHosts?: boolean
   readonly exitCode?: boolean
-  readonly html?: string
+  readonly html?: string | true
   readonly timeout: number
   readonly maxConcurrency: number
 }
 
 type ScanCliOptions = {
   readonly json?: boolean
-  readonly html?: string
+  readonly html?: string | true
   readonly apiKey?: string
   readonly timeout: number
 }
@@ -87,14 +90,15 @@ export async function runCli(
     },
     runValidation: async (target, options) => {
       const validatorOptions = buildValidatorOptions(target, options)
-      if (options.html !== undefined) {
+      if (typeof options.html === 'string') {
         validateHtmlPath(options.html)
       }
 
       const result = await validate(validatorOptions)
 
       if (options.html !== undefined) {
-        await writeHtmlReport(options.html, result)
+        const htmlPath = options.html === true ? DEFAULT_VALIDATE_HTML_PATH : options.html
+        await writeHtmlReport(htmlPath, result)
       }
 
       stdout += options.json
@@ -104,7 +108,7 @@ export async function runCli(
       exitCode = result.passed || options.exitCode === false ? 0 : 1
     },
     runScan: async (target, options) => {
-      if (options.html !== undefined) {
+      if (typeof options.html === 'string') {
         validateHtmlPath(options.html)
       }
 
@@ -125,7 +129,8 @@ export async function runCli(
       stderr += formatScanStderrMessage(outcome)
 
       if (options.html !== undefined) {
-        await writeScanHtmlReport(options.html, target, outcome)
+        const htmlPath = options.html === true ? DEFAULT_SCAN_HTML_PATH : options.html
+        await writeScanHtmlReport(htmlPath, target, outcome)
       }
     },
   })
@@ -195,7 +200,10 @@ function createProgram(options: {
     .option('--fail-on-warn', 'Treat any warning as a failed validation result')
     .option('--allow-private-hosts', 'Allow private/internal hosts in target and llm_url fetches')
     .option('--no-exit-code', 'Return exit code 0 for validation failures')
-    .option('--html <path>', 'Write a standalone HTML report to the provided .html path')
+    .option(
+      '--html [path]',
+      `Write a standalone HTML report to the provided .html path, or to ${DEFAULT_VALIDATE_HTML_PATH} if no path is given`,
+    )
     .option('--timeout <ms>', 'Request timeout in milliseconds', parsePositiveInteger, DEFAULT_TIMEOUT_MS)
     .option(
       '--max-concurrency <n>',
@@ -218,7 +226,10 @@ function createProgram(options: {
     .description('Scan a site via the Agent View scanner service and print the scan result.')
     .argument('<url>', 'Site URL to scan, for example https://example.com')
     .option('--json', 'Print the raw scanner status as JSON')
-    .option('--html <path>', 'Write a minimal HTML report to the provided .html path')
+    .option(
+      '--html [path]',
+      `Write a minimal HTML report to the provided .html path, or to ${DEFAULT_SCAN_HTML_PATH} if no path is given`,
+    )
     .option('--api-key <key>', 'Reserved for future scanner authentication (currently has no effect)')
     .option('--timeout <ms>', 'Scan request timeout in milliseconds', parsePositiveInteger, DEFAULT_TIMEOUT_MS)
     .action(options.runScan)
@@ -253,6 +264,7 @@ function buildValidatorOptions(target: string, options: CliOptions): ValidatorOp
 
 async function writeHtmlReport(path: string, result: ValidationResult): Promise<void> {
   try {
+    await mkdir(dirname(path), { recursive: true })
     await writeFile(path, formatHtmlReport(result), 'utf8')
   }
   catch (error: unknown) {
@@ -319,6 +331,7 @@ async function writeScanHtmlReport(path: string, target: string, outcome: ScanOu
     if (!result) {
       throw new Error('No scan result available to format')
     }
+    await mkdir(dirname(path), { recursive: true })
     await writeFile(path, formatScanHtmlReport(result, outcome.auditLinks.html), 'utf8')
   }
   catch (error: unknown) {

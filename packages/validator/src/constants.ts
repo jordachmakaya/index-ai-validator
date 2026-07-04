@@ -12,6 +12,10 @@ export const MANIFEST_CANONICAL_PATH = '/.well-known/index-ai.json'
 
 export const MANIFEST_FALLBACK_PATH = '/index-ai.json'
 
+export const DEFAULT_VALIDATE_HTML_PATH = '.report/validate-report.html'
+
+export const DEFAULT_SCAN_HTML_PATH = '.report/scan-report.html'
+
 export const CHECK = {
   L1_MANIFEST_FOUND: 'L1_MANIFEST_FOUND',
   L1_MANIFEST_CONTENT_TYPE: 'L1_MANIFEST_CONTENT_TYPE',
