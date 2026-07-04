@@ -707,8 +707,8 @@ function renderHero(
 ): string {
   return `<section class="hero">
   <div class="hero-eyebrow">AI-readiness report</div>
-  <h1 class="hero-title">Is this website readable by AI agents?</h1>
-  <p class="hero-copy">${escapeHtml('Most websites are readable by browsers. This report checks whether yours is readable by AI agents.')}</p>
+  <h1 class="hero-title">Does this website accurately implement Agent-View LV2?</h1>
+  <p class="hero-copy">${escapeHtml('This report checks whether your site correctly exposes an AI manifest and Agent View, the index-ai open standard\'s Level 1 and Level 2.')}</p>
   <p class="hero-target">Target <span>${escapeHtml(result.target)}</span></p>
   <div class="verdict-display">
     <div class="verdict-word ${escapeHtml(verdictClass)}">${escapeHtml(verdictWord)}</div>
@@ -1714,6 +1714,7 @@ export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): str
     }
     .agent-layer-cta {
       margin-top: 16px;
+      margin-bottom: 24px;
       padding: 16px;
       background: var(--surface-1);
       border: 1px solid var(--blue);
