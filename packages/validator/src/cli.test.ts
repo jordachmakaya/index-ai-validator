@@ -1,3 +1,19 @@
+/**
+ * @filemeta
+ * type: test
+ * title: CLI integration tests
+ * description: End-to-end tests for the runCli entrypoint covering validate and scan subcommands, --html report writing (explicit and default paths), --json output, and error handling.
+ * job_ref: T3.2_default-report-locations_tester
+ * functions: [validManifest, validGraph, completeRoutes, routesWithDiscoveryWarnings, jsonRoute, textRoute, validationResult, scanStatusDone, scanOutcome, omitOnProgress, fileExists, withTempDir, withTempCwd, parseJsonObject, expectJsonResultContract, expectObjectField, startServer, closeServer, installFailingFetch, createRoutedTarget, installFetchHostRewrite, getFetchInputUrl]
+ * classes: []
+ * inputs: []
+ * outputs: []
+ * relations:
+ *   - imports: packages/validator/src/cli.ts
+ *   - tests: packages/validator/src/cli.ts
+ * last_update: 2026-07-04
+ */
+
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
@@ -235,6 +251,25 @@ async function withTempDir<T>(run: (directory: string) => Promise<T>): Promise<T
   }
 }
 
+/**
+ * Runs `run` with the process cwd temporarily switched to a fresh empty
+ * temp directory, so default (cwd-relative) `--html` path resolution can be
+ * exercised. Always restores the original cwd, even if `run` throws.
+ */
+async function withTempCwd<T>(run: (directory: string) => Promise<T>): Promise<T> {
+  const directory = await mkdtemp(join(tmpdir(), 'index-ai-cli-cwd-'))
+  const originalCwd = process.cwd()
+  process.chdir(directory)
+
+  try {
+    return await run(directory)
+  }
+  finally {
+    process.chdir(originalCwd)
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
 function parseJsonObject(text: string): Record<string, unknown> {
   const value: unknown = JSON.parse(text)
 
@@ -435,8 +470,8 @@ describe('runCli', () => {
       expect(html).toContain('/</span>validator')
       expect(html).toContain('@hardmachinelabs/index-ai-validator')
       expect(html).toContain('by Jordach Makaya')
-      expect(html).toContain('Most websites are readable by browsers.')
-      expect(html).toContain('This report checks whether yours is readable by AI agents.')
+      expect(html).toContain('This report checks whether your site correctly exposes an AI manifest and Agent View')
+      expect(html).toContain('the index-ai open standard&#39;s Level 1 and Level 2.')
       expect(html).toContain('PASSED')
       expect(html).toContain('CI Verdict')
       expect(html).toContain('Readiness')
@@ -696,29 +731,56 @@ describe('runCli', () => {
   it('returns exit 2 for invalid HTML report paths before validation output is printed', async () => {
     await withTempDir(async (directory) => {
       const validate: CliValidationRunner = async (options) => validationResult(options.target)
-      const missingPath = await runCli(['https://example.com', '--html'], { validate })
       const emptyPath = await runCli(['https://example.com', '--html', ''], { validate })
       const nonHtmlPath = await runCli(['https://example.com', '--html', join(directory, 'report.txt')], {
         validate,
       })
-      const missingParent = await runCli([
-        'https://example.com',
-        '--html',
-        join(directory, 'missing', 'report.html'),
-      ], { validate })
 
-      expect(missingPath.exitCode).toBe(2)
-      expect(missingPath.stdout).toBe('')
-      expect(missingPath.stderr).toContain("option '--html <path>' argument missing")
       expect(emptyPath.exitCode).toBe(2)
       expect(emptyPath.stdout).toBe('')
       expect(emptyPath.stderr).toContain('HTML report path must not be empty')
       expect(nonHtmlPath.exitCode).toBe(2)
       expect(nonHtmlPath.stdout).toBe('')
       expect(nonHtmlPath.stderr).toContain('HTML report path must end with .html')
-      expect(missingParent.exitCode).toBe(2)
-      expect(missingParent.stdout).toBe('')
-      expect(missingParent.stderr).toContain('Failed to write HTML report')
+    })
+  })
+
+  // NOTE (T3.2_default-report-locations): `--html` with no value was
+  // previously a Commander error ("option '--html <path>' argument
+  // missing"), asserted in this same block above. That is now an
+  // intentional behavior change, not a broken test: `--html` becomes
+  // optional-value, and no value means "use the default path". See the
+  // two tests below.
+  it('defaults --html with no value to .report/validate-report.html relative to cwd', async () => {
+    await withTempCwd(async (directory) => {
+      const validate: CliValidationRunner = async (options) => validationResult(options.target)
+      const reportDir = join(directory, '.report')
+
+      expect(await fileExists(reportDir)).toBe(false)
+
+      const result = await runCli(['https://example.com', '--html'], { validate })
+      const html = await readFile(join(reportDir, 'validate-report.html'), 'utf8')
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stderr).toBe('')
+      expect(await fileExists(reportDir)).toBe(true)
+      expect(html).toContain('<title>index-ai validation report</title>')
+      expect(html).toContain('https://example.com')
+    })
+  })
+
+  it('creates a missing parent directory for an explicit --html path', async () => {
+    await withTempDir(async (directory) => {
+      const validate: CliValidationRunner = async (options) => validationResult(options.target)
+      const reportPath = join(directory, 'missing', 'nested', 'report.html')
+
+      const result = await runCli(['https://example.com', '--html', reportPath], { validate })
+      const html = await readFile(reportPath, 'utf8')
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stderr).toBe('')
+      expect(html).toContain('<title>index-ai validation report</title>')
+      expect(html).toContain('https://example.com')
     })
   })
 
@@ -1097,6 +1159,39 @@ describe('runCli scan subcommand', () => {
       expect(nonHtmlPath.stdout).toBe('')
       expect(nonHtmlPath.stderr).toContain('HTML report path must end with .html')
       expect(scanCalls).toBe(0)
+    })
+  })
+
+  it('defaults scan --html with no value to .report/scan-report.html relative to cwd', async () => {
+    await withTempCwd(async (directory) => {
+      const outcome = scanOutcome()
+      const scan: CliScanRunner = async () => outcome
+      const reportDir = join(directory, '.report')
+
+      expect(await fileExists(reportDir)).toBe(false)
+
+      const result = await runCli(['scan', 'https://example.com', '--html'], { scan })
+      const html = await readFile(join(reportDir, 'scan-report.html'), 'utf8')
+
+      expect(result.exitCode).toBe(0)
+      expect(await fileExists(reportDir)).toBe(true)
+      expect(html).toContain('https://example.com')
+      expect(html).toContain(outcome.auditLinks.html)
+    })
+  })
+
+  it('creates a missing parent directory for an explicit scan --html path', async () => {
+    await withTempDir(async (directory) => {
+      const outcome = scanOutcome()
+      const scan: CliScanRunner = async () => outcome
+      const reportPath = join(directory, 'missing', 'nested', 'report.html')
+
+      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan })
+      const html = await readFile(reportPath, 'utf8')
+
+      expect(result.exitCode).toBe(0)
+      expect(html).toContain('https://example.com')
+      expect(html).toContain(outcome.auditLinks.html)
     })
   })
 
