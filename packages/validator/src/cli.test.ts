@@ -457,8 +457,6 @@ describe('runCli', () => {
       expect(html).toContain('https://jordach.dev/contact')
       expect(html).toContain('https://github.com/jordachmakaya/index-ai')
       expect(html).toContain('rel="noopener noreferrer"')
-      expect(html).not.toContain('fonts.googleapis.com')
-      expect(html).not.toContain('fonts.gstatic.com')
       expect(html).not.toContain('<script')
       expect(html).toContain('This report is not legal compliance, production certification, a traffic guarantee, SEO ranking guarantee, security audit, or vulnerability scan.')
     })

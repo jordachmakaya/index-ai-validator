@@ -1,3 +1,20 @@
+/**
+ * @filemeta
+ * type: utility
+ * title: HTML validation report formatter
+ * description: Formats AI-readiness validation results into a static HTML report with design system tokens and Google Fonts.
+ * job_ref: T3.0_html-brand-tokens
+ * functions: [formatHtmlReport]
+ * classes: []
+ * inputs: [ValidationResult]
+ * outputs: [string]
+ * relations:
+ *   - imports: packages/validator/src/constants.ts
+ *   - imports: packages/validator/src/types.ts
+ *   - tested_by: packages/validator/src/utils/html-report.test.ts
+ * last_update: 2026-07-04
+ */
+
 import { CHECK } from '../constants'
 import type { Severity, ValidationCheck, ValidationMetrics, ValidationResult } from '../types'
 
@@ -28,15 +45,17 @@ export function formatHtmlReport(result: ValidationResult): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>index-ai validation report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
-      --bg: #080b11;
-      --surface-1: #0d1320;
-      --surface-2: #121c2e;
-      --surface-3: #1a2640;
-      --border: #1e2d44;
-      --border-2: #253552;
+      --bg: #010102;
+      --surface-1: #0f1011;
+      --surface-2: #141516;
+      --surface-3: #18191a;
+      --hairline: #23252a;
+      --border: #23252a;
+      --border-2: #34343a;
       --text: #e8edf5;
       --muted: #7a8ba3;
       --dim: #4a5a72;
@@ -50,8 +69,9 @@ export function formatHtmlReport(result: ValidationResult): string {
       --pass-border: rgba(16, 185, 129, 0.25);
       --warn-border: rgba(245, 158, 11, 0.25);
       --fail-border: rgba(239, 68, 68, 0.25);
-      --sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --font-headings: 'Outfit', var(--sans);
+      --mono: 'JetBrains Mono', ui-monospace, monospace;
       --r-sm: 6px;
       --r-md: 10px;
       --r-lg: 14px;
@@ -62,9 +82,13 @@ export function formatHtmlReport(result: ValidationResult): string {
       min-height: 100vh;
       background: var(--bg);
       color: var(--text);
-      font-family: var(--sans);
+      font-family: 'Inter', var(--sans);
       font-size: 14px;
       line-height: 1.6;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Outfit', var(--font-headings);
+      letter-spacing: -0.02em;
     }
     a { color: var(--blue); text-decoration: none; }
     a:hover { text-decoration: underline; }
@@ -108,7 +132,7 @@ export function formatHtmlReport(result: ValidationResult): string {
     }
     .logo {
       color: var(--text);
-      font-family: var(--mono);
+      font-family: 'Outfit', var(--font-headings);
       font-size: 13px;
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -148,6 +172,7 @@ export function formatHtmlReport(result: ValidationResult): string {
       max-width: 700px;
       margin: 0 0 10px;
       color: var(--text);
+      font-family: 'Outfit', var(--font-headings);
       font-size: clamp(2rem, 5vw, 3.6rem);
       line-height: 1.02;
       letter-spacing: -0.03em;
@@ -270,9 +295,10 @@ export function formatHtmlReport(result: ValidationResult): string {
     }
     .section-title {
       color: var(--text);
+      font-family: 'Outfit', var(--font-headings);
       font-size: 13px;
       font-weight: 700;
-      letter-spacing: -0.01em;
+      letter-spacing: -0.02em;
     }
     .section-count {
       color: var(--muted);
