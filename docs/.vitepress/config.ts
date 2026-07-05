@@ -23,6 +23,20 @@ const config = withMermaid(
     // amber/navy product, not a library default. Keep in sync with that file.
     mermaid: {
       theme: 'base',
+      // Default node/label padding (15) and rankSpacing (50) pack decision
+      // branches (e.g. security.md's finding -> none/secret-shaped
+      // value/private infra reference) too tightly against each other and
+      // against the connecting lines. rankSpacing is the vertical gap
+      // between ranks, which only grows the diagram's height (the page
+      // scrolls, so this is "free"). nodeSpacing is horizontal and grows
+      // the diagram's width, which VitePress then scales down to fit the
+      // content column if pushed too far — kept close to the 50 default for
+      // that reason, with rankSpacing and padding doing most of the work.
+      flowchart: {
+        nodeSpacing: 55,
+        rankSpacing: 95,
+        padding: 22,
+      },
       themeVariables: {
         primaryColor: '#0d1320',
         primaryBorderColor: '#5f6e85',
