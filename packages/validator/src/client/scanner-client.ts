@@ -3,7 +3,7 @@
  * type: adapter
  * title: Scanner HTTP client
  * description: Submits and polls Agent View scans over HTTP, mapping contract error codes and validating done results against the vendored ScanResult schema.
- * job_ref: T1.1_scanner-client
+ * job_ref: T5.0_resilience-hardening
  * functions: [submitScan, pollScan]
  * classes: [ScanRequestError, ScanNotFoundError, ScanExpiredError, ScanRateLimitError, ScanServerError, ScanTimeoutError, ScanResultSchemaError, ScanResponseShapeError]
  * inputs: [url, scanId, SubmitScanOptions, PollScanOptions]
@@ -12,7 +12,7 @@
  *   - imports: packages/validator/src/schemas.ts
  *   - imports: packages/validator/src/constants.ts
  *   - tested_by: packages/validator/src/client/scanner-client.test.ts
- * last_update: 2026-07-02
+ * last_update: 2026-07-05
  */
 import { DEFAULT_TIMEOUT_MS, PACKAGE_NAME } from '../constants'
 import { type SchemaValidationError, type ScanResult, validateScanResult } from '../schemas'
@@ -95,7 +95,12 @@ export class ScanRateLimitError extends Error {
 export class ScanServerError extends Error {
   override readonly name = 'ScanServerError'
 
-  constructor(message: string, readonly code?: string) {
+  // `isNetworkError` distinguishes a raw fetch()-level failure (no HTTP
+  // response received at all — DNS hiccup, reset connection) from a genuine
+  // HTTP 500 the server sent back. Internal only, not part of the exported
+  // error taxonomy's contract: `pollScan` uses it to tolerate the former and
+  // keep rejecting the latter immediately, unchanged.
+  constructor(message: string, readonly code?: string, readonly isNetworkError = false) {
     super(message)
   }
 }
@@ -148,7 +153,26 @@ export async function pollScan(scanId: string, options: PollScanOptions = {}): P
       throw new ScanTimeoutError(`Scan "${scanId}" timed out — server-side budget is ${budgetMs}ms.`)
     }
 
-    const payload = await performScanRequest('GET', url, timeoutMs)
+    let payload: unknown
+
+    try {
+      payload = await performScanRequest('GET', url, timeoutMs)
+    }
+    catch (error) {
+      // A transient network hiccup (no HTTP response at all) on one poll
+      // attempt doesn't have to end the scan when the budget still allows
+      // another attempt — the deadline check above already bounds how long
+      // this can repeat, so no separate retry-count/backoff is needed here.
+      // Business errors (404/410/429-exhausted/real 500) are not
+      // `isNetworkError` and fall through to reject immediately, unchanged.
+      if (isTransientNetworkError(error)) {
+        await sleep(intervalMs)
+        continue
+      }
+
+      throw error
+    }
+
     const status = parseScanStatus(payload)
 
     if (status.status === 'done' || status.status === 'failed') {
@@ -225,11 +249,15 @@ async function fetchScan(
       throw new ScanTimeoutError(`Request to "${url}" timed out after ${timeoutMs}ms.`)
     }
 
-    throw new ScanServerError(`Network error while calling "${url}": ${formatUnknownError(error)}.`)
+    throw new ScanServerError(`Network error while calling "${url}": ${formatUnknownError(error)}.`, undefined, true)
   }
   finally {
     clearTimeout(timeout)
   }
+}
+
+function isTransientNetworkError(error: unknown): error is ScanServerError {
+  return error instanceof ScanServerError && error.isNetworkError
 }
 
 async function resolveResponseBody(response: Response, url: string): Promise<unknown> {
