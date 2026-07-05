@@ -4,7 +4,7 @@ layout: home
 hero:
   name: index-ai-validator
   text: Is your site readable by AI agents?
-  tagline: A free CLI that checks whether your site exposes a clean, agent-facing layer — index-ai manifest, Agent Index, clean endpoints, and measured content size. Runs in your terminal. No signup.
+  tagline: A free CLI with two features. Default validation mode checks whether your site correctly exposes the index-ai layer — manifest, Agent Index, clean endpoints, measured content size. `scan` calls the remote Agent View scanner and shows how AI-ready your site is overall. Runs in your terminal. No signup.
   actions:
     - theme: brand
       text: Get started
@@ -20,6 +20,8 @@ features:
     details: Inspects the Level 2a graph nodes, fetches each clean llm_url endpoint, and verifies content_chars against the Unicode NFC code-point count.
   - title: Catch leaks before agents do
     details: Flags secret-shaped values, sensitive variable names, and private infrastructure references in the public content you expose to agents.
+  - title: See your AI-readiness score
+    details: Run `scan` to call the remote Agent View scanner — one URL, one score out of 100, one shareable report showing the gap between what humans see and what bots can extract.
 ---
 
 <div class="hero-media">
@@ -34,15 +36,21 @@ Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a
 
 `index-ai` explores an Agent View through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, an [Agent Index](/guide/level-2a-agent-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
 
-`@hardmachinelabs/index-ai-validator` makes that layer testable. One command tells you whether yours works.
+`@hardmachinelabs/index-ai-validator` makes that layer testable, with two features that answer two different questions: Default validation mode checks whether a site correctly implements the layer above, and `scan` calls the remote Agent View scanner to show how AI-ready a site is overall, whether or not that layer exists yet.
 
 ## Run it
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com
+```
+
+Returns an AI-readiness score out of 100, findings, and an optional shareable HTML report — no implementation required first.
 
 ```bash
 npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-The package name is `@hardmachinelabs/index-ai-validator`. The CLI binary is `index-ai`. By default it prints a deterministic, summary-first report:
+The package name is `@hardmachinelabs/index-ai-validator`. The CLI binary is `index-ai`, and Default validation mode runs automatically — there is no command keyword to type. By default it prints a deterministic, summary-first report:
 
 ```txt
 index-ai validation result
@@ -71,11 +79,11 @@ Next:
 - No blocking validation fixes were found.
 ```
 
-Add `--json` for a stable machine-readable result, or `--html report.html` for a shareable visual report with a CI verdict, a readiness score, and recommended next steps.
+Both commands accept `--json` for a stable machine-readable result, and `--html` for a shareable HTML report.
 
-Checks Level 1 + Level 2a today. Not certification, not a traffic promise. → [See the full scope](/guide/scope)
+Default validation mode checks Level 1 + Level 2a conformance today. `scan` calls the remote Agent View scanner for a broader AI-readiness diagnostic. Neither is certification, and neither is a traffic promise. → [See the full scope](/guide/scope)
 
-## What it checks
+## What Default validation mode checks
 
 - Level 1 AI Manifest: fetch, JSON content type, JSON parse, and schema shape
 - The `access.agent_index` declaration and the Agent Index graph it points to
@@ -85,7 +93,13 @@ Checks Level 1 + Level 2a today. Not certification, not a traffic promise. → [
 - Secret-shaped values and private infrastructure references in public AI-facing content
 - Discovery hints on the homepage, `robots.txt`, and `/llms.txt`
 
-For what it deliberately does not do, see [Scope](/guide/scope).
+## What `scan` checks
+
+- Five scored dimensions from the remote Agent View scanner: `access`, `extractability`, `citability`, `safety`, and `agent_layer`
+- The gap between what a human sees (rendered page) and what a bot can extract (raw content)
+- Findings ranked by severity, with fix links back to `index-ai` where relevant
+
+For what each command deliberately does not do, see [Scope](/guide/scope).
 
 <div class="cta-band">
   <div class="cta-copy">

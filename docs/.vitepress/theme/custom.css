@@ -116,6 +116,13 @@
   border-radius: 8px;
 }
 
+/* Content images on regular guide pages (not the homepage, see .VPHome img
+   below): breathing room above and below so they don't crowd surrounding
+   prose. */
+.vp-doc img {
+  margin: 32px 0;
+}
+
 /* Explainer image on the home page: framed, full-width band */
 .VPHome img {
   width: 100%;
