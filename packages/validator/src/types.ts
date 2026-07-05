@@ -151,3 +151,16 @@ export type ScanOptions = {
   budgetMs?: number
   onProgress?: (progress: { currentStep: ScanProgressStep }) => void
 }
+
+export type TargetLevel = 'l1' | 'l2a' | 'l2b'
+
+export type LevelStatus = 'tested' | 'skipped'
+
+export type LevelResult = {
+  level: TargetLevel
+  status: LevelStatus
+  pass: number
+  warn: number
+  fail: number
+  reason?: string
+}
