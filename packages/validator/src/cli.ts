@@ -3,7 +3,7 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands and runs validation/scanner checks to write terminal, JSON, or HTML reports.
- * job_ref: T3.2_default-report-locations
+ * job_ref: T5.2_cli-ux-fixes
  * functions: [runCli, main, createProgram]
  * classes: []
  * inputs: [process.argv]
@@ -14,11 +14,12 @@
  *   - imports: packages/validator/src/scan.ts
  *   - imports: packages/validator/src/constants.ts
  *   - tested_by: packages/validator/src/cli.test.ts
- * last_update: 2026-07-04
+ * last_update: 2026-07-05
  */
 
+import { readFileSync } from 'node:fs'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, extname, resolve } from 'node:path'
+import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
@@ -99,6 +100,9 @@ export async function runCli(
       if (options.html !== undefined) {
         const htmlPath = options.html === true ? DEFAULT_VALIDATE_HTML_PATH : options.html
         await writeHtmlReport(htmlPath, result)
+        if (!options.json) {
+          stdout += `HTML report written to ${resolve(htmlPath)}\n`
+        }
       }
 
       stdout += options.json
@@ -131,6 +135,9 @@ export async function runCli(
       if (options.html !== undefined) {
         const htmlPath = options.html === true ? DEFAULT_SCAN_HTML_PATH : options.html
         await writeScanHtmlReport(htmlPath, target, outcome)
+        if (!options.json) {
+          stdout += `HTML report written to ${resolve(htmlPath)}\n`
+        }
       }
     },
   })
@@ -190,8 +197,55 @@ function createProgram(options: {
   program
     .name(CLI_NAME)
     .usage('[options] <url>')
-    .description('Validate index-ai Level 1 and Level 2a agent-facing content layers.')
+    .description(
+      [
+        'Validate index-ai Level 1 and Level 2a agent-facing content layers.',
+        '',
+        'Two modes:',
+        `  ${CLI_NAME} validate <url>  Run full validation checks (also the default when no subcommand is given).`,
+        `  ${CLI_NAME} scan <url>      Run the Agent View scanner service against a site and print its findings.`,
+      ].join('\n'),
+    )
     .enablePositionalOptions()
+    .version(readPackageVersion())
+    .configureOutput({
+      writeOut: options.writeOut,
+      writeErr: options.writeErr,
+    })
+    .exitOverride()
+
+  addValidationOptions(program).action(options.runValidation)
+
+  // `.command()` snapshots the parent's configureOutput/exitOverride at call
+  // time (Commander's copyInheritedSettings), so this must come after the
+  // chain above configured them on `program`.
+  addValidationOptions(program.command('validate'))
+    .description('Validate index-ai Level 1 and Level 2a agent-facing content layers (same as the default mode).')
+    .action(options.runValidation)
+
+  program
+    .command('scan')
+    .description('Scan a site via the Agent View scanner service and print the scan result.')
+    .argument('<url>', 'Site URL to scan, for example https://example.com')
+    .option('--json', 'Print the raw scanner status as JSON')
+    .option(
+      '--html [path]',
+      `Write a minimal HTML report to the provided .html path, or to ${DEFAULT_SCAN_HTML_PATH} if no path is given`,
+    )
+    .option('--api-key <key>', 'Reserved for future scanner authentication (currently has no effect)')
+    .option('--timeout <ms>', 'Scan request timeout in milliseconds', parsePositiveInteger, DEFAULT_TIMEOUT_MS)
+    .action(options.runScan)
+
+  return program
+}
+
+/**
+ * Applies the validation command's argument and option chain to `command`.
+ * Shared between the root program (default `index-ai <url>` mode) and the
+ * `validate` subcommand so the two never drift out of sync (shokunin: DRY).
+ */
+function addValidationOptions(command: Command): Command {
+  return command
     .argument('<url>', 'Site URL to validate, for example https://example.com')
     .option('--json', 'Print stable JSON output')
     .option('--verbose', 'Print all checks, including passed checks')
@@ -211,30 +265,18 @@ function createProgram(options: {
       parsePositiveInteger,
       DEFAULT_MAX_CONCURRENCY,
     )
-    .configureOutput({
-      writeOut: options.writeOut,
-      writeErr: options.writeErr,
-    })
-    .exitOverride()
-    .action(options.runValidation)
+}
 
-  // `.command()` snapshots the parent's configureOutput/exitOverride at call
-  // time (Commander's copyInheritedSettings), so this must come after the
-  // chain above configured them on `program`.
-  program
-    .command('scan')
-    .description('Scan a site via the Agent View scanner service and print the scan result.')
-    .argument('<url>', 'Site URL to scan, for example https://example.com')
-    .option('--json', 'Print the raw scanner status as JSON')
-    .option(
-      '--html [path]',
-      `Write a minimal HTML report to the provided .html path, or to ${DEFAULT_SCAN_HTML_PATH} if no path is given`,
-    )
-    .option('--api-key <key>', 'Reserved for future scanner authentication (currently has no effect)')
-    .option('--timeout <ms>', 'Scan request timeout in milliseconds', parsePositiveInteger, DEFAULT_TIMEOUT_MS)
-    .action(options.runScan)
+/**
+ * Reads the CLI's own version from package.json at runtime, so `--version`
+ * always reflects the real release version instead of a hardcoded string
+ * that would drift on the next release.
+ */
+function readPackageVersion(): string {
+  const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
+  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string }
 
-  return program
+  return packageJson.version
 }
 
 function parsePositiveInteger(value: string): number {
