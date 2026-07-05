@@ -123,6 +123,13 @@
   margin: 32px 0;
 }
 
+/* Mermaid diagrams: same breathing room as .vp-doc img above, so a diagram
+   gets consistent spacing from surrounding prose without hand-placed <br>
+   tags in the Markdown source. */
+.vp-doc .mermaid {
+  margin: 32px 0;
+}
+
 /* Audio explainer, rendered as a static-image video so it reads as playable
    media rather than a plain <audio> tag easily missed on the page. */
 .audio-explainer {

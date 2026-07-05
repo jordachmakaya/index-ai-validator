@@ -17,6 +17,27 @@ const config = withMermaid(
       },
       assetsInclude: ['**/*.PNG'],
     },
+    // Mermaid ships a generic grey default theme. These values mirror the
+    // brand tokens in theme/custom.css (--vp-c-bg-soft, --vp-c-border,
+    // --vp-c-text-1, --vp-c-text-3) so flowcharts read as part of the same
+    // amber/navy product, not a library default. Keep in sync with that file.
+    mermaid: {
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#0d1320',
+        primaryBorderColor: '#5f6e85',
+        primaryTextColor: '#e8edf5',
+        lineColor: '#5f6e85',
+        textColor: '#e8edf5',
+        mainBkg: '#0d1320',
+        nodeBorder: '#5f6e85',
+        clusterBkg: '#0d1320',
+        clusterBorder: '#1e2d44',
+        edgeLabelBackground: '#0d1320',
+        fontFamily:
+          'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
+      },
+    },
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/guide/getting-started' },

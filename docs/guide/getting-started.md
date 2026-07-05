@@ -24,17 +24,9 @@ a verdict, and findings — for any site, whether or not it implements
 
 This package is for developers, maintainers, and technical reviewers working on
 public `index-ai` implementations, and for anyone who wants a quick, free read
-on how AI-ready a site is overall.
-
->[!note]
->Use **`Default validation mode`** when `you need structured conformance checks for
-the AI Manifest`, Agent Index graph, clean endpoint content types, HTML leaks,
-`content_chars`, conservative security heuristics, discovery hints, and CLI
-behavior. 
-
->[!tip]
->Use `scan` when you just want a score and findings, with nothing to
-implement first.
+on how AI-ready a site is overall — use Default validation mode once
+`index-ai` is implemented, and `scan` when you just want a score and
+findings first.
 
 ## Default validation mode
 
@@ -191,8 +183,6 @@ flowchart TD
   F --> G["Choose exit code"]
 ```
 
-<br>
-
 >[!note]
 >`scan` follows a different flow — it submits the URL to the remote Agent View
 scanner and polls for a result, rather than running checks locally. See
@@ -321,8 +311,6 @@ failure exits non-zero. It is a diagnostic, not compliance certification or
 a traffic promise — see [Scope](/guide/scope).
 
 ### Scan architecture overview
-
-<br>
 
 ```mermaid
 flowchart TD

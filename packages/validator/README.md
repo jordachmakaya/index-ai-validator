@@ -39,23 +39,9 @@ agent-facing content layer.
 
 Most websites are built for browsers: HTML, scripts, navigation, layout, and
 client-side rendering. AI agents often have to extract meaning from that
-browser-first surface.
-
-`index-ai` adds a machine-readable layer built for agents: a manifest, an
-Agent Index, and clean text endpoints with measured content size.
-
-The default validation mode checks whether that layer is implemented
-correctly.
-
-`scan` diagnoses the broader gap between the human-facing website and what
-an AI-oriented scanner can extract.
-
->[!important]
-
-- Use the `default validation mode` **when you already implemented
-  `index-ai`** and want to check if the layer is correct.
-- Use `scan` when **you want to see what AI agents can actually read from
-  your website content**, what they miss, and which gaps need fixing.
+browser-first surface. `index-ai` adds a machine-readable layer built for
+agents instead: a manifest, an Agent Index, and clean text endpoints with
+measured content size.
 
 ```bash
 # Remote Agent View diagnostic

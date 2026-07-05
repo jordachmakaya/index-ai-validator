@@ -31,9 +31,7 @@ two different questions:
 
 Most sites are built for browsers, so agents have to read browser-first
 HTML to understand them. `index-ai` is a machine-readable layer built for
-agents instead: Default validation mode checks whether a site exposes that
-layer correctly, and `scan` diagnoses how close a site is to full
-AI-readiness.
+agents instead.
 
 ![What is Agent View? A machine-readable version of your website, built for AI agents](docs/hardmachinelabs-what-is-agent-view.png)
 
