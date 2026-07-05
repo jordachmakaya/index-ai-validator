@@ -3,6 +3,12 @@ node_modules/
 .pnpm-store/
 .pnpm/
 .bin/
+assets/
+.claude/
+TEST_PATTERNS.md
+CLAUDE.md
+MEMORY.md
+DESIGN.md
 
 # builds
 dist/
@@ -43,3 +49,7 @@ CODE_STYLES.md
 DOCS_IMPLEMENTATION_PLAN.md
 IMPLEMENTATION_PLAN.md
 RULES.md
+CODE_LOCATIONS.md
+
+# Shokunin planning/strategy — never pushed to this public repo
+.shokunin/
