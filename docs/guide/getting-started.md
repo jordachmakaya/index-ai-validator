@@ -7,13 +7,15 @@
 `@hardmachinelabs/index-ai-validator` is a free CLI with two features:
 Default validation mode and `scan`.
 
-Default validation mode is an experimental conformance checker for
+>[!note]
+>**Default validation mode** is an experimental conformance checker for
 `index-ai` Level 1 and Level 2a. It checks whether a public website exposes
 the files, Agent Index graph, and clean endpoints expected by the current
 Level 1 and Level 2a implementation. It runs entirely locally — no
 dependency beyond the target site itself.
 
-`scan` calls the remote Agent View scanner and returns an AI-readiness score,
+>[!important]
+>`scan` calls the remote Agent View scanner and returns an AI-readiness score,
 a verdict, and findings — for any site, whether or not it implements
 `index-ai` yet. This page covers Default validation mode; see
 [CLI](/guide/cli) for the full `scan` reference.
@@ -24,10 +26,14 @@ This package is for developers, maintainers, and technical reviewers working on
 public `index-ai` implementations, and for anyone who wants a quick, free read
 on how AI-ready a site is overall.
 
-Use Default validation mode when you need structured conformance checks for
-the AI Manifest, Agent Index graph, clean endpoint content types, HTML leaks,
+>[!note]
+>Use **`Default validation mode`** when `you need structured conformance checks for
+the AI Manifest`, Agent Index graph, clean endpoint content types, HTML leaks,
 `content_chars`, conservative security heuristics, discovery hints, and CLI
-behavior. Use `scan` when you just want a score and findings, with nothing to
+behavior. 
+
+>[!tip]
+>Use `scan` when you just want a score and findings, with nothing to
 implement first.
 
 ## Default validation mode
@@ -185,7 +191,10 @@ flowchart TD
   F --> G["Choose exit code"]
 ```
 
-`scan` follows a different flow — it submits the URL to the remote Agent View
+<br>
+
+>[!note]
+>`scan` follows a different flow — it submits the URL to the remote Agent View
 scanner and polls for a result, rather than running checks locally. See
 below.
 
@@ -202,7 +211,8 @@ mode, it requires a network call to the scanner API.
 npx @hardmachinelabs/index-ai-validator scan https://example.com
 ```
 
-The CLI submits the URL to the remote scanner, then polls until the scan
+>[!note]
+>The CLI submits the URL to the remote scanner, then polls until the scan
 reaches a terminal `done` (or `failed`) result. While it waits, it prints
 progress on stderr, one line per stage:
 
@@ -253,20 +263,21 @@ directly in a browser or can be sent to someone else as-is. This is the
 artifact people forward when they want another person to see the result
 without re-running the scan themselves.
 
-The report renders every field from the JSON result:
-
-- The score out of 100 and the verdict, plus a color-coded recommendation
-  strip that changes with the score tier (high, moderate, or low).
-- A per-dimension breakdown: `access`, `extractability`, `citability`,
-  `safety`, `agent_layer`.
-- Every finding, grouped by severity (`P0`/`P1`/`P2`), each with its effort
-  estimate and a "Fix this" link where the scanner provides one.
-- A noise-ratio, CSR-gap, and render-comparison panel.
-- A sidebar with the verdict, a findings-severity summary, scan metadata
-  (engine version, schema version, target), and resource links — including
-  a link to the full audit when the scanner provides one.
-- When the `agent_layer` dimension is present and scores below 5, a callout
-  pointing to [agent-view.com](https://agent-view.com).
+>[!note]
+>The report renders every field from the JSON result:
+>
+>- The score out of 100 and the verdict, plus a color-coded recommendation
+>  strip that changes with the score tier (high, moderate, or low).
+>- A per-dimension breakdown: `access`, `extractability`, `citability`,
+>  `safety`, `agent_layer`.
+>- Every finding, grouped by severity (`P0`/`P1`/`P2`), each with its effort
+>  estimate and a "Fix this" link where the scanner provides one.
+>- A noise-ratio, CSR-gap, and render-comparison panel.
+>- A sidebar with the verdict, a findings-severity summary, scan metadata
+>  (engine version, schema version, target), and resource links — including
+>  a link to the full audit when the scanner provides one.
+>- When the `agent_layer` dimension is present and scores below 5, a callout
+>  pointing to [agent-view.com](https://agent-view.com).
 
 See [CLI](/guide/cli#scan) for the full option, exit-code, and TypeScript
 reference.
@@ -297,7 +308,8 @@ fields:
 - A noise ratio, a CSR (client-side-rendering) gap percentage, and a
   rendered-vs-raw comparison status
 
-Scoring, dimension weights, and finding content are computed and owned by
+>[!note]
+>Scoring, dimension weights, and finding content are computed and owned by
 the remote scanner service, not by this package, and can change
 independently of this package's version.
 
@@ -309,6 +321,8 @@ failure exits non-zero. It is a diagnostic, not compliance certification or
 a traffic promise — see [Scope](/guide/scope).
 
 ### Scan architecture overview
+
+<br>
 
 ```mermaid
 flowchart TD

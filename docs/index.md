@@ -14,7 +14,7 @@ hero:
       link: /guide/fix-your-report
 
 features:
-  - title: Prove agents can find you
+  - title: Check your discovery signals
     details: Checks the AI Manifest at /.well-known/index-ai.json and the discovery hints agents rely on — HTML link, HTTP Link header, robots.txt, llms.txt.
   - title: Validate your Agent Index
     details: Inspects the Level 2a graph nodes, fetches each clean llm_url endpoint, and verifies content_chars against the Unicode NFC code-point count.
@@ -24,19 +24,58 @@ features:
     details: Run `scan` to call the remote Agent View scanner — one URL, one score out of 100, one shareable report showing the gap between what humans see and what bots can extract.
 ---
 
+<br>
+
 <div class="hero-media">
-  <video src="/index-ai-validator.mp4" controls autoplay muted loop playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result">
+  <video src="/can_AI_Read_Your_Site_hardmachinelabs.mp4" controls autoplay muted loop playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result">
     Your browser does not support the video tag. The index-ai-validator demo shows a public website validated through the AI Manifest, Agent Index, and clean endpoints to a validation result.
   </video>
 </div>
 
-## Most sites are readable by browsers. Is yours readable by agents?
+## What is index-ai-validator?
 
-Browsers read HTML, CSS, and JavaScript. AI agents need a different interface: a clean layer that says what a site is, where its content lives, how fresh it is, and how much text they will pay tokens for before fetching it.
+`@hardmachinelabs/index-ai-validator` is a free CLI that checks two
+things:
 
-`index-ai` explores an Agent View through three ideas — an [AI Manifest](/guide/level-1-manifest) that describes the site, an [Agent Index](/guide/level-2a-agent-index) that maps public content into structured nodes, and clean content endpoints that return Markdown or plain text instead of rendered HTML.
+1. **Is a site's `index-ai` layer already implemented correctly?**
+   Default validation mode — local, no signup, no account.
+2. **How AI-ready is a site overall, implemented or not?**
+   `scan` — calls the remote Agent View scanner, returns a score, a
+   verdict, and findings.
 
-`@hardmachinelabs/index-ai-validator` makes that layer testable, with two features that answer two different questions: Default validation mode checks whether a site correctly implements the layer above, and `scan` calls the remote Agent View scanner to show how AI-ready a site is overall, whether or not that layer exists yet.
+Run either against a real site in one command.
+
+## What is Agent View?
+
+![llms.txt vs index-ai: llms.txt is a human-readable note providing context; index-ai is a queryable, structured interface](llmTxt_vs_index-ai-hardmachinelabs.png)
+
+If `llms.txt` is a human-readable note, `index-ai` is a queryable,
+structured interface.
+
+Most sites are built for browsers: HTML, CSS, and JavaScript. AI agents
+read that same page differently — they need a clean, machine-readable
+interface that states what a site is, where its content lives, how fresh
+it is, and how much text they will pay tokens for before fetching it.
+Agent View is that interface: an [AI Manifest](/guide/level-1-manifest),
+an [Agent Index](/guide/level-2a-agent-index), and clean content
+endpoints that return Markdown or plain text instead of rendered HTML.
+It is defined by the open [`index-ai` specification](https://github.com/jordachmakaya/index-ai)
+and diagnosed at scale by [Agent View](https://agent-view.com), the
+remote scanner `scan` calls.
+
+## See it for yourself
+
+[Jordach's own site](https://jordach.dev) implements Agent View — proof,
+not a claim to take on faith. Try this:
+
+1. Copy `https://jordach.dev`.
+2. Paste it into any LLM chat (ChatGPT, Claude, or similar) and ask it
+   questions about Jordach — his background, his work, his projects.
+3. Then ask the LLM directly: was that information easy to retrieve, and
+   why?
+
+Easy or hard, and why, is exactly what this CLI measures. Run `scan` or
+Default validation mode on your own site next.
 
 ## Run it
 

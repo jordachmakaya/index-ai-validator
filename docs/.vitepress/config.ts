@@ -15,11 +15,13 @@ const config = withMermaid(
       optimizeDeps: {
         include: ['mermaid'],
       },
+      assetsInclude: ['**/*.PNG'],
     },
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/guide/getting-started' },
         { text: 'CLI', link: '/guide/cli' },
+        { text: 'HTML Report', link: '/guide/html-report' },
         { text: 'Scope', link: '/guide/scope' },
         { text: 'About', link: '/about' },
       ],
@@ -42,6 +44,7 @@ const config = withMermaid(
             { text: 'Fix Your Report', link: '/guide/fix-your-report' },
             { text: 'Conformance vs Passed', link: '/guide/conformance-vs-passed' },
             { text: 'JSON Output', link: '/guide/json-output' },
+            { text: 'HTML Report', link: '/guide/html-report' },
             { text: 'CI', link: '/guide/ci' },
           ],
         },

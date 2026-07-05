@@ -4,7 +4,17 @@ Level 2a extends Level 1 with an Agent Index graph. The graph lists clean,
 AI-readable endpoints and declares the metadata needed to validate those
 endpoints.
 
-Level 2a Agent Index validation is available through `validateIndexAi()` and
+
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="Winning AI search with Agent View — audio explainer">
+    <source src="/level-2a-agent-index-explained.mp4" type="video/mp4">
+    Your browser does not support the video tag. Listen to the audio explainer: <a href="/Winning_AI_search_with_Agent_View.m4a">Winning_AI_search_with_Agent_View.m4a</a>.
+  </video>
+  <p class="audio-explainer-caption">🔊 Audio explainer — winning AI search with Agent View.</p>
+</div>
+
+>[!important]
+>Level 2a Agent Index validation is available through `validateIndexAi()` and
 the `index-ai` CLI.
 
 ## Level 2a scope

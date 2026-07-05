@@ -17,6 +17,13 @@
 
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelab-index-ai-two-cmd-cli.png)
 
+<br>
+
+![The Agent Web, why this matters: what a human sees versus what agents fetch — useful content is often less than 20-30% of total HTML token weight, agents pay a token tax on markup never meant for them](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/the_Agent_Web_why_this_matter-hardmachinelabs.png)
+
+## index-ai-validator
+
+
 `@hardmachinelabs/index-ai-validator` is a CLI for the `index-ai`
 agent-facing content layer.
 
@@ -533,8 +540,13 @@ Documentation:
 
 ## About index-ai
 
+
 `index-ai` is an experimental specification for making public websites
 easier for AI agents to read, inspect, and budget before fetching content.
+
+<br>
+
+![Architecting the Agent Web: Layer 1 AI Manifest (/.well-known/index-ai.json), Layer 2 Agent View (/agent-index.json), Layer 3 Query Interface (MCP Server) — public, publisher-declared, and publisher-controlled](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/Architecting_the_Agent_Web_-_hardmachinelabs.png)
 
 It is built around three simple ideas:
 
@@ -551,6 +563,13 @@ remote AI-readiness diagnostic against a broader model (`scan`).
 It does not claim to be a formal standard. It is an experimental project
 built in public to explore how websites can expose cleaner, cheaper, and
 more reliable content surfaces for AI agents.
+
+## In short
+
+![llms.txt vs index-ai: llms.txt is a human-readable note providing context; index-ai is a queryable, structured interface](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/llmTxt_vs_index-ai-hardmachinelabs.png)
+
+If `llms.txt` is a human-readable note, `index-ai` is a queryable,
+structured interface.
 
 ## Built by Jordach Makaya
 

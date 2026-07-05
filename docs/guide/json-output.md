@@ -93,7 +93,8 @@ Top-level fields:
 }
 ```
 
-The `metrics` object above is complete. The `checks` array is shortened to two
+>[!note]
+>The `metrics` object above is complete. The `checks` array is shortened to two
 representative entries — a real result lists every generated check. In this
 passing example the summary totals 59 checks.
 

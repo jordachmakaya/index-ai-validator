@@ -188,6 +188,8 @@ Neither command provides legal compliance, production certification, a
 security audit, vulnerability scanning, AI traffic guarantees, SEO ranking
 guarantees, Level 2b relations, or Level 3 MCP validation.
 
+![Why AI agents prefer Agent View: without it, agents pay a high token cost parsing HTML noise; with it, clean structured content keeps token cost low](docs/hardmachinelabs-agent-view-cost-less-tokens.png)
+
 ## Built by Jordach Makaya
 
 `index-ai` and `@hardmachinelabs/index-ai-validator` are created and

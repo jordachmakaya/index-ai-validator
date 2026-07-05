@@ -123,6 +123,19 @@
   margin: 32px 0;
 }
 
+/* Audio explainer, rendered as a static-image video so it reads as playable
+   media rather than a plain <audio> tag easily missed on the page. */
+.audio-explainer {
+  margin: 32px 0;
+}
+
+.audio-explainer-caption {
+  margin-top: 10px;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  text-align: center;
+}
+
 /* Explainer image on the home page: framed, full-width band */
 .VPHome img {
   width: 100%;

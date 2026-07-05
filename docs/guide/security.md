@@ -15,6 +15,14 @@ are not vulnerability scanning.
 The validator scans fetched Level 2a clean endpoint bodies from node
 `content.llm_url` values.
 
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai Validator Security Checks">
+    <source src="/index-ai_Validator_Security_Checks.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <p class="audio-explainer-caption">🔊 index-ai Validator Security Checks.</p>
+</div>
+
 Before fail-level secret and private infrastructure checks run, Markdown fenced
 code and inline code are stripped. This lets documentation show examples without
 turning every code sample into a finding.
@@ -103,6 +111,8 @@ They can change `passed`:
 - `strictSecurity` upgrades private infrastructure warnings to failures.
 - `failOnWarn` makes any warning fail `passed`.
 - `strict` makes SHOULD-level warnings fail `passed`.
+
+![AI Manifest — Security Checks: what developers must verify according to the index-ai spec — no sensitive data, treat text as untrusted, domain integrity, robots.txt comes first, public content only](../index-ai-security-check.png)
 
 ## Scope
 

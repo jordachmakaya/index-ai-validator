@@ -7,8 +7,18 @@ honest.
 `content_chars` is the declared Unicode code point count for a clean `llm_url`
 response.
 
-The validator checks `content_chars` as part of Level 2a Agent Index
+>[!important]
+>The validator checks `content_chars` as part of Level 2a Agent Index
 validation through both `validateIndexAi()` and the `index-ai` CLI.
+
+
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="Why AI agents prioritize content_chars — audio explainer">
+    <source src="/content-chars-explained.mp4" type="video/mp4">
+    Your browser does not support the video tag. Listen to the audio explainer: <a href="/why_AI_agents_prioritize_contentchars.m4a">why_AI_agents_prioritize_contentchars.m4a</a>.
+  </video>
+  <p class="audio-explainer-caption">🔊 Audio explainer — why <code>content_chars</code> matters to AI agents.</p>
+</div>
 
 ## What is implemented now
 

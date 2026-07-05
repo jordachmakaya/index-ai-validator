@@ -18,7 +18,8 @@ The `index-ai` binary has two features that answer two different questions:
 
 ## Default validation mode
 
-Default validation mode runs automatically — there is no command keyword to
+>[!note]
+>Default validation mode runs automatically — there is no command keyword to
 type. It calls `validateIndexAi()` and returns either a human-readable
 report or stable JSON.
 
@@ -136,7 +137,8 @@ errors before a validation result use stderr.
 index-ai https://example.com --html report.html
 ```
 
-The HTML report is optional and intended for local or shareable human review.
+>[!note]
+>The HTML report is optional and intended for local or shareable human review.
 It is generated from the same validation result as the human and JSON output.
 It does not change validation semantics or exit codes.
 
@@ -144,7 +146,8 @@ HTML reports include a `CI Verdict`, a `Readiness` score, and recommended next
 steps. The readiness score is report-only and does not affect `passed`,
 `conformance`, JSON output, or exit codes.
 
-The report path must be non-empty and end with `.html`. Parent directories are
+>[!important]
+>The report path must be non-empty and end with `.html`. Parent directories are
 not created automatically.
 
 JSON remains the automation format. When used together, stdout stays JSON-only
@@ -189,7 +192,8 @@ Use this only for trusted local or private development:
 index-ai http://localhost:3000 --allow-private-hosts
 ```
 
-Do not use `--allow-private-hosts` as evidence that private endpoints are
+>[!caution]
+>Do not use `--allow-private-hosts` as evidence that private endpoints are
 appropriate for public `index-ai` implementations.
 
 ## `scan`
