@@ -455,6 +455,40 @@ describe('pollScan', () => {
       await server.close()
     }
   })
+
+  // T5.0: pollScan's `for (;;)` loop currently has no protection against a
+  // one-off transient network error mid-poll (DNS hiccup, connection reset)
+  // — it propagates immediately and kills the whole scan, even though the
+  // very next poll would have succeeded within budget. Destroying the socket
+  // before any response is sent (no HTTP status at all) is what makes
+  // undici's real fetch() surface a generic network TypeError, matching the
+  // real-world failure this test protects against. RED until the Coder job
+  // adds a tolerance for exactly one such hiccup per poll.
+  test('tolerates one transient network error mid-poll and still resolves on the next successful poll', async () => {
+    let requestCount = 0
+
+    const server = await startServer((request, response) => {
+      requestCount += 1
+
+      if (requestCount === 1) {
+        request.socket.destroy()
+        return
+      }
+
+      sendJson(response, 200, DONE_STATUS)
+    })
+
+    try {
+      const result = await pollScan(SCAN_ID, { baseUrl: server.origin, intervalMs: 5 })
+
+      expect(result.status).toBe('done')
+      expect(result.result?.score).toBe(35)
+      expect(requestCount).toBe(2)
+    }
+    finally {
+      await server.close()
+    }
+  })
 })
 
 type TestServer = {
