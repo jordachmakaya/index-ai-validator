@@ -17,8 +17,9 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { mkdir, mkdtemp, readFile, rm, stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
+import { fileURLToPath } from 'node:url'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -1337,3 +1338,139 @@ function getFetchInputUrl(input: Parameters<typeof fetch>[0]): URL | null {
 
   return null
 }
+
+async function readPackageVersion(): Promise<string> {
+  const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json')
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8')) as { version: string }
+
+  return packageJson.version
+}
+
+// T5.2_cli-ux-fixes (Bug 1, UPGRADE_BRIEF.md §2): `validate` is not yet a
+// recognized subcommand or alias, so `runCli(['validate', url, ...])`
+// currently fails with a Commander usage error ("too many arguments"). This
+// test is expected to fail (RED) until the Coder job adds the alias.
+describe('runCli validate alias', () => {
+  it('produces identical output for `index-ai validate <url>` and the bare `index-ai <url>` form', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const aliasResult = await runCli(['validate', 'https://example.com', '--json'], { validate })
+    const bareResult = await runCli(['https://example.com', '--json'], { validate })
+
+    expect(aliasResult.exitCode).toBe(bareResult.exitCode)
+    expect(aliasResult.stdout).toBe(bareResult.stdout)
+    expect(aliasResult.stderr).toBe(bareResult.stderr)
+    expect(parseJsonObject(aliasResult.stdout)).toStrictEqual(parseJsonObject(bareResult.stdout))
+  })
+})
+
+// T5.2_cli-ux-fixes (Bug 2, UPGRADE_BRIEF.md §2): `--version`/`-V` are not
+// implemented at all today (no `.version()` call on the Commander program),
+// so both flags currently fail as unrecognized options. Expected to fail
+// (RED) until the Coder job wires up the real package.json version.
+describe('runCli --version', () => {
+  it('prints the real package.json version for --version, exits 0, and never runs validation', async () => {
+    const version = await readPackageVersion()
+    let validateCalls = 0
+    const validate: CliValidationRunner = async (options) => {
+      validateCalls += 1
+      return validationResult(options.target)
+    }
+
+    const result = await runCli(['--version'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain(version)
+    expect(validateCalls).toBe(0)
+  })
+
+  it('prints the real package.json version for the -V short flag, exits 0, and never runs validation', async () => {
+    const version = await readPackageVersion()
+    let validateCalls = 0
+    const validate: CliValidationRunner = async (options) => {
+      validateCalls += 1
+      return validationResult(options.target)
+    }
+
+    const result = await runCli(['-V'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain(version)
+    expect(validateCalls).toBe(0)
+  })
+})
+
+// T5.2_cli-ux-fixes (Bug 3, UPGRADE_BRIEF.md §2): `--html` writes the report
+// correctly today but prints nothing confirming the path. Expected to fail
+// (RED) until the Coder job adds a one-line confirmation to stdout, for both
+// `validate --html` and `scan --html`, default and explicit paths alike.
+describe('runCli --html confirmation message', () => {
+  it('prints a confirmation line citing the explicit path after validate --html writes successfully', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+      const result = await runCli(['https://example.com', '--html', reportPath], { validate })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(reportPath)
+    })
+  })
+
+  it('prints a confirmation line citing the default path after validate --html with no value writes successfully', async () => {
+    await withTempCwd(async (directory) => {
+      const validate: CliValidationRunner = async (options) => validationResult(options.target)
+      const expectedPath = join(directory, '.report', 'validate-report.html')
+
+      const result = await runCli(['https://example.com', '--html'], { validate })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(expectedPath)
+    })
+  })
+
+  it('prints a confirmation line citing the explicit path after scan --html writes successfully', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const outcome = scanOutcome()
+      const scan: CliScanRunner = async () => outcome
+
+      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(reportPath)
+    })
+  })
+
+  it('prints a confirmation line citing the default path after scan --html with no value writes successfully', async () => {
+    await withTempCwd(async (directory) => {
+      const outcome = scanOutcome()
+      const scan: CliScanRunner = async () => outcome
+      const expectedPath = join(directory, '.report', 'scan-report.html')
+
+      const result = await runCli(['scan', 'https://example.com', '--html'], { scan })
+
+      expect(result.exitCode).toBe(0)
+      expect(result.stdout).toContain(expectedPath)
+    })
+  })
+})
+
+// T5.2_cli-ux-fixes (Bug 4, UPGRADE_BRIEF.md §2): `--help` currently lists
+// `scan` as a bare Commands: entry with no explicit framing that
+// `index-ai <url>` / `index-ai validate <url>` is the other, default mode.
+// These assertions require the two keywords in distinct, mode-naming
+// contexts (not just raw substring presence, which the current bugged
+// output already satisfies for "scan"). Expected to fail (RED) until the
+// Coder job rewrites the help text.
+describe('runCli --help two-mode framing', () => {
+  it('explains index-ai validate <url> as the default mode, distinct from index-ai scan <url>', async () => {
+    const result = await runCli(['--help'])
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toMatch(/index-ai\s+validate\s*<url>/)
+    expect(result.stdout).toMatch(/index-ai\s+scan\s*<url>/)
+  })
+})
