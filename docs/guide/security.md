@@ -114,6 +114,15 @@ They can change `passed`:
 
 ![AI Manifest — Security Checks: what developers must verify according to the index-ai spec — no sensitive data, treat text as untrusted, domain integrity, robots.txt comes first, public content only](../index-ai-security-check.png)
 
+<div class="illustration-note">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Illustrative example — for visual reference only.</span>
+</div>
+
 ## Scope
 
 These are conservative heuristics, not a security guarantee. The package does
