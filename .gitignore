@@ -14,6 +14,7 @@ dist/
 coverage/
 .turbo/
 .cache/
+.temp/
 
 # docs build/cache
 docs/.vitepress/dist/
