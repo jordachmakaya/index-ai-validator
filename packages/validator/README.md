@@ -121,11 +121,12 @@ requests to the target site. There is no Level 3 / MCP check implemented.
 
 ### Usage
 
-Default validation mode runs automatically — there is no command keyword to
-type, just the URL:
+Default validation mode runs automatically — no command keyword is required,
+just the URL. `validate <url>` is the same mode with an explicit keyword:
 
 ```bash
 index-ai <url> [options]
+index-ai validate <url> [options]
 ```
 
 ### Options

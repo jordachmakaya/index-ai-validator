@@ -40,6 +40,7 @@ agents instead.
 ```bash
 index-ai scan https://example.com       # remote Agent View diagnostic
 index-ai https://example.com            # default validation mode, no keyword
+index-ai validate https://example.com   # same as above, explicit keyword
 ```
 
 ## Which one should I use?
@@ -106,11 +107,13 @@ index-ai
 
 ## Default validation mode — local conformance check
 
-Default validation mode runs automatically — there is no command keyword to
-type, just the URL:
+Default validation mode runs automatically — no command keyword is required,
+just the URL. `validate <url>` is the same mode with an explicit keyword,
+for scripts or muscle memory that prefer naming it:
 
 ```bash
 index-ai <url>
+index-ai validate <url>
 ```
 
 It calls `validateIndexAi()`, prints a deterministic human-readable report

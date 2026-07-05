@@ -39,9 +39,10 @@ npx @hardmachinelabs/index-ai-validator https://example.com
 The package name is `@hardmachinelabs/index-ai-validator`.
 
 The CLI binary is `index-ai`, and Default validation mode runs
-automatically — there is no command keyword to type. The rest of this
-section covers Default validation mode; skip to [scan](#scan) below for the
-remote diagnostic.
+automatically — no command keyword is required (`index-ai validate <url>`
+is the same mode with an explicit keyword, if you prefer naming it). The
+rest of this section covers Default validation mode; skip to
+[scan](#scan) below for the remote diagnostic.
 
 ### STEP-2 - Read the human report
 

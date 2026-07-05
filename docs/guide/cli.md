@@ -19,14 +19,16 @@ The `index-ai` binary has two features that answer two different questions:
 ## Default validation mode
 
 >[!note]
->Default validation mode runs automatically — there is no command keyword to
-type. It calls `validateIndexAi()` and returns either a human-readable
-report or stable JSON.
+>Default validation mode runs automatically — no command keyword is
+required. `validate <url>` is the same mode with an explicit keyword. Both
+call `validateIndexAi()` and return either a human-readable report or
+stable JSON.
 
 ### Basic command
 
 ```bash
 index-ai https://example.com
+index-ai validate https://example.com
 ```
 
 When running directly from the package:
