@@ -23,7 +23,6 @@
 
 ## index-ai-validator
 
-
 `@hardmachinelabs/index-ai-validator` is a CLI for the `index-ai`
 agent-facing content layer.
 
@@ -107,7 +106,7 @@ pnpm exec index-ai https://example.com
 
 Requires Node.js 20 or newer.
 
-# `Default validation mode` — local conformance check
+## `Default validation mode` — local conformance check
 
 Default validation mode checks whether a public site already exposes the
 current `index-ai` spec correctly: Level 1 AI Manifest and Level 2a Agent
@@ -117,7 +116,6 @@ requests to the target site. There is no Level 3 / MCP check implemented.
 <br>
 
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelabs-what-is-agent-view.png)
-
 
 ### Usage
 
@@ -358,10 +356,9 @@ Default validation mode does not check:
 - production compliance certification
 - AI traffic outcomes
 
-
 <br>
 
-# `scan` — remote Agent View diagnostic
+## `scan` — remote Agent View diagnostic
 
 `scan` calls the remote Agent View scanner service and returns an
 AI-readiness score, a verdict, and a list of findings, including what
@@ -369,11 +366,9 @@ upgrading to the full Agent View would add. It checks a broader model of
 AI-readiness than Default validation mode, and it requires a network call
 to the scanner API — it is a diagnostic, not a local conformance check.
 
-
 <br>
 
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelabs-index-ai-scan_report_explained.png)
-
 
 ### Scan usage
 
@@ -526,7 +521,6 @@ Documentation:
 [jordachmakaya.github.io/index-ai-validator](https://jordachmakaya.github.io/index-ai-validator/)
 
 ## About index-ai
-
 
 `index-ai` is an experimental specification for making public websites
 easier for AI agents to read, inspect, and budget before fetching content.

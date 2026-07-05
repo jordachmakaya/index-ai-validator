@@ -14,6 +14,8 @@ the files, Agent Index graph, and clean endpoints expected by the current
 Level 1 and Level 2a implementation. It runs entirely locally — no
 dependency beyond the target site itself.
 
+Its counterpart is `scan`:
+
 >[!important]
 >`scan` calls the remote Agent View scanner and returns an AI-readiness score,
 a verdict, and findings — for any site, whether or not it implements
@@ -258,17 +260,17 @@ without re-running the scan themselves.
 >The report renders every field from the JSON result:
 >
 >- The score out of 100 and the verdict, plus a color-coded recommendation
->  strip that changes with the score tier (high, moderate, or low).
+> strip that changes with the score tier (high, moderate, or low).
 >- A per-dimension breakdown: `access`, `extractability`, `citability`,
->  `safety`, `agent_layer`.
+> `safety`, `agent_layer`.
 >- Every finding, grouped by severity (`P0`/`P1`/`P2`), each with its effort
->  estimate and a "Fix this" link where the scanner provides one.
+> estimate and a "Fix this" link where the scanner provides one.
 >- A noise-ratio, CSR-gap, and render-comparison panel.
 >- A sidebar with the verdict, a findings-severity summary, scan metadata
->  (engine version, schema version, target), and resource links — including
->  a link to the full audit when the scanner provides one.
+> (engine version, schema version, target), and resource links — including
+> a link to the full audit when the scanner provides one.
 >- When the `agent_layer` dimension is present and scores below 5, a callout
->  pointing to [agent-view.com](https://agent-view.com).
+> pointing to [agent-view.com](https://agent-view.com).
 
 See [CLI](/guide/cli#scan) for the full option, exit-code, and TypeScript
 reference.
