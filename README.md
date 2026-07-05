@@ -11,35 +11,81 @@
 [![Experimental status](https://img.shields.io/badge/STATUS-EXPERIMENTAL-f59e0b?style=for-the-badge)](https://github.com/jordachmakaya/index-ai-validator)
 
 [![Documentation](https://img.shields.io/badge/DOCS-GITHUB%20PAGES-378add?style=for-the-badge)](https://jordachmakaya.github.io/index-ai-validator/)
+[![Package README](https://img.shields.io/badge/README-packages%2Fvalidator-378add?style=for-the-badge)](packages/validator/README.md)
+[![Agent View](https://img.shields.io/badge/AGENT--VIEW-agent--view.com-3b82f6?style=for-the-badge)](https://agent-view.com)
 [![GitHub repository](https://img.shields.io/badge/GITHUB-index--ai--validator-7a8ba3?style=for-the-badge)](https://github.com/jordachmakaya/index-ai-validator)
 
-![index-ai-validator explained](docs/index-ai-validator_explained.png)
+![Two features, two jobs: scan is the remote Agent View diagnostic, Default validation mode is the local index-ai conformance check](docs/hardmachinelab-index-ai-two-cmd-cli.png)
 
 `@hardmachinelabs/index-ai-validator` is a free, experimental CLI for the
-`index-ai` agent-facing content layer, and it has two commands that answer
+`index-ai` agent-facing content layer, and it has two features that answer
 two different questions:
 
-- **`validate`** — is a site's already-implemented `index-ai` layer correct?
-  Local, free, no dependency beyond the target site itself. Checks Level 1
-  AI Manifest and Level 2a Agent Index. There is no Level 3 / MCP check
-  implemented.
+- **Default validation mode** — is a site's already-implemented `index-ai`
+  layer correct? Local, free, no dependency beyond the target site itself.
+  Checks Level 1 AI Manifest and Level 2a Agent Index. There is no Level 3
+  / MCP check implemented.
 - **`scan`** — how AI-ready is a site overall, and what would upgrading to
   the full Agent View add? Calls the remote Agent View scanner service and
   returns an AI-readiness score, a verdict, and findings.
 
 Most sites are built for browsers, so agents have to read browser-first
 HTML to understand them. `index-ai` is a machine-readable layer built for
-agents instead: `validate` checks whether a site exposes that layer
-correctly, and `scan` diagnoses how close a site is to full AI-readiness.
+agents instead: Default validation mode checks whether a site exposes that
+layer correctly, and `scan` diagnoses how close a site is to full
+AI-readiness.
 
-This repository contains the `@hardmachinelabs/index-ai-validator` package
-and its documentation.
+![What is Agent View? A machine-readable version of your website, built for AI agents](docs/hardmachinelabs-what-is-agent-view.png)
+
+## Quick start
+
+```bash
+index-ai scan https://example.com       # remote Agent View diagnostic
+index-ai https://example.com            # default validation mode, no keyword
+```
+
+## Which one should I use?
+
+- **`scan <url>`** — use it for a diagnostic of the AI-readability gap.
+  Returns a score `/100`, findings, and a shareable HTML report.
+- **Default validation mode** (no command keyword — `index-ai <url>`) — use
+  it once you have implemented `index-ai` and want to check it. Returns a
+  local conformance check for the AI Manifest, Agent Index, clean endpoints,
+  `content_chars`, discovery, and safety heuristics.
+
+## Features
+
+- **Two commands, two jobs** — a free remote diagnostic (`scan`) and a free
+  local conformance checker (Default validation mode), sharing one binary.
+- **Deterministic, not LLM-based** — every check and score is rule-based and
+  reproducible; no model call is in the loop for either command.
+- **CI-friendly JSON** — stable, typed, machine-readable output; human
+  explanations and progress messages stay on stderr, never mixed into
+  parseable stdout.
+- **Shareable HTML reports** — standalone files for both commands, generated
+  from the same result as the human/JSON output, nothing else to run to view
+  them.
+- **Explicit exit codes** — scriptable pass/fail semantics for Default
+  validation mode; request-vs-result semantics for `scan`.
+- **TypeScript-first** — typed `validateIndexAi()` entrypoint alongside the
+  CLI, zero `any`.
+- **Small footprint** — 4 runtime dependencies.
+
+## Documentation
+
+| Resource | What it covers |
+| --- | --- |
+| [Package README](packages/validator/README.md) | Full option list, JSON shapes, exit codes, and TypeScript usage of both commands |
+| [Documentation site](https://jordachmakaya.github.io/index-ai-validator/) | Guided walkthroughs, CLI reference, and conformance rules |
+| [CLI guide](docs/guide/cli.md) | Flag-by-flag reference for `validate` and `scan` |
+| [Agent View](https://agent-view.com) | The remote scanner `scan` calls, and the full AI-readiness audit it can point to |
+| [`index-ai` specification](https://github.com/jordachmakaya/index-ai) | The open spec Default validation mode checks |
 
 Naming:
 
 - `index-ai-validator` is this validator repository.
 - [`index-ai`](https://github.com/jordachmakaya/index-ai) is the
-  experimental specification `validate` checks.
+  experimental specification checked in Default validation mode.
 - `@hardmachinelabs/index-ai-validator` is the npm package.
 - `index-ai` is also the CLI binary name.
 
@@ -60,10 +106,10 @@ CLI binary:
 index-ai
 ```
 
-## `validate` — local conformance check
+## Default validation mode — local conformance check
 
-`validate` is the default command — there is no `validate` keyword to
-type:
+Default validation mode runs automatically — there is no command keyword to
+type, just the URL:
 
 ```bash
 index-ai <url>
@@ -94,9 +140,9 @@ full Agent View add?
 
 It prints a score, a verdict, and a list of findings by severity (`P0`,
 `P1`, `P2`), and can print the raw scanner status as JSON with `--json`, or
-write a standalone HTML report with `--html`. Unlike `validate`, `scan`
-requires a network call to the scanner API and always exits `0` for a
-completed scan, whatever the score.
+write a standalone HTML report with `--html`. Unlike Default validation
+mode, `scan` requires a network call to the scanner API and always exits
+`0` for a completed scan, whatever the score.
 
 Examples:
 
@@ -106,6 +152,8 @@ index-ai scan https://example.com --json
 index-ai scan https://example.com --html
 index-ai scan https://example.com --timeout 20000
 ```
+
+![What does the scan command do? Give it a URL, the scanner analyzes the site, you get a shareable report](docs/hardmachinelabs-index-ai-scan_report_explained.png)
 
 A generated example HTML report is committed at
 [`packages/validator/.preview/scan-report.html`](https://github.com/jordachmakaya/index-ai-validator/blob/main/packages/validator/.preview/scan-report.html)
@@ -120,7 +168,8 @@ See:
 
 ## Scope
 
-`validate` checks public `index-ai` Level 1 and Level 2a behavior:
+Default validation mode checks public `index-ai` Level 1 and Level 2a
+behavior:
 
 - AI Manifest fetch, JSON parsing, content type, and schema shape
 - Agent Index fetch, graph shape, node fields, and deprecated `pages`
@@ -138,3 +187,21 @@ full Agent View would add.
 Neither command provides legal compliance, production certification, a
 security audit, vulnerability scanning, AI traffic guarantees, SEO ranking
 guarantees, Level 2b relations, or Level 3 MCP validation.
+
+## Built by Jordach Makaya
+
+`index-ai` and `@hardmachinelabs/index-ai-validator` are created and
+maintained by Jordach Makaya.
+
+Jordach builds AI infrastructure for insurance claims workflows and
+developer tooling around reliable, inspectable AI systems.
+
+The validator is part of a broader effort to make AI-facing web
+infrastructure testable instead of vague.
+
+- GitHub: [github.com/jordachmakaya](https://github.com/jordachmakaya)
+- LinkedIn: [linkedin.com/in/jordachmakaya](https://www.linkedin.com/in/jordachmakaya/)
+
+## License
+
+MIT — see [LICENSE](LICENSE).

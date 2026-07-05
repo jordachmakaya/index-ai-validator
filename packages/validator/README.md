@@ -15,21 +15,61 @@
 [![4 runtime dependencies](https://img.shields.io/badge/Dependencies-4%20runtime-7a8ba3?style=for-the-badge)](https://github.com/jordachmakaya/index-ai-validator)
 [![Small dependency surface](https://img.shields.io/badge/Surface-small-f59e0b?style=for-the-badge)](https://github.com/jordachmakaya/index-ai-validator)
 
-![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/index-ai-validator_explained.png)
+![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelab-index-ai-two-cmd-cli.png)
 
-`@hardmachinelabs/index-ai-validator` is a CLI for the `index-ai` agent-facing
-content layer, and it has two commands that answer two different questions:
+`@hardmachinelabs/index-ai-validator` is a CLI for the `index-ai`
+agent-facing content layer.
 
-- **`validate`** — is a site's already-implemented `index-ai` layer correct?
-  Local, free, no network dependency beyond the target site itself.
-- **`scan`** — how AI-ready is a site overall, and what would upgrading to the
-  full Agent View add? Calls a remote scanner service and returns a score.
+**It has two features that answer two different questions:**
 
-Most websites are built for browsers — HTML, scripts, navigation, layout —
-and AI agents have to read that browser-first HTML to understand them.
-`index-ai` is a machine-readable layer built for agents instead. `validate`
-checks whether a site exposes that layer correctly. `scan` diagnoses how
-close a site is to full AI-readiness and shows what is missing.
+- **Default validation mode** — is your `index-ai` implementation correct?
+  Runs locally against the target site. Checks the AI Manifest, Agent Index,
+  clean endpoints, `content_chars`, discovery hints, and safety heuristics.
+
+- **`scan`** — what is the AI-readability gap?
+  Calls the remote Agent View scanner and returns a deterministic score
+  `/100`, findings, dimensions, and an optional shareable HTML report.
+
+Most websites are built for browsers: HTML, scripts, navigation, layout, and
+client-side rendering. AI agents often have to extract meaning from that
+browser-first surface.
+
+`index-ai` adds a machine-readable layer built for agents: a manifest, an
+Agent Index, and clean text endpoints with measured content size.
+
+The default validation mode checks whether that layer is implemented
+correctly.
+
+`scan` diagnoses the broader gap between the human-facing website and what
+an AI-oriented scanner can extract.
+
+>[!important]
+
+- Use the `default validation mode` **when you already implemented
+  `index-ai`** and want to check if the layer is correct.
+- Use `scan` when **you want to see what AI agents can actually read from
+  your website content**, what they miss, and which gaps need fixing.
+
+```bash
+# Remote Agent View diagnostic
+pnpm dlx @hardmachinelabs/index-ai-validator scan https://example.com
+
+# Local index-ai validation
+pnpm dlx @hardmachinelabs/index-ai-validator https://example.com
+
+# Installed usage
+pnpm add -D @hardmachinelabs/index-ai-validator
+pnpm exec index-ai https://example.com
+```
+
+## Which command should I use?
+
+- **`scan <url>`** — use it for a diagnostic of the AI-readability gap.
+  Returns a score `/100`, findings, and a shareable HTML report.
+- **Default validation mode** (no command keyword — `index-ai <url>`) — use
+  it once you have implemented `index-ai` and want to check it. Returns a
+  local conformance check for the AI Manifest, Agent Index, clean endpoints,
+  `content_chars`, discovery, and safety heuristics.
 
 It is a free, experimental developer CLI. It provides the `index-ai` binary
 and the `validateIndexAi()` TypeScript entrypoint.
@@ -39,7 +79,7 @@ Naming:
 - Repository: `index-ai-validator`
 - Package: `@hardmachinelabs/index-ai-validator`
 - CLI binary: `index-ai`
-- Specification checked by `validate`: `index-ai`
+- Specification checked in Default validation mode: `index-ai`
 
 Neither command is a production certification, legal compliance tool,
 traffic guarantee, SEO ranking tool, security audit, or vulnerability
@@ -74,16 +114,22 @@ pnpm exec index-ai https://example.com
 
 Requires Node.js 20 or newer.
 
-## `validate` — local conformance check
+# `Default validation mode` — local conformance check
 
-`validate` checks whether a public site already exposes the current
-`index-ai` spec correctly: Level 1 AI Manifest and Level 2a Agent Index.
-It runs locally and is free — the only network calls are public HTTP
+Default validation mode checks whether a public site already exposes the
+current `index-ai` spec correctly: Level 1 AI Manifest and Level 2a Agent
+Index. It runs locally and is free — the only network calls are public HTTP
 requests to the target site. There is no Level 3 / MCP check implemented.
+
+<br>
+
+![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelabs-what-is-agent-view.png)
+
 
 ### Usage
 
-`validate` is the default command — there is no `validate` keyword to type:
+Default validation mode runs automatically — there is no command keyword to
+type, just the URL:
 
 ```bash
 index-ai <url> [options]
@@ -305,7 +351,7 @@ Implemented in 0.1.0:
 
 ### Current limits
 
-`validate` does not check:
+Default validation mode does not check:
 
 - Level 2b relations
 - Level 3 MCP
@@ -318,13 +364,22 @@ Implemented in 0.1.0:
 - production compliance certification
 - AI traffic outcomes
 
-## `scan` — remote Agent View diagnostic
+
+<br>
+
+# `scan` — remote Agent View diagnostic
 
 `scan` calls the remote Agent View scanner service and returns an
 AI-readiness score, a verdict, and a list of findings, including what
 upgrading to the full Agent View would add. It checks a broader model of
-AI-readiness than `validate`, and it requires a network call to the
-scanner API — it is a diagnostic, not a local conformance check.
+AI-readiness than Default validation mode, and it requires a network call
+to the scanner API — it is a diagnostic, not a local conformance check.
+
+
+<br>
+
+![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelabs-index-ai-scan_report_explained.png)
+
 
 ### Scan usage
 
@@ -457,8 +512,8 @@ in the repository.
   the score or verdict.
 - non-zero (`2`) — the scan request failed: a scanner transport error, a
   server-side scan failure, a poll timeout, or a usage/configuration error.
-  `scan` has no separate pass/fail exit code the way `validate` does — a
-  low score or `P0` findings still exit `0`.
+  `scan` has no separate pass/fail exit code the way Default validation
+  mode does — a low score or `P0` findings still exit `0`.
 
 ### Scope and limits
 
@@ -490,8 +545,8 @@ It is built around three simple ideas:
   browsers.
 
 `@hardmachinelabs/index-ai-validator` is the free CLI for the current
-Level 1 and Level 2a implementation (`validate`), plus a remote
-AI-readiness diagnostic against a broader model (`scan`).
+Level 1 and Level 2a implementation (Default validation mode), plus a
+remote AI-readiness diagnostic against a broader model (`scan`).
 
 It does not claim to be a formal standard. It is an experimental project
 built in public to explore how websites can expose cleaner, cheaper, and
