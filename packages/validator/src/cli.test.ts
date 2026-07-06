@@ -11,7 +11,7 @@
  * relations:
  *   - imports: packages/validator/src/cli.ts
  *   - tests: packages/validator/src/cli.ts
- * last_update: 2026-07-04
+ * last_update: 2026-07-05
  */
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
@@ -1472,5 +1472,134 @@ describe('runCli --help two-mode framing', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toMatch(/index-ai\s+validate\s*<url>/)
     expect(result.stdout).toMatch(/index-ai\s+scan\s*<url>/)
+  })
+})
+
+// T5.6_target-level-cli-wiring: wires --target-level (l1/l2a; l2b reserved)
+// onto the default/validate option chain, plus a minimal inline
+// "Requested target level" / "Achieved level" summary line in human stdout.
+// Scope is intentionally narrow — no grouped-by-level report yet (T5.7) and
+// no level-aware --json fields yet (T5.8). RED until the Coder job wires the
+// option in cli.ts.
+describe('runCli --target-level option', () => {
+  it('accepts --target-level l1 and prints the requested level', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com', '--target-level', 'l1'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain('Requested target level: l1')
+  })
+
+  it('defaults --target-level to l2a, matching an explicit --target-level l2a', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const withoutFlag = await runCli(['https://example.com'], { validate })
+    const withFlag = await runCli(['https://example.com', '--target-level', 'l2a'], { validate })
+
+    expect(withoutFlag.exitCode).toBe(0)
+    expect(withFlag.exitCode).toBe(0)
+    expect(withoutFlag.stdout).toContain('Requested target level: l2a')
+    expect(withFlag.stdout).toContain('Requested target level: l2a')
+    expect(withoutFlag.stdout).toBe(withFlag.stdout)
+  })
+
+  it('rejects --target-level l2b with a dev-friendly not-yet-available message', async () => {
+    const validate: CliValidationRunner = async () => {
+      throw new Error('Validation should not run when the target level is rejected')
+    }
+
+    const result = await runCli(['https://example.com', '--target-level', 'l2b'], { validate })
+
+    expect(result.exitCode).toBe(2)
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toContain('Level 2B')
+    expect(result.stderr).toContain('not yet available')
+  })
+
+  it('rejects an invalid --target-level value citing the value and the accepted options', async () => {
+    const validate: CliValidationRunner = async () => {
+      throw new Error('Validation should not run when the target level is rejected')
+    }
+
+    const result = await runCli(['https://example.com', '--target-level', 'bogus'], { validate })
+
+    expect(result.exitCode).toBe(2)
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toContain('"bogus"')
+    expect(result.stderr).toContain('l1')
+    expect(result.stderr).toContain('l2a')
+  })
+
+  it('prints Achieved level: l2a for a site that fully passes l2a', async () => {
+    const passingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Agent Index graph found.',
+      },
+    ]
+    const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+      conformance: 'level-2a',
+      passed: true,
+      summary: { pass: 2, warn: 0, fail: 0, total: 2 },
+      checks: passingChecks,
+    })
+
+    const result = await runCli(['https://example.com', '--target-level', 'l2a'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('Achieved level: l2a')
+  })
+
+  it('prints Achieved level: none when l1 has a blocking failure', async () => {
+    const failingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'Manifest not found.',
+      },
+    ]
+    const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+      conformance: 'none',
+      passed: false,
+      summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+      checks: failingChecks,
+    })
+
+    const result = await runCli(['https://example.com', '--target-level', 'l1'], { validate })
+
+    expect(result.exitCode).toBe(1)
+    expect(result.stdout).toContain('Achieved level: none')
+  })
+
+  it('does not expose --target-level on the scan subcommand', async () => {
+    const result = await runCli(['scan', '--help'])
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('--target-level')
+  })
+
+  it('keeps --json output valid parseable JSON when combined with --target-level', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(
+      ['https://example.com', '--json', '--target-level', 'l1'],
+      { validate },
+    )
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(0)
+    expect(json.target).toBe('https://example.com')
+    expectJsonResultContract(json)
   })
 })
