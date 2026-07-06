@@ -1,3 +1,21 @@
+/**
+ * @filemeta
+ * type: type-definition
+ * title: Shared validator types
+ * description: Defines the ValidationResult contract, its supporting types, and the additive TargetLevelResultJson shape used by --json output.
+ * job_ref: T5.8_target-level-json-output
+ * functions: []
+ * classes: []
+ * inputs: []
+ * outputs: [ValidationResult, ValidatorOptions, ValidationCheck, LevelResult, TargetLevelResultJson]
+ * relations:
+ *   - used_by: packages/validator/src/cli.ts
+ *   - used_by: packages/validator/src/validator.ts
+ *   - used_by: packages/validator/src/utils/format.ts
+ *   - used_by: packages/validator/src/utils/target-level.ts
+ * last_update: 2026-07-06
+ */
+
 import type { ScanProgressStep } from './client/scanner-client'
 
 export type Severity = 'pass' | 'warn' | 'fail'
@@ -164,3 +182,13 @@ export type LevelResult = {
   fail: number
   reason?: string
 }
+
+/**
+ * The JSON-shaped rendering of a single `LevelResult` entry, keyed by
+ * `TargetLevel` under `level_results` in `--json` output (see cli.ts's
+ * `buildLevelAwareJson`). Additive to `ValidationResult` — composed onto the
+ * JSON object by spread, never merged into the type itself.
+ */
+export type TargetLevelResultJson =
+  | { label: string; status: 'tested'; pass: number; warn: number; fail: number }
+  | { label: string; status: 'skipped'; reason: string }

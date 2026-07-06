@@ -2,15 +2,16 @@
  * @filemeta
  * type: script
  * title: Command-line interface entrypoint
- * description: Defines Commander CLI commands and runs validation/scanner checks to write terminal, JSON, or HTML reports.
- * job_ref: T5.7_target-level-human-report
- * functions: [runCli, main, createProgram]
+ * description: Defines Commander CLI commands, runs validation/scanner checks, and composes level-aware fields onto --json output.
+ * job_ref: T5.8_target-level-json-output
+ * functions: [runCli, main, createProgram, buildLevelAwareJson]
  * classes: []
  * inputs: [process.argv]
  * outputs: [CliRunResult]
  * relations:
  *   - imports: packages/validator/src/utils/format.ts
  *   - imports: packages/validator/src/utils/html-report.ts
+ *   - imports: packages/validator/src/utils/target-level.ts
  *   - imports: packages/validator/src/validator.ts
  *   - imports: packages/validator/src/scan.ts
  *   - imports: packages/validator/src/constants.ts
@@ -34,9 +35,18 @@ import {
   DEFAULT_VALIDATE_HTML_PATH,
 } from './constants'
 import { scanUrl, type ScanOutcome } from './scan'
-import type { ScanOptions, ValidationResult, ValidatorOptions } from './types'
+import type {
+  LevelResult,
+  ScanOptions,
+  TargetLevel,
+  TargetLevelResultJson,
+  ValidationCheck,
+  ValidationResult,
+  ValidatorOptions,
+} from './types'
 import { formatHumanResult } from './utils/format'
 import { formatHtmlReport, formatScanHtmlReport } from './utils/html-report'
+import { computeLevelResults, LEVEL_LABEL } from './utils/target-level'
 import { validateIndexAi } from './validator'
 
 /**
@@ -115,12 +125,20 @@ export async function runCli(
         }
       }
 
-      stdout += options.json
-        ? `${JSON.stringify(result, null, 2)}\n`
-        : `${formatHumanResult(result, {
-            verbose: validatorOptions.verbose,
-            targetLevel: options.targetLevel,
-          })}\n`
+      if (options.json) {
+        const levelResults = computeLevelResultsForCliTargetLevel(result.checks, options.targetLevel)
+        stdout += `${JSON.stringify(
+          { ...result, ...buildLevelAwareJson(levelResults, options.targetLevel) },
+          null,
+          2,
+        )}\n`
+      }
+      else {
+        stdout += `${formatHumanResult(result, {
+          verbose: validatorOptions.verbose,
+          targetLevel: options.targetLevel,
+        })}\n`
+      }
 
       exitCode = result.passed || options.exitCode === false ? 0 : 1
     },
@@ -337,6 +355,108 @@ function buildValidatorOptions(target: string, options: CliOptions): ValidatorOp
     maxConcurrency: options.maxConcurrency,
     allowPrivateHosts: options.allowPrivateHosts ?? false,
   }
+}
+
+/**
+ * Calls `computeLevelResults` with `targetLevel` narrowed to one of its
+ * overloaded literal signatures via an explicit switch, since a plain
+ * `CliTargetLevel`-typed argument doesn't match any single overload of a
+ * function overloaded on string literals. `l2b` is out of scope: the CLI's
+ * `parseTargetLevel` already rejects it before this point (see comment on
+ * `CliTargetLevel`). Mirrors format.ts's `computeLevelResultsFor`.
+ */
+function computeLevelResultsForCliTargetLevel(
+  checks: ValidationCheck[],
+  targetLevel: CliTargetLevel,
+): LevelResult[] {
+  switch (targetLevel) {
+    case 'l1':
+      return computeLevelResults(checks, 'l1')
+    case 'l2a':
+      return computeLevelResults(checks, 'l2a')
+  }
+}
+
+type LevelAwareJson = {
+  readonly requested_level: CliTargetLevel
+  readonly tested_levels: readonly TargetLevel[]
+  readonly achieved_level: TargetLevel | 'none'
+  readonly failed_level: TargetLevel | null
+  readonly level_results: Partial<Record<TargetLevel, TargetLevelResultJson>>
+}
+
+/**
+ * Composes the 5 level-aware fields added to `--json` output by spread onto
+ * `result` (see the `runValidation` json branch above). `ValidationResult`
+ * itself stays unchanged — this is JSON-shape-only composition local to the
+ * CLI, not a new field on the validator's public result type.
+ */
+function buildLevelAwareJson(
+  levelResults: readonly LevelResult[],
+  targetLevel: CliTargetLevel,
+): LevelAwareJson {
+  return {
+    requested_level: targetLevel,
+    tested_levels: levelResults.map((levelResult) => levelResult.level),
+    achieved_level: deriveAchievedLevel(levelResults),
+    failed_level: deriveFailedLevel(levelResults),
+    level_results: Object.fromEntries(
+      levelResults.map((levelResult) => [levelResult.level, toLevelResultJson(levelResult)]),
+    ) as Partial<Record<TargetLevel, TargetLevelResultJson>>,
+  }
+}
+
+/**
+ * Walks the cascade from l1 upward and returns the level code of the highest
+ * level that was actually tested with zero failures, stopping at the first
+ * level that either was never tested (skipped) or failed itself — mirrors
+ * computeLevelResults' cascade-skip semantics. Returns 'none' if even l1
+ * failed. Same walk as format.ts's `formatAchievedLevel`, but returns the raw
+ * level code for JSON instead of a human label.
+ */
+function deriveAchievedLevel(levelResults: readonly LevelResult[]): TargetLevel | 'none' {
+  let achieved: TargetLevel | undefined
+
+  for (const levelResult of levelResults) {
+    if (levelResult.status !== 'tested' || levelResult.fail > 0) {
+      break
+    }
+
+    achieved = levelResult.level
+  }
+
+  return achieved ?? 'none'
+}
+
+/**
+ * Returns the level code of the first tested level with a blocking failure,
+ * or `null` if every tested level passed.
+ */
+function deriveFailedLevel(levelResults: readonly LevelResult[]): TargetLevel | null {
+  const failed = levelResults.find((levelResult) => levelResult.status === 'tested' && levelResult.fail > 0)
+
+  return failed ? failed.level : null
+}
+
+/**
+ * Renders one `LevelResult` as its `TargetLevelResultJson` shape, reusing
+ * `LEVEL_LABEL` (imported from target-level.ts, not re-declared here) for the
+ * label. Throws instead of silently defaulting if a skipped level is missing
+ * its reason, since `computeLevelResults` always sets one — a missing reason
+ * would mean that invariant broke.
+ */
+function toLevelResultJson(levelResult: LevelResult): TargetLevelResultJson {
+  const label = LEVEL_LABEL[levelResult.level]
+
+  if (levelResult.status === 'tested') {
+    return { label, status: 'tested', pass: levelResult.pass, warn: levelResult.warn, fail: levelResult.fail }
+  }
+
+  if (levelResult.reason === undefined) {
+    throw new Error(`Skipped level result for "${levelResult.level}" is missing a reason.`)
+  }
+
+  return { label, status: 'skipped', reason: levelResult.reason }
 }
 
 async function writeHtmlReport(path: string, result: ValidationResult): Promise<void> {
