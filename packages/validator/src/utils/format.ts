@@ -3,7 +3,7 @@
  * type: utility
  * title: Human-readable validation report formatter
  * description: Renders a ValidationResult as a plain-text CLI report, including a grouped-by-level cascade block driven by computeLevelResults.
- * job_ref: T5.7_target-level-human-report
+ * job_ref: T5.8a_fix-level-label-casing
  * functions: [formatHumanResult]
  * classes: []
  * inputs: [ValidationResult, HumanFormatOptions]
@@ -16,23 +16,11 @@
  */
 
 import type { LevelResult, TargetLevel, ValidationCheck, ValidationResult } from '../types'
-import { computeLevelResults } from './target-level'
+import { computeLevelResults, LEVEL_LABEL } from './target-level'
 
 type HumanFormatOptions = {
   readonly verbose: boolean
   readonly targetLevel: TargetLevel
-}
-
-/**
- * Human-readable labels for the grouped-by-level report, deliberately
- * distinct from `target-level.ts`'s internal `LEVEL_LABEL` (which uses
- * 'Level 2A'/'Level 2B' for its skip-reason strings) — this casing is locked
- * by format.test.ts.
- */
-const LEVEL_LABEL: Record<TargetLevel, string> = {
-  l1: 'Level 1',
-  l2a: 'Level 2a',
-  l2b: 'Level 2b',
 }
 
 export function formatHumanResult(

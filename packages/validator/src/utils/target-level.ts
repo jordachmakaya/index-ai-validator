@@ -3,23 +3,24 @@
  * type: utility
  * title: Target-level result cascade
  * description: Groups ValidationCheck[] by conformance level (l1/l2a/l2b) and applies cascade-skip semantics — a blocking must/fail at one level skips every level after it instead of reporting phantom counts.
- * job_ref: T5.5_target-level-types-and-cascade
+ * job_ref: T5.8a_fix-level-label-casing
  * functions: [computeLevelResults]
  * inputs: [checks, targetLevel]
  * outputs: [LevelResult[] ordered l1 -> l2a -> l2b, truncated to targetLevel]
  * relations:
  *   - tested_by: packages/validator/src/utils/target-level.test.ts
- * last_update: 2026-07-05
+ *   - used_by: packages/validator/src/utils/format.ts
+ * last_update: 2026-07-06
  */
 
 import type { LevelResult, TargetLevel, ValidationCheck } from '../types'
 
 const LEVEL_ORDER: readonly TargetLevel[] = ['l1', 'l2a', 'l2b']
 
-const LEVEL_LABEL: Record<TargetLevel, string> = {
+export const LEVEL_LABEL: Record<TargetLevel, string> = {
   l1: 'Level 1',
-  l2a: 'Level 2A',
-  l2b: 'Level 2B',
+  l2a: 'Level 2a',
+  l2b: 'Level 2b',
 }
 
 /**
