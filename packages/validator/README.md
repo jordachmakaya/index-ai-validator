@@ -149,6 +149,13 @@ index-ai validate <url> [options]
   working directory, creating that directory if it does not exist. With an
   explicit path, writes exactly there (its parent directory is also created
   if missing).
+- `--target-level <level>` — default `l2a`. Conformance level to validate
+  against: `l1` or `l2a`. `l2b` is rejected with a dev-friendly error —
+  Level 2b is not implemented yet. Levels are cumulative: `l2a` validates
+  Level 1 + Level 2a. If an earlier level has a blocking failure, later
+  levels are reported as `skipped` (with a reason), never as a second
+  failure. See [docs/guide/cli.md](../../docs/guide/cli.md#target-level)
+  for the full cascade-skip example.
 
 ### Examples
 
@@ -165,6 +172,7 @@ index-ai https://example.com --max-concurrency 5
 index-ai https://example.com --html
 index-ai https://example.com --html report.html
 index-ai https://example.com --json --html
+index-ai https://example.com --target-level l1
 ```
 
 ### JSON output
@@ -205,6 +213,12 @@ Example shape:
 The real `metrics` object contains the implemented validator counters. The
 real `checks` array contains check objects with stable codes, severity,
 messages, and fixes where available.
+
+The real JSON also includes five level-aware fields —
+`requested_level`, `tested_levels`, `achieved_level`, `failed_level`, and
+`level_results` — driven by `--target-level`. See
+[docs/guide/json-output.md](../../docs/guide/json-output.md#target-level-fields)
+for the full shape and a real cascade-skip example.
 
 ### HTML report
 

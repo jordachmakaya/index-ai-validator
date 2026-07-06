@@ -40,7 +40,7 @@ npx @hardmachinelabs/index-ai-validator https://example.com
 ### Full command shape
 
 ```bash
-index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts]
+index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts] [--target-level <level>]
 ```
 
 ### Options
@@ -58,6 +58,7 @@ index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-securit
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
 | `--html <path>` | No | - | Writes a standalone local HTML report to a `.html` file. |
+| `--target-level <level>` | No | `l2a` | Conformance level to validate against: `l1` or `l2a`. `l2b` is rejected — see [Target level](#target-level) below. |
 
 ### Examples
 
@@ -72,7 +73,66 @@ index-ai https://example.com --no-exit-code
 index-ai https://example.com --timeout 10000
 index-ai https://example.com --max-concurrency 5
 index-ai https://example.com --html report.html
+index-ai https://example.com --target-level l1
 ```
+
+### Target level
+
+Levels are progressive and cumulative: Level 2a includes Level 1. `--target-level`
+lets you choose how far to validate, without changing what each level itself
+requires.
+
+| Value | Validates |
+| --- | --- |
+| `l1` | Level 1 manifest requirements only. |
+| `l2a` (default) | Level 1 + Level 2a agent index requirements. |
+| `l2b` | Rejected with a dev-friendly error. Level 2b is not implemented yet — see [Scope](/guide/scope). |
+
+```bash
+index-ai https://example.com --target-level l1
+index-ai https://example.com --target-level l2a
+index-ai https://example.com --target-level l2b
+# Error: Level 2B is not yet available. Use --target-level l1 or l2a.
+```
+
+**Cascade-skip, not cascade-fail**: if an earlier level has a blocking failure,
+every level after it is reported as `skipped` with the reason, never as a
+second `failed` — a later level was never actually run once an earlier one
+blocked it. The human report gains four fields plus a level-by-level
+breakdown: `Requested target level`, `Tested levels`, `Achieved level`, and
+`Level results`.
+
+Real output, `index-ai https://example.com --target-level l2a` against a site
+with no manifest:
+
+```txt
+index-ai validation result
+
+Target: https://example.com
+Duration: 441 ms
+Conformance: none
+Passed: false
+
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: none
+
+Level results:
+- Level 1: 0 pass, 5 warn, 1 fail
+- Level 2a: skipped (Level 1 failed)
+
+Summary:
+- pass: 0
+- warn: 5
+- fail: 1
+- total: 6
+```
+
+`Achieved level` is derived from the same per-level pass/fail results as
+`Level results`, not from `conformance` — it reflects the highest level
+actually reached with zero failures under the requested target, and reads
+`none` if even Level 1 didn't pass. See [JSON Output](/guide/json-output) for
+the equivalent machine-readable fields.
 
 ### Human output
 
