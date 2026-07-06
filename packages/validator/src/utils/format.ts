@@ -3,7 +3,7 @@
  * type: utility
  * title: Human-readable validation report formatter
  * description: Renders a ValidationResult as a plain-text CLI report, including a grouped-by-level cascade block driven by computeLevelResults.
- * job_ref: T5.8a_fix-level-label-casing
+ * job_ref: T5.12_fix-level-label-casing
  * functions: [formatHumanResult]
  * classes: []
  * inputs: [ValidationResult, HumanFormatOptions]

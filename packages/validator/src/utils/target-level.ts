@@ -3,7 +3,7 @@
  * type: utility
  * title: Target-level result cascade
  * description: Groups ValidationCheck[] by conformance level (l1/l2a/l2b) and applies cascade-skip semantics — a blocking must/fail at one level skips every level after it instead of reporting phantom counts.
- * job_ref: T5.8a_fix-level-label-casing
+ * job_ref: T5.12_fix-level-label-casing
  * functions: [computeLevelResults]
  * inputs: [checks, targetLevel]
  * outputs: [LevelResult[] ordered l1 -> l2a -> l2b, truncated to targetLevel]
