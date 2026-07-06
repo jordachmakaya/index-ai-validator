@@ -59,6 +59,34 @@ describe('computeLevelResults', () => {
     expect(l2aResult.fail).toBe(0)
   })
 
+  test('cascade-skip: l2b requested but l2a (not l1) has a blocking must/fail -> l2b is skipped with a reason naming l2a in lowercase ("Level 2a failed"), never "Level 2A failed"', () => {
+    const checks: ValidationCheck[] = [
+      makeCheck(CHECK.L1_MANIFEST_FOUND, 'pass', 'must'),
+      makeCheck(CHECK.L2A_AGENT_INDEX_FOUND, 'fail', 'must'),
+      makeCheck('L2B_PLACEHOLDER', 'pass', 'must'),
+    ]
+
+    const results = computeLevelResults(checks, 'l2b')
+
+    expect(results).toHaveLength(3)
+    expect(results[0]).toMatchObject({ level: 'l1', status: 'tested', pass: 1, warn: 0, fail: 0 })
+    expect(results[1]).toMatchObject({ level: 'l2a', status: 'tested', pass: 0, warn: 0, fail: 1 })
+
+    const l2bResult = results[2]
+    expect(l2bResult.level).toBe('l2b')
+    expect(l2bResult.status).toBe('skipped')
+    // Exact match, not a case-insensitive regex: proves the label casing bug.
+    // `.temp/CLI_UPGRADE.md` consistently uses 'Level 2a' (lowercase 'a'),
+    // but target-level.ts's internal LEVEL_LABEL constant still produces
+    // 'Level 2A' (uppercase 'A') as of T5.5.
+    expect(l2bResult.reason).toBe('Level 2a failed')
+    // A skipped level was never actually run - it must never carry real or
+    // phantom pass/warn/fail counts that could be misread as "l2b failed".
+    expect(l2bResult.pass).toBe(0)
+    expect(l2bResult.warn).toBe(0)
+    expect(l2bResult.fail).toBe(0)
+  })
+
   test('l1 has only a warn (not a blocking must/fail) -> l2a is not skipped', () => {
     const checks: ValidationCheck[] = [
       makeCheck(CHECK.L1_DOMAIN_MATCH, 'warn', 'should'),
