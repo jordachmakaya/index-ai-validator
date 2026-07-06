@@ -1602,4 +1602,137 @@ describe('runCli --target-level option', () => {
     expect(json.target).toBe('https://example.com')
     expectJsonResultContract(json)
   })
+
+  // T5.8_target-level-json-output: adds requested_level/tested_levels/
+  // achieved_level/failed_level/level_results to --json output. RED until
+  // the Coder job composes these 5 fields onto the JSON result in cli.ts.
+  it('adds level-aware JSON fields for --target-level l1 when l1 fails', async () => {
+    const failingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'Manifest not found.',
+      },
+    ]
+    const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+      conformance: 'none',
+      passed: false,
+      summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+      checks: failingChecks,
+    })
+
+    const result = await runCli(
+      ['https://example.com', '--target-level', 'l1', '--json'],
+      { validate },
+    )
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(1)
+    expect(json.requested_level).toBe('l1')
+    expect(json.tested_levels).toStrictEqual(['l1'])
+    expect(json.achieved_level).toBe('none')
+    expect(json.failed_level).toBe('l1')
+
+    const levelResults = expectObjectField(json, 'level_results')
+    expect(Object.keys(levelResults)).toStrictEqual(['l1'])
+    expect(levelResults.l1).toStrictEqual({ label: 'Level 1', status: 'tested', pass: 0, warn: 0, fail: 1 })
+  })
+
+  it('cascade-skips l2a in level_results for --target-level l2a when l1 fails', async () => {
+    const failingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'Manifest not found.',
+      },
+    ]
+    const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+      conformance: 'none',
+      passed: false,
+      summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+      checks: failingChecks,
+    })
+
+    const result = await runCli(
+      ['https://example.com', '--target-level', 'l2a', '--json'],
+      { validate },
+    )
+    const json = parseJsonObject(result.stdout)
+
+    expect(json.tested_levels).toStrictEqual(['l1', 'l2a'])
+    expect(json.failed_level).toBe('l1')
+
+    const levelResults = expectObjectField(json, 'level_results')
+    expect(levelResults.l2a).toStrictEqual({
+      label: 'Level 2a',
+      status: 'skipped',
+      reason: 'Level 1 failed',
+    })
+  })
+
+  it('reports achieved_level l2a and a null failed_level for --target-level l2a when everything passes', async () => {
+    const passingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Agent Index graph found.',
+      },
+    ]
+    const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+      conformance: 'level-2a',
+      passed: true,
+      summary: { pass: 2, warn: 0, fail: 0, total: 2 },
+      checks: passingChecks,
+    })
+
+    const result = await runCli(
+      ['https://example.com', '--target-level', 'l2a', '--json'],
+      { validate },
+    )
+    const json = parseJsonObject(result.stdout)
+
+    expect(json.achieved_level).toBe('l2a')
+    expect(json.failed_level).toBeNull()
+
+    const levelResults = expectObjectField(json, 'level_results')
+    expect(levelResults.l1).toStrictEqual({ label: 'Level 1', status: 'tested', pass: 1, warn: 0, fail: 0 })
+    expect(levelResults.l2a).toStrictEqual({ label: 'Level 2a', status: 'tested', pass: 1, warn: 0, fail: 0 })
+    expect(result.stdout).not.toContain('skipped')
+  })
+
+  // Note: there is deliberately no "--target-level l2b --json" case here.
+  // parseTargetLevel (cli.ts, T5.6) still rejects l2b at the CLI parser
+  // layer — locked, unchanged behavior per UPGRADE_BRIEF.md §4 ("don't
+  // expose l2b until implemented"), already covered by the pre-existing
+  // 'rejects --target-level l2b...' test above. Since the JSON composition
+  // added by this job is a private function local to cli.ts (no exported
+  // unit-testable entry point), l2b's 3-level JSON shape is not reachable
+  // through the public CLI surface this sprint — mirrors T5.7's own
+  // precedent, where l2b's cascade is only exercised via format.test.ts's
+  // direct unit calls to formatHumanResult, never through the CLI binary.
+  it('adds the 5 level-aware JSON fields for the default --target-level (l2a) alongside the existing JSON contract', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com', '--json'], { validate })
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(0)
+    expectJsonResultContract(json)
+    expect(json.requested_level).toBe('l2a')
+    expect(json.tested_levels).toStrictEqual(['l1', 'l2a'])
+    expect(typeof json.achieved_level).toBe('string')
+    expect(json.failed_level === null || typeof json.failed_level === 'string').toBe(true)
+
+    const levelResults = expectObjectField(json, 'level_results')
+    expect(Object.keys(levelResults)).toStrictEqual(['l1', 'l2a'])
+  })
 })
