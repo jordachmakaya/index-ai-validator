@@ -2,9 +2,9 @@
  * @filemeta
  * type: script
  * title: Command-line interface entrypoint
- * description: Defines Commander CLI commands, runs validation/scanner checks, and composes level-aware fields onto --json output.
- * job_ref: T5.8_target-level-json-output
- * functions: [runCli, main, createProgram, buildLevelAwareJson]
+ * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
+ * job_ref: T5.10_cli-branding-banner
+ * functions: [runCli, main, createProgram, buildLevelAwareJson, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
  * outputs: [CliRunResult]
@@ -15,6 +15,7 @@
  *   - imports: packages/validator/src/validator.ts
  *   - imports: packages/validator/src/scan.ts
  *   - imports: packages/validator/src/constants.ts
+ *   - imports: packages/validator/src/client/scanner-client.ts
  *   - tested_by: packages/validator/src/cli.test.ts
  * last_update: 2026-07-06
  */
@@ -25,8 +26,9 @@ import { dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
-import { bold, cyan, green } from 'kleur/colors'
+import { bold, cyan, dim, gray, green, yellow } from 'kleur/colors'
 
+import type { ScanProgressStep } from './client/scanner-client'
 import {
   CLI_NAME,
   DEFAULT_MAX_CONCURRENCY,
@@ -82,9 +84,22 @@ export type CliValidationRunner = (options: ValidatorOptions) => Promise<Validat
 
 export type CliScanRunner = (options: ScanOptions) => Promise<ScanOutcome>
 
+/**
+ * Injectable driver for the scan human-mode terminal spinner. `start`/`stop`
+ * bracket the scan call; `step` is invoked once per `onProgress` event, in
+ * order, while the scan is in flight (see `runScan`).
+ */
+export type CliScanSpinner = {
+  readonly start: () => void
+  readonly step: (currentStep: ScanProgressStep) => void
+  readonly stop: () => void
+}
+
 export type CliRunDependencies = {
   readonly validate?: CliValidationRunner
   readonly scan?: CliScanRunner
+  readonly isTTY?: boolean
+  readonly spinner?: CliScanSpinner
 }
 
 export type CliRunResult = {
@@ -102,6 +117,10 @@ export async function runCli(
   let exitCode = 0
   const validate = dependencies.validate ?? validateIndexAi
   const scan = dependencies.scan ?? scanUrl
+  // The testable default is `false` — no live TTY detection inside `runCli`,
+  // which keeps it a pure function of its arguments. Real detection happens
+  // once, in `main()`, which passes `process.stdout.isTTY === true` in.
+  const isTTY = dependencies.isTTY ?? false
   const program = createProgram({
     writeOut: (value) => {
       stdout += value
@@ -109,7 +128,12 @@ export async function runCli(
     writeErr: (value) => {
       stderr += value
     },
+    isTTY,
     runValidation: async (target, options) => {
+      if (!options.json && isTTY) {
+        stdout += `${buildBanner()}\n\n`
+      }
+
       const validatorOptions = buildValidatorOptions(target, options)
       if (typeof options.html === 'string') {
         validateHtmlPath(options.html)
@@ -143,32 +167,59 @@ export async function runCli(
       exitCode = result.passed || options.exitCode === false ? 0 : 1
     },
     runScan: async (target, options) => {
+      if (!options.json && isTTY) {
+        stdout += `${buildBanner()}\n\n`
+      }
+
       if (typeof options.html === 'string') {
         validateHtmlPath(options.html)
       }
+
+      // Resolved at the point of use, not as a `CliRunDependencies` default:
+      // an injected spinner is only actually driven while a live spinner
+      // would be shown (TTY + human mode) — see the "never drives the
+      // injected spinner in --json or non-TTY scan runs" test. Outside that
+      // case the spinner is always the no-op, regardless of what's injected.
+      const useLiveSpinner = isTTY && !options.json
+      const spinner: CliScanSpinner = useLiveSpinner
+        ? dependencies.spinner ?? createTerminalSpinner()
+        : noopSpinner
 
       const scanOptions: ScanOptions = {
         target,
         timeoutMs: options.timeout,
         onProgress: (progress) => {
-          stderr += `Scan progress: ${progress.currentStep}\n`
+          if (useLiveSpinner) {
+            spinner.step(progress.currentStep)
+          }
+          else {
+            // Legacy, unchanged: --json and non-TTY runs keep the exact
+            // accumulated "Scan progress: <step>\n" stderr lines.
+            stderr += `Scan progress: ${progress.currentStep}\n`
+          }
         },
       }
 
-      const outcome = await scan(scanOptions)
+      spinner.start()
+      try {
+        const outcome = await scan(scanOptions)
 
-      stdout += options.json
-        ? `${JSON.stringify(outcome.status, null, 2)}\n`
-        : `${formatScanSummary(target, outcome)}\n`
+        stdout += options.json
+          ? `${JSON.stringify(outcome.status, null, 2)}\n`
+          : `${formatScanSummary(target, outcome)}\n`
 
-      stderr += formatScanStderrMessage(outcome)
+        stderr += formatScanStderrMessage(outcome)
 
-      if (options.html !== undefined) {
-        const htmlPath = options.html === true ? DEFAULT_SCAN_HTML_PATH : options.html
-        await writeScanHtmlReport(htmlPath, target, outcome)
-        if (!options.json) {
-          stdout += `HTML report written to ${resolve(htmlPath)}\n`
+        if (options.html !== undefined) {
+          const htmlPath = options.html === true ? DEFAULT_SCAN_HTML_PATH : options.html
+          await writeScanHtmlReport(htmlPath, target, outcome)
+          if (!options.json) {
+            stdout += `HTML report written to ${resolve(htmlPath)}\n`
+          }
         }
+      }
+      finally {
+        spinner.stop()
       }
     },
   })
@@ -204,7 +255,7 @@ export async function runCli(
 }
 
 export async function main(argv: readonly string[] = process.argv.slice(2)): Promise<void> {
-  const result = await runCli(argv)
+  const result = await runCli(argv, { isTTY: process.stdout.isTTY === true })
 
   if (result.stdout) {
     process.stdout.write(result.stdout)
@@ -222,8 +273,13 @@ function createProgram(options: {
   readonly writeErr: (value: string) => void
   readonly runValidation: (target: string, options: CliOptions) => Promise<void>
   readonly runScan: (target: string, options: ScanCliOptions) => Promise<void>
+  readonly isTTY: boolean
 }): Command {
   const program = new Command()
+  // Captured by closure from the `isTTY` resolved once in `runCli` — never
+  // re-derived here, so help output and human-mode output agree on the same
+  // value for a given run.
+  const helpBanner = (): string => (options.isTTY ? `${buildBanner()}\n` : '')
 
   program
     .name(CLI_NAME)
@@ -244,6 +300,7 @@ function createProgram(options: {
       writeErr: options.writeErr,
     })
     .exitOverride()
+    .addHelpText('beforeAll', helpBanner)
 
   addValidationOptions(program).action(options.runValidation)
 
@@ -257,6 +314,10 @@ function createProgram(options: {
   program
     .command('scan')
     .description('Scan a site via the Agent View scanner service and print the scan result.')
+    // No `addHelpText('beforeAll', ...)` here: Commander's `beforeAll` help
+    // text on the parent program IS shown for a subcommand's own `--help`
+    // (verified empirically — registering it here too produced a duplicated
+    // banner). Registering it once on `program` covers both.
     .argument('<url>', 'Site URL to scan, for example https://example.com')
     .option('--json', 'Print the raw scanner status as JSON')
     .option(
@@ -314,6 +375,76 @@ function readPackageVersion(): string {
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version: string }
 
   return packageJson.version
+}
+
+/**
+ * Compact "Agent View CLI" brand banner for human-facing help text and
+ * default (non-JSON) TTY output — never printed in `--json` output or
+ * non-TTY runs (see `isTTY` gating at each call site). Colored via
+ * `kleur/colors`, whose 16-color ANSI palette has no true amber: `yellow` +
+ * `bold` is the closest available approximation of the brand accent
+ * (`--vp-c-brand-1: #f59e0b` in `docs/.vitepress/theme/custom.css`); `gray` +
+ * `dim` renders the secondary tagline.
+ */
+function buildBanner(): string {
+  const title = bold(yellow('Agent View CLI'))
+  const tagline = dim(gray('AI-readable website validation for the Agent Web.'))
+
+  return ['  ╭─╮', `  │▲│  ${title}`, `  ╰─╯  ${tagline}`].join('\n')
+}
+
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'] as const
+const SPINNER_INTERVAL_MS = 80
+
+/**
+ * Shared no-op `CliScanSpinner`: used whenever a live spinner would not
+ * actually be shown (non-TTY or `--json`), regardless of whether a spinner
+ * dependency was injected — driving an injected spinner outside the live
+ * case would be an observable side effect the caller never asked for.
+ */
+const noopSpinner: CliScanSpinner = {
+  start() {},
+  step() {},
+  stop() {},
+}
+
+/**
+ * Hand-rolled terminal spinner (no `ora`/`cli-spinner` dependency — `kleur`
+ * is enough) for `runScan`'s human-mode TTY output. Writes directly to
+ * `process.stderr` on a timer, bypassing the `runCli` stderr accumulator —
+ * the one deliberate exception in this file, since an animated spinner only
+ * makes sense as live terminal output, never buffered and replayed once the
+ * run has finished. `step()` only updates the label; `stop()` clears the
+ * timer and the line so no orphan frame is left on screen.
+ */
+function createTerminalSpinner(): CliScanSpinner {
+  let frameIndex = 0
+  let currentStep: ScanProgressStep | undefined
+  let timer: NodeJS.Timeout | undefined
+
+  const render = (): void => {
+    const frame = yellow(SPINNER_FRAMES[frameIndex % SPINNER_FRAMES.length] ?? SPINNER_FRAMES[0])
+    frameIndex += 1
+    const label = gray(currentStep ? `Scanning: ${currentStep}` : 'Scanning...')
+    process.stderr.write(`\r${frame} ${label}`)
+  }
+
+  return {
+    start() {
+      render()
+      timer = setInterval(render, SPINNER_INTERVAL_MS)
+    },
+    step(nextStep) {
+      currentStep = nextStep
+    },
+    stop() {
+      if (timer !== undefined) {
+        clearInterval(timer)
+        timer = undefined
+      }
+      process.stderr.write('\r\x1B[K')
+    },
+  }
 }
 
 function parsePositiveInteger(value: string): number {
