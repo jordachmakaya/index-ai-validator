@@ -1489,7 +1489,7 @@ describe('runCli --target-level option', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stderr).toBe('')
-    expect(result.stdout).toContain('Requested target level: l1')
+    expect(result.stdout).toContain('Requested target level: Level 1')
   })
 
   it('defaults --target-level to l2a, matching an explicit --target-level l2a', async () => {
@@ -1500,8 +1500,8 @@ describe('runCli --target-level option', () => {
 
     expect(withoutFlag.exitCode).toBe(0)
     expect(withFlag.exitCode).toBe(0)
-    expect(withoutFlag.stdout).toContain('Requested target level: l2a')
-    expect(withFlag.stdout).toContain('Requested target level: l2a')
+    expect(withoutFlag.stdout).toContain('Requested target level: Level 2a')
+    expect(withFlag.stdout).toContain('Requested target level: Level 2a')
     expect(withoutFlag.stdout).toBe(withFlag.stdout)
   })
 
@@ -1557,7 +1557,7 @@ describe('runCli --target-level option', () => {
     const result = await runCli(['https://example.com', '--target-level', 'l2a'], { validate })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('Achieved level: l2a')
+    expect(result.stdout).toContain('Achieved level: Level 2a')
   })
 
   it('prints Achieved level: none when l1 has a blocking failure', async () => {
