@@ -21,11 +21,11 @@ import { dirname, join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CHECK, SCHEMA_VERSION } from './constants'
 import { runCli, type CliScanRunner, type CliValidationRunner } from './cli'
-import { ScanRequestError, ScanTimeoutError, type ScanStatus } from './client/scanner-client'
+import { ScanRequestError, ScanTimeoutError, type ScanProgressStep, type ScanStatus } from './client/scanner-client'
 import { ScanFailedError, type ScanOutcome } from './scan'
 import type { ScanOptions, ValidationCheck, ValidationResult, ValidatorOptions } from './types'
 import { countContentChars } from './utils/content-chars'
@@ -1734,5 +1734,160 @@ describe('runCli --target-level option', () => {
 
     const levelResults = expectObjectField(json, 'level_results')
     expect(Object.keys(levelResults)).toStrictEqual(['l1', 'l2a'])
+  })
+})
+
+// T5.10_cli-branding-banner: adds an "Agent View CLI" ASCII banner to
+// human-facing --help output (main program + scan --help) and the default
+// human validation report, gated on a new injectable `isTTY` dependency, plus
+// an injectable `spinner` dependency (CliScanSpinner: start/step/stop) driven
+// from the existing `ScanOptions.onProgress` callback during `scan`. Locked
+// design (JOB.md): the banner must never appear in --json output or when
+// `isTTY` is false/absent (default testable state stays non-TTY-like, which
+// is why none of the ~1738 pre-existing tests above inject `isTTY` and none
+// of them see a banner). RED until the Coder job adds `isTTY`/`spinner` to
+// `CliRunDependencies` and wires `buildBanner()`/`CliScanSpinner` into
+// `cli.ts`.
+describe('runCli branding banner + scan spinner', () => {
+  it('does not print the banner in human validation output when isTTY is not provided', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Agent View CLI')
+  })
+
+  it('prints the Agent View CLI banner before the human validation report when isTTY is true', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com'], { validate, isTTY: true })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('Agent View CLI')
+    expect(result.stdout).toContain('index-ai validation result')
+    expect(result.stdout.indexOf('Agent View CLI')).toBeLessThan(
+      result.stdout.indexOf('index-ai validation result'),
+    )
+  })
+
+  it('never prints the banner in --json output even when isTTY is true, and keeps stdout parseable JSON', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com', '--json'], { validate, isTTY: true })
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Agent View CLI')
+    expectJsonResultContract(json)
+  })
+
+  it('does not print the banner in human validation output when isTTY is explicitly false', async () => {
+    const validate: CliValidationRunner = async (options) => validationResult(options.target)
+
+    const result = await runCli(['https://example.com'], { validate, isTTY: false })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Agent View CLI')
+  })
+
+  it('prints the Agent View CLI banner in --help when isTTY is true, and omits it when isTTY is false', async () => {
+    const withTty = await runCli(['--help'], { isTTY: true })
+    const withoutTty = await runCli(['--help'], { isTTY: false })
+
+    expect(withTty.exitCode).toBe(0)
+    expect(withTty.stdout).toContain('Agent View CLI')
+    expect(withoutTty.exitCode).toBe(0)
+    expect(withoutTty.stdout).not.toContain('Agent View CLI')
+  })
+
+  it('prints the Agent View CLI banner in scan --help when isTTY is true, and omits it when isTTY is false', async () => {
+    const withTty = await runCli(['scan', '--help'], { isTTY: true })
+    const withoutTty = await runCli(['scan', '--help'], { isTTY: false })
+
+    expect(withTty.exitCode).toBe(0)
+    expect(withTty.stdout).toContain('Agent View CLI')
+    expect(withoutTty.exitCode).toBe(0)
+    expect(withoutTty.stdout).not.toContain('Agent View CLI')
+  })
+
+  it('drives the injected spinner through start, ordered step calls, and stop during a TTY human scan', async () => {
+    const callOrder: string[] = []
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async (options) => {
+      callOrder.push('scan:start')
+      options.onProgress?.({ currentStep: 'fetch' })
+      options.onProgress?.({ currentStep: 'render' })
+      options.onProgress?.({ currentStep: 'score' })
+      callOrder.push('scan:end')
+      return outcome
+    }
+    const spinner = {
+      start: vi.fn(() => callOrder.push('spinner:start')),
+      step: vi.fn((currentStep: ScanProgressStep) => callOrder.push(`spinner:step:${currentStep}`)),
+      stop: vi.fn(() => callOrder.push('spinner:stop')),
+    }
+
+    const result = await runCli(['scan', 'https://example.com'], { scan, spinner, isTTY: true })
+
+    expect(result.exitCode).toBe(0)
+    expect(spinner.start).toHaveBeenCalledTimes(1)
+    expect(spinner.stop).toHaveBeenCalledTimes(1)
+    expect(spinner.step).toHaveBeenNthCalledWith(1, 'fetch')
+    expect(spinner.step).toHaveBeenNthCalledWith(2, 'render')
+    expect(spinner.step).toHaveBeenNthCalledWith(3, 'score')
+    expect(callOrder).toStrictEqual([
+      'spinner:start',
+      'scan:start',
+      'spinner:step:fetch',
+      'spinner:step:render',
+      'spinner:step:score',
+      'scan:end',
+      'spinner:stop',
+    ])
+  })
+
+  it('never drives the injected spinner in --json or non-TTY scan runs, and keeps the legacy stderr progress lines', async () => {
+    const outcome = scanOutcome()
+    const scenarios: readonly { readonly label: string; readonly argv: readonly string[]; readonly isTTY: boolean }[] = [
+      { label: '--json with isTTY true', argv: ['scan', 'https://example.com', '--json'], isTTY: true },
+      { label: 'isTTY false without --json', argv: ['scan', 'https://example.com'], isTTY: false },
+    ]
+
+    for (const scenario of scenarios) {
+      const scan: CliScanRunner = async (options) => {
+        options.onProgress?.({ currentStep: 'fetch' })
+        options.onProgress?.({ currentStep: 'render' })
+        return outcome
+      }
+      const spinner = {
+        start: vi.fn(),
+        step: vi.fn(),
+        stop: vi.fn(),
+      }
+
+      const result = await runCli(scenario.argv, { scan, spinner, isTTY: scenario.isTTY })
+
+      expect(result.exitCode).toBe(0)
+      expect(spinner.start).not.toHaveBeenCalled()
+      expect(spinner.step).not.toHaveBeenCalled()
+      expect(spinner.stop).not.toHaveBeenCalled()
+      expect(result.stderr).toContain('Scan progress: fetch')
+      expect(result.stderr).toContain('Scan progress: render')
+    }
+  })
+
+  it('runs scan without crashing when no isTTY or spinner dependency is provided, matching pre-existing behavior', async () => {
+    const outcome = scanOutcome()
+    const scan: CliScanRunner = async (options) => {
+      options.onProgress?.({ currentStep: 'fetch' })
+      return outcome
+    }
+
+    const result = await runCli(['scan', 'https://example.com'], { scan })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).not.toContain('Agent View CLI')
+    expect(result.stderr).toContain('Scan progress: fetch')
   })
 })
