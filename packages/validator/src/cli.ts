@@ -3,13 +3,14 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands and runs validation/scanner checks to write terminal, JSON, or HTML reports.
- * job_ref: T5.2_cli-ux-fixes
+ * job_ref: T5.6_target-level-cli-wiring
  * functions: [runCli, main, createProgram]
  * classes: []
  * inputs: [process.argv]
  * outputs: [CliRunResult]
  * relations:
  *   - imports: packages/validator/src/utils/html-report.ts
+ *   - imports: packages/validator/src/utils/target-level.ts
  *   - imports: packages/validator/src/validator.ts
  *   - imports: packages/validator/src/scan.ts
  *   - imports: packages/validator/src/constants.ts
@@ -33,10 +34,19 @@ import {
   DEFAULT_VALIDATE_HTML_PATH,
 } from './constants'
 import { scanUrl, type ScanOutcome } from './scan'
-import type { ScanOptions, ValidationResult, ValidatorOptions } from './types'
+import type { LevelResult, ScanOptions, ValidationResult, ValidatorOptions } from './types'
 import { formatHumanResult } from './utils/format'
 import { formatHtmlReport, formatScanHtmlReport } from './utils/html-report'
+import { computeLevelResults } from './utils/target-level'
 import { validateIndexAi } from './validator'
+
+/**
+ * Target levels the CLI currently accepts. Level 2B is a real `TargetLevel`
+ * in the type system (and in `computeLevelResults`), but is not yet
+ * validator-complete, so the CLI rejects it explicitly with a dev-friendly
+ * message instead of silently accepting a level it can't actually check.
+ */
+type CliTargetLevel = 'l1' | 'l2a'
 
 type CliOptions = {
   readonly json?: boolean
@@ -49,6 +59,7 @@ type CliOptions = {
   readonly html?: string | true
   readonly timeout: number
   readonly maxConcurrency: number
+  readonly targetLevel: CliTargetLevel
 }
 
 type ScanCliOptions = {
@@ -108,6 +119,10 @@ export async function runCli(
       stdout += options.json
         ? `${JSON.stringify(result, null, 2)}\n`
         : `${formatHumanResult(result, { verbose: validatorOptions.verbose })}\n`
+
+      if (!options.json) {
+        stdout += `${formatTargetLevelSummary(result, options.targetLevel)}\n`
+      }
 
       exitCode = result.passed || options.exitCode === false ? 0 : 1
     },
@@ -265,6 +280,12 @@ function addValidationOptions(command: Command): Command {
       parsePositiveInteger,
       DEFAULT_MAX_CONCURRENCY,
     )
+    .option(
+      '--target-level <level>',
+      "Target conformance level to validate against ('l1' or 'l2a'; 'l2b' is not yet available)",
+      parseTargetLevel,
+      'l2a',
+    )
 }
 
 /**
@@ -289,6 +310,22 @@ function parsePositiveInteger(value: string): number {
   }
 
   return parsed
+}
+
+function parseTargetLevel(value: string): CliTargetLevel {
+  if (value === 'l1' || value === 'l2a') {
+    return value
+  }
+
+  if (value === 'l2b') {
+    throw new InvalidArgumentError(
+      'Level 2B validation is not yet available. Use --target-level l1 or --target-level l2a instead.',
+    )
+  }
+
+  throw new InvalidArgumentError(
+    `Invalid --target-level value: "${value}". Accepted values are 'l1' or 'l2a'.`,
+  )
 }
 
 function buildValidatorOptions(target: string, options: CliOptions): ValidatorOptions {
@@ -323,6 +360,45 @@ function validateHtmlPath(path: string): void {
   if (extname(path).toLowerCase() !== '.html') {
     throw new InvalidArgumentError('HTML report path must end with .html.')
   }
+}
+
+/**
+ * Builds the two-line human-mode target-level summary appended after the
+ * regular validation report. Derives "Achieved level" from the
+ * `LevelResult[]` cascade produced by `computeLevelResults` (T5.5) rather
+ * than from `result.conformance`, so this stays consistent with the
+ * cascade-skip semantics already verified there. This is a minimal inline
+ * summary; T5.7 will replace it with a full grouped report in format.ts.
+ */
+function formatTargetLevelSummary(result: ValidationResult, targetLevel: CliTargetLevel): string {
+  const levelResults = targetLevel === 'l1'
+    ? computeLevelResults(result.checks, 'l1')
+    : computeLevelResults(result.checks, 'l2a')
+
+  return [
+    `Requested target level: ${targetLevel}`,
+    `Achieved level: ${deriveAchievedLevel(levelResults)}`,
+  ].join('\n')
+}
+
+/**
+ * Walks the cascade from l1 upward and returns the highest level that was
+ * actually tested with zero failures, stopping at the first level that
+ * either was never tested (skipped) or failed — matching computeLevelResults'
+ * cascade-skip semantics. Returns 'none' if even l1 failed.
+ */
+function deriveAchievedLevel(levelResults: readonly LevelResult[]): string {
+  let achieved: string | undefined
+
+  for (const levelResult of levelResults) {
+    if (levelResult.status !== 'tested' || levelResult.fail > 0) {
+      break
+    }
+
+    achieved = levelResult.level
+  }
+
+  return achieved ?? 'none'
 }
 
 type ScanFindingSeverity = 'P0' | 'P1' | 'P2'
