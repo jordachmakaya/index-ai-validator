@@ -3,8 +3,8 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
- * job_ref: T5.14_html-report-level-aware
- * functions: [runCli, main, createProgram, buildLevelAwareJson, buildBanner, createTerminalSpinner]
+ * job_ref: T5.15_scan-json-error-shape
+ * functions: [runCli, main, createProgram, buildLevelAwareJson, buildScanJsonError, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
  * outputs: [CliRunResult]
@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url'
 import { Command, CommanderError, InvalidArgumentError } from 'commander'
 import { bold, cyan, dim, gray, green, yellow } from 'kleur/colors'
 
-import type { ScanProgressStep } from './client/scanner-client'
+import { ScanServerError, type ScanProgressStep } from './client/scanner-client'
 import {
   CLI_NAME,
   DEFAULT_MAX_CONCURRENCY,
@@ -202,7 +202,31 @@ export async function runCli(
 
       spinner.start()
       try {
-        const outcome = await scan(scanOptions)
+        let outcome: ScanOutcome
+
+        try {
+          outcome = await scan(scanOptions)
+        }
+        catch (error: unknown) {
+          // Non-`--json` runs keep today's behavior unchanged: rethrow so
+          // the error reaches `runCli`'s generic top-level catch below,
+          // which formats it to `stderr` via `formatCliError` — never
+          // duplicated here (T5.15_scan-json-error-shape point 3).
+          if (!options.json) {
+            throw error
+          }
+
+          // `--json` runs get a parseable JSON error object on `stdout`
+          // instead of empty stdout (V2_BUG.md §BUG-2) — `stderr` keeps
+          // carrying the same human-readable text the generic catch would
+          // have produced, so only stdout's contract changes for `--json`.
+          if (!stderr) {
+            stderr += formatCliError(error)
+          }
+          stdout += `${JSON.stringify(buildScanJsonError(error), null, 2)}\n`
+          exitCode = 2
+          return
+        }
 
         stdout += options.json
           ? `${JSON.stringify(outcome.status, null, 2)}\n`
@@ -646,6 +670,60 @@ function countFindingsBySeverity(
   }
 
   return counts
+}
+
+type ScanJsonError = {
+  readonly passed: false
+  readonly status: 'error'
+  readonly error_type: string
+  readonly message: string
+}
+
+// Machine-readable `error_type` per scan error family (V2_BUG.md §BUG-2),
+// keyed off each error class's own stable `.name` (scanner-client.ts's
+// `override readonly name` fields, scan.ts's `ScanFailedError`).
+// `ScanServerError` is deliberately absent from this map: its `.name` alone
+// doesn't distinguish a raw network failure from a genuine HTTP 500 —
+// `deriveScanErrorType` branches on its `.isNetworkError` field instead.
+const SCAN_ERROR_TYPE_BY_NAME: Readonly<Record<string, string>> = {
+  ScanRequestError: 'invalid_request',
+  ScanNotFoundError: 'not_found',
+  ScanExpiredError: 'expired',
+  ScanRateLimitError: 'rate_limited',
+  ScanTimeoutError: 'timeout_error',
+  ScanResultSchemaError: 'result_schema_error',
+  ScanResponseShapeError: 'response_shape_error',
+  ScanFailedError: 'scan_failed',
+}
+
+function deriveScanErrorType(error: unknown): string {
+  if (error instanceof ScanServerError) {
+    return error.isNetworkError ? 'network_error' : 'server_error'
+  }
+
+  if (error instanceof Error) {
+    return SCAN_ERROR_TYPE_BY_NAME[error.name] ?? 'unknown_error'
+  }
+
+  return 'unknown_error'
+}
+
+/**
+ * Builds the JSON error object written to `stdout` when `scan --json` fails
+ * (V2_BUG.md §BUG-2). `message` reuses the thrown error's own curated
+ * message — every scan error class already produces a factual, displayable
+ * message (never a raw stack trace), same source `formatCliError` uses for
+ * `stderr`. `scanner_url` is intentionally omitted: no thrown error here
+ * carries a known scanner URL distinct from the target already on the
+ * command line, and inventing one from message text would not be factual.
+ */
+function buildScanJsonError(error: unknown): ScanJsonError {
+  return {
+    passed: false,
+    status: 'error',
+    error_type: deriveScanErrorType(error),
+    message: error instanceof Error ? error.message : String(error),
+  }
 }
 
 function formatScanStderrMessage(outcome: ScanOutcome): string {
