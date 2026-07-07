@@ -25,7 +25,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { CHECK, SCHEMA_VERSION } from './constants'
 import { runCli, type CliScanRunner, type CliValidationRunner } from './cli'
-import { ScanRequestError, ScanTimeoutError, type ScanProgressStep, type ScanStatus } from './client/scanner-client'
+import { ScanRequestError, ScanServerError, ScanTimeoutError, type ScanProgressStep, type ScanStatus } from './client/scanner-client'
 import { ScanFailedError, type ScanOutcome } from './scan'
 import type { ScanOptions, ValidationCheck, ValidationResult, ValidatorOptions } from './types'
 import { countContentChars } from './utils/content-chars'
@@ -1200,26 +1200,40 @@ describe('runCli scan subcommand', () => {
     })
   })
 
-  it('fails cleanly and writes no HTML report when scan rejects with ScanFailedError', async () => {
+  // T5.15_scan-json-error-shape (V2_BUG.md §BUG-2): the 3 tests below used to
+  // lock `expect(result.stdout).toBe('')` for a scan error even under
+  // `--json` — that was the bug (`scan <url> --json` on a real error piped
+  // unparseable plain text to stdout). This is a deliberate contract change,
+  // not a regression: see the Tester report's "3 rewritten tests" section
+  // for old-behavior -> new-behavior -> why-not-a-regression per test.
+  it('returns parseable JSON on stdout and writes no HTML report when scan rejects with ScanFailedError, under --json', async () => {
     await withTempDir(async (directory) => {
       const reportPath = join(directory, 'report.html')
+      const failedError = new ScanFailedError('SCAN-001')
       const scan: CliScanRunner = async () => {
-        throw new ScanFailedError('SCAN-001')
+        throw failedError
       }
 
       const result = await runCli(
         ['scan', 'https://example.com', '--json', '--html', reportPath],
         { scan },
       )
+      const json = parseJsonObject(result.stdout)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stdout).toBe('')
+      expect(json.passed).toBe(false)
+      expect(json.status).toBe('error')
+      expect(typeof json.error_type).toBe('string')
+      expect(json.error_type).not.toBe('')
+      expect(json.message).toContain('SCAN-001')
+      // stderr keeps carrying human-readable text — only stdout's contract
+      // changes for --json, per JOB.md.
       expect(result.stderr).toContain('SCAN-001')
       expect(await fileExists(reportPath)).toBe(false)
     })
   })
 
-  it('fails cleanly and writes no HTML report when scan rejects with a scanner transport error', async () => {
+  it('returns parseable JSON on stdout and writes no HTML report when scan rejects with a scanner transport error, under --json', async () => {
     await withTempDir(async (directory) => {
       const reportPath = join(directory, 'report.html')
       const requestError = new ScanRequestError('Scanner request failed with code SCAN-500', 'SCAN-500')
@@ -1231,25 +1245,146 @@ describe('runCli scan subcommand', () => {
         ['scan', 'https://example.com', '--json', '--html', reportPath],
         { scan },
       )
+      const json = parseJsonObject(result.stdout)
 
       expect(result.exitCode).not.toBe(0)
-      expect(result.stdout).toBe('')
+      expect(json.passed).toBe(false)
+      expect(json.status).toBe('error')
+      expect(typeof json.error_type).toBe('string')
+      expect(json.error_type).not.toBe('')
+      expect(json.message).toContain(requestError.message)
       expect(result.stderr).toContain(requestError.message)
       expect(await fileExists(reportPath)).toBe(false)
     })
   })
 
-  it('fails cleanly when scan rejects with a poll timeout error', async () => {
+  it('returns parseable JSON on stdout when scan rejects with a poll timeout error, under --json', async () => {
     const timeoutError = new ScanTimeoutError('Scan polling timed out after 90000ms')
     const scan: CliScanRunner = async () => {
       throw timeoutError
     }
 
     const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).not.toBe(0)
+    expect(json.passed).toBe(false)
+    expect(json.status).toBe('error')
+    expect(typeof json.error_type).toBe('string')
+    expect(json.error_type).not.toBe('')
+    expect(json.message).toContain(timeoutError.message)
+    expect(result.stderr).toContain(timeoutError.message)
+  })
+
+  it('keeps plain-text stderr and empty stdout unchanged for a scan error when --json is not set (human-mode non-regression)', async () => {
+    const failedError = new ScanFailedError('SCAN-001')
+    const scan: CliScanRunner = async () => {
+      throw failedError
+    }
+
+    const result = await runCli(['scan', 'https://example.com'], { scan })
 
     expect(result.exitCode).not.toBe(0)
     expect(result.stdout).toBe('')
-    expect(result.stderr).toContain(timeoutError.message)
+    expect(result.stderr).toContain('SCAN-001')
+  })
+
+  it('gives each of the network, timeout, and business-failure scan error families its own stable, distinct error_type', async () => {
+    // Exact error_type string values are the Coder's choice (documented in
+    // the Coder's report) — this test only proves the 3 families the bug
+    // report calls out are distinguishable and stable, never pinning a
+    // literal string the Coder didn't choose yet.
+    const networkError = new ScanServerError(
+      'Network error while calling "https://example.com": fetch failed.',
+      undefined,
+      true,
+    )
+    const timeoutError = new ScanTimeoutError('Scan polling timed out after 90000ms')
+    const businessError = new ScanFailedError('SCAN-001')
+
+    const networkScan: CliScanRunner = async () => { throw networkError }
+    const timeoutScan: CliScanRunner = async () => { throw timeoutError }
+    const businessScan: CliScanRunner = async () => { throw businessError }
+
+    const networkResult = await runCli(['scan', 'https://example.com', '--json'], { scan: networkScan })
+    const timeoutResult = await runCli(['scan', 'https://example.com', '--json'], { scan: timeoutScan })
+    const businessResult = await runCli(['scan', 'https://example.com', '--json'], { scan: businessScan })
+
+    const networkJson = parseJsonObject(networkResult.stdout)
+    const timeoutJson = parseJsonObject(timeoutResult.stdout)
+    const businessJson = parseJsonObject(businessResult.stdout)
+
+    for (const json of [networkJson, timeoutJson, businessJson]) {
+      expect(json.passed).toBe(false)
+      expect(json.status).toBe('error')
+      expect(typeof json.error_type).toBe('string')
+      expect(json.error_type).not.toBe('')
+    }
+
+    expect(networkJson.error_type).not.toBe(timeoutJson.error_type)
+    expect(timeoutJson.error_type).not.toBe(businessJson.error_type)
+    expect(networkJson.error_type).not.toBe(businessJson.error_type)
+  })
+
+  it('produces stdout that is genuinely parseable JSON, not merely JSON-shaped text, for a scan network error', async () => {
+    const networkError = new ScanServerError(
+      'Network error while calling "https://example.com": fetch failed.',
+      undefined,
+      true,
+    )
+    const scan: CliScanRunner = async () => {
+      throw networkError
+    }
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+
+    expect(() => JSON.parse(result.stdout)).not.toThrow()
+    const parsed: unknown = JSON.parse(result.stdout)
+    expect(typeof parsed).toBe('object')
+    expect(parsed).not.toBeNull()
+    expect(Array.isArray(parsed)).toBe(false)
+  })
+
+  it('never leaks the banner or a human scan summary into --json error output, even when isTTY is true', async () => {
+    const networkError = new ScanServerError(
+      'Network error while calling "https://example.com": fetch failed.',
+      undefined,
+      true,
+    )
+    const scan: CliScanRunner = async () => {
+      throw networkError
+    }
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, isTTY: true })
+
+    expect(result.stdout).not.toContain('Agent View CLI')
+    expect(result.stdout).not.toContain('Score:')
+    expect(result.stdout).not.toContain('Verdict:')
+    expect(result.stdout).not.toContain('[')
+    expect(() => JSON.parse(result.stdout)).not.toThrow()
+  })
+
+  // Out of scope per V2_BUG.md §BUG-2 point 4: `validate`'s error path must
+  // not change. `runCli`'s top-level catch (cli.ts:227-248) is shared by
+  // both subcommands, so this pins today's plain-text/empty-stdout behavior
+  // for a thrown error under `validate --json` as a regression guard against
+  // an overly broad fix that reshapes the generic catch instead of scan's
+  // own error handling.
+  it('leaves validate --json error output (plain-text stderr, empty stdout) unchanged — this fix is scoped to scan only', async () => {
+    const networkLikeError = new ScanServerError(
+      'Network error while calling "https://example.com": fetch failed.',
+      undefined,
+      true,
+    )
+    const validate: CliValidationRunner = async () => {
+      throw networkLikeError
+    }
+
+    const result = await runCli(['https://example.com', '--json'], { validate })
+
+    expect(result.exitCode).not.toBe(0)
+    expect(result.stdout).toBe('')
+    expect(result.stderr).toContain('Network error while calling')
   })
 
   it('writes scan progress steps to stderr in order and never to stdout', async () => {
