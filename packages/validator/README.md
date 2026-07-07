@@ -72,6 +72,9 @@ Naming:
 - Package: `@hardmachinelabs/index-ai-validator`
 - CLI binary: `index-ai`
 - Specification checked in Default validation mode: `index-ai`
+- `Agent View CLI` is the banner brand line shown in human-mode terminal
+  output — it is not a new package or binary name, and it is not a rename of
+  the remote `Agent View` scanner service; the binary remains `index-ai`.
 
 Neither command is a production certification, legal compliance tool,
 traffic guarantee, SEO ranking tool, security audit, or vulnerability

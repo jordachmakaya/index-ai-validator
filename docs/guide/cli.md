@@ -92,7 +92,7 @@ requires.
 index-ai https://example.com --target-level l1
 index-ai https://example.com --target-level l2a
 index-ai https://example.com --target-level l2b
-# Error: Level 2B is not yet available. Use --target-level l1 or l2a.
+# Error: Level 2b validation is not yet available. Use --target-level l1 or --target-level l2a instead.
 ```
 
 **Cascade-skip, not cascade-fail**: if an earlier level has a blocking failure,

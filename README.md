@@ -87,6 +87,9 @@ Naming:
   experimental specification checked in Default validation mode.
 - `@hardmachinelabs/index-ai-validator` is the npm package.
 - `index-ai` is also the CLI binary name.
+- `Agent View CLI` is the banner brand line shown in human-mode terminal
+  output — it is not a new package or binary name, and it is not a rename of
+  the remote `Agent View` scanner service above; the binary remains `index-ai`.
 
 ## Validator package
 

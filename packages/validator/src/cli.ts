@@ -3,7 +3,7 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
- * job_ref: T5.10_cli-branding-banner
+ * job_ref: T5.13_fix-labeling-drift
  * functions: [runCli, main, createProgram, buildLevelAwareJson, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
@@ -52,7 +52,7 @@ import { computeLevelResults, LEVEL_LABEL } from './utils/target-level'
 import { validateIndexAi } from './validator'
 
 /**
- * Target levels the CLI currently accepts. Level 2B is a real `TargetLevel`
+ * Target levels the CLI currently accepts. Level 2b is a real `TargetLevel`
  * in the type system (and in `computeLevelResults`), but is not yet
  * validator-complete, so the CLI rejects it explicitly with a dev-friendly
  * message instead of silently accepting a level it can't actually check.
@@ -466,7 +466,7 @@ function parseTargetLevel(value: string): CliTargetLevel {
 
   if (value === 'l2b') {
     throw new InvalidArgumentError(
-      'Level 2B validation is not yet available. Use --target-level l1 or --target-level l2a instead.',
+      `${LEVEL_LABEL.l2b} validation is not yet available. Use --target-level l1 or --target-level l2a instead.`,
     )
   }
 
