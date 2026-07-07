@@ -89,7 +89,7 @@ Returns an AI-readiness score out of 100, findings, and an optional shareable HT
 npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-The package name is `@hardmachinelabs/index-ai-validator`. The CLI binary is `index-ai`, and Default validation mode runs automatically — there is no command keyword to type. By default it prints a deterministic, summary-first report:
+The package name is `@hardmachinelabs/index-ai-validator`. Its CLI binary is installed under two equivalent names, `index-ai` and `index-ai-validator` — either one runs the same executable. Default validation mode runs automatically — there is no command keyword to type. By default it prints a deterministic, summary-first report:
 
 ```txt
 index-ai validation result
@@ -98,6 +98,14 @@ Target: https://example.com
 Duration: 42 ms
 Conformance: level-2a
 Passed: true
+
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: Level 2a
+
+Level results:
+- Level 1: 5 pass, 0 warn, 0 fail
+- Level 2a: 7 pass, 0 warn, 0 fail
 
 Summary:
 - pass: 12
@@ -118,7 +126,24 @@ Next:
 - No blocking validation fixes were found.
 ```
 
-Both commands accept `--json` for a stable machine-readable result, and `--html` for a shareable HTML report.
+Both commands accept `--json` for a stable machine-readable result, and `--html` for a shareable HTML report. Default validation mode's `--json` output includes:
+
+- `schema_version`
+- `target`
+- `generated_at`
+- `duration_ms`
+- `conformance`
+- `passed`
+- `summary`
+- `metrics`
+- `checks`
+- `requested_level`
+- `tested_levels`
+- `achieved_level`
+- `failed_level`
+- `level_results`
+
+See [JSON Output](/guide/json-output) for field meanings and shapes.
 
 Default validation mode checks Level 1 + Level 2a conformance today. `scan` calls the remote Agent View scanner for a broader AI-readiness diagnostic. Neither is certification, and neither is a traffic promise. → [See the full scope](/guide/scope)
 
