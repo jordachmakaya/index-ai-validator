@@ -1514,7 +1514,7 @@ describe('runCli --target-level option', () => {
 
     expect(result.exitCode).toBe(2)
     expect(result.stdout).toBe('')
-    expect(result.stderr).toContain('Level 2B')
+    expect(result.stderr).toContain('Level 2b')
     expect(result.stderr).toContain('not yet available')
   })
 
