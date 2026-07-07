@@ -2,21 +2,22 @@
  * @filemeta
  * type: test
  * title: HTML report format tests
- * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, Plain Speech, and content-regression snapshots.
- * job_ref: T3.3_html-regression-tests_tester
- * functions: [makeScanResult, extractContentText]
+ * description: Unit tests for HTML report generation functions ensuring branding compliance, structural integrity, Plain Speech, content-regression snapshots, and level-aware content.
+ * job_ref: T5.14_html-report-level-aware_tester
+ * functions: [makeScanResult, extractContentText, buildLevelAwareResult]
  * classes: []
  * inputs: []
  * outputs: []
  * relations:
  *   - imports: packages/validator/src/utils/html-report.ts
- * last_update: 2026-07-04
+ * last_update: 2026-07-07
  */
 
 import { describe, expect, it } from 'vitest'
 
+import { CHECK } from '../constants'
 import type { ScanResult } from '../schemas'
-import type { ValidationResult } from '../types'
+import type { ValidationCheck, ValidationResult } from '../types'
 import { formatHtmlReport, formatScanHtmlReport } from './html-report'
 
 /**
@@ -116,7 +117,7 @@ describe('formatHtmlReport', () => {
 
   it('preserves content semantic and contains score, targets, and checks details', () => {
     // Act
-    const html = formatHtmlReport(fakeResult)
+    const html = formatHtmlReport(fakeResult, { targetLevel: 'l2a' })
 
     // Assert
     expect(html).toContain('75%')
@@ -142,7 +143,7 @@ describe('formatHtmlReport', () => {
 
   it('contains design token CSS variables from BRANDING.md', () => {
     // Act
-    const html = formatHtmlReport(fakeResult)
+    const html = formatHtmlReport(fakeResult, { targetLevel: 'l2a' })
 
     // Assert
     expect(html).toContain('--bg: #010102;')
@@ -157,7 +158,7 @@ describe('formatHtmlReport', () => {
 
   it('includes google fonts Outfit and Inter, and configures them in styles', () => {
     // Act
-    const html = formatHtmlReport(fakeResult)
+    const html = formatHtmlReport(fakeResult, { targetLevel: 'l2a' })
 
     // Assert
     // Check loading via Google Fonts links
@@ -172,7 +173,7 @@ describe('formatHtmlReport', () => {
 
   it('applies negative tracking to headings and title elements', () => {
     // Act
-    const html = formatHtmlReport(fakeResult)
+    const html = formatHtmlReport(fakeResult, { targetLevel: 'l2a' })
 
     // Assert
     // Outfit headers or hero-title or h1/h2/h3 must have negative letter-spacing
@@ -189,7 +190,7 @@ describe('formatHtmlReport', () => {
   // -------------------------------------------------------------------------
   it('preserves the extracted text content of formatHtmlReport across visual redesigns', () => {
     // Act
-    const html = formatHtmlReport(fakeResult)
+    const html = formatHtmlReport(fakeResult, { targetLevel: 'l2a' })
     const text = extractContentText(html)
 
     // Assert
@@ -480,3 +481,232 @@ describe('formatScanHtmlReport — findings CTA', () => {
     }
   })
 })
+
+// ---------------------------------------------------------------------------
+// RED tests — T5.14_html-report-level-aware (V2_BUG.md §BUG-1)
+//
+// `formatHtmlReport(result: ValidationResult)` currently ignores level-aware
+// data entirely and hardcodes the obsolete "Agent-View LV2" / "Level 1 and
+// Level 2" hero copy (html-report.ts:710-711) — a term that does not exist
+// in SPEC-v1.0-final.md. These tests lock in the new two-argument signature
+// `formatHtmlReport(result, options: { targetLevel: TargetLevel })` (mirrors
+// `formatHumanResult`'s `HumanFormatOptions` pattern in format.ts) and assert
+// that the rendered report exposes the same requested/tested/achieved/failed
+// level content and cascade-skip reasons already proven by format.test.ts and
+// cli.test.ts's --json level-aware tests — reusing `computeLevelResults` /
+// `LEVEL_LABEL` from target-level.ts, never reimplementing the cascade.
+//
+// RED until the Coder job:
+//   1. Adds `options: { targetLevel: TargetLevel }` to `formatHtmlReport`.
+//   2. Replaces `renderHero`'s hardcoded copy with level-aware content.
+//   3. Wires `options.targetLevel` through `writeHtmlReport` in cli.ts
+//      (covered separately by the cli.test.ts e2e test below).
+// ---------------------------------------------------------------------------
+describe('formatHtmlReport — level-aware content (T5.14_html-report-level-aware)', () => {
+  it('includes requested/tested/achieved level content when targetLevel is l1 and l1 passes', () => {
+    // Arrange
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+    ]
+    const result = buildLevelAwareResult(checks, { conformance: 'level-1', passed: true })
+
+    // Act
+    const html = formatHtmlReport(result, { targetLevel: 'l1' })
+    const text = extractContentText(html)
+
+    // Assert
+    expect(text).toContain('Requested target level')
+    expect(text).toContain('Tested levels')
+    expect(text).toContain('Achieved level')
+    expect(text).toContain('Level 1')
+  })
+
+  it('includes requested/tested/achieved level content when targetLevel is l2a and everything passes', () => {
+    // Arrange
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Agent Index graph found.',
+      },
+    ]
+    const result = buildLevelAwareResult(checks, { conformance: 'level-2a', passed: true })
+
+    // Act
+    const html = formatHtmlReport(result, { targetLevel: 'l2a' })
+    const text = extractContentText(html)
+
+    // Assert
+    expect(text).toContain('Requested target level')
+    expect(text).toContain('Tested levels')
+    expect(text).toContain('Achieved level')
+    expect(text).toContain('Level 2a')
+    expect(text.toLowerCase()).not.toContain('skipped')
+  })
+
+  it('shows Level 2a as skipped with the blocking level named as Failed level, when l1 fails under targetLevel l2a', () => {
+    // Arrange
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'Manifest not found.',
+      },
+    ]
+    const result = buildLevelAwareResult(checks, {
+      conformance: 'none',
+      passed: false,
+      summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+    })
+
+    // Act
+    const html = formatHtmlReport(result, { targetLevel: 'l2a' })
+    const text = extractContentText(html)
+
+    // Assert
+    expect(text).toContain('Failed level')
+    expect(text).toContain('Level 1')
+    expect(text).toContain('Level 2a')
+    expect(text.toLowerCase()).toContain('skipped')
+  })
+
+  it('never contains the obsolete "LV2" wording or a bare "Level 2" without an a/b suffix', () => {
+    // Arrange
+    const passingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+    ]
+    const failingChecks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'Manifest not found.',
+      },
+    ]
+
+    // Act
+    const htmlL1 = formatHtmlReport(buildLevelAwareResult(passingChecks), { targetLevel: 'l1' })
+    const htmlL2aPassing = formatHtmlReport(
+      buildLevelAwareResult(passingChecks, { conformance: 'level-1', passed: true }),
+      { targetLevel: 'l2a' },
+    )
+    const htmlL2aSkipped = formatHtmlReport(
+      buildLevelAwareResult(failingChecks, {
+        conformance: 'none',
+        passed: false,
+        summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+      }),
+      { targetLevel: 'l2a' },
+    )
+
+    // Assert
+    for (const html of [htmlL1, htmlL2aPassing, htmlL2aSkipped]) {
+      expect(html).not.toContain('LV2')
+      expect(html).not.toMatch(/Level 2[^ab]/)
+      expect(html).not.toMatch(/Level 2$/)
+    }
+  })
+
+  it('uses "Level 2a" consistently, never the incorrectly cased "Level 2A"', () => {
+    // Arrange
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Manifest found.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Agent Index graph found.',
+      },
+    ]
+    const result = buildLevelAwareResult(checks, { conformance: 'level-2a', passed: true })
+
+    // Act
+    const html = formatHtmlReport(result, { targetLevel: 'l2a' })
+
+    // Assert
+    expect(html).toContain('Level 2a')
+    expect(html).not.toContain('Level 2A')
+  })
+
+  // Non-regression (Cas 5, V2_BUG.md §BUG-1 required fix #4): formatScanHtmlReport
+  // is a separate function with its own hero copy and must stay unaffected by
+  // the validate --html level-aware change — same 1-argument (+ optional
+  // auditUrl) call shape, same "Is this website readable by AI agents?" copy.
+  it('leaves formatScanHtmlReport unaffected: same signature, same scan-specific hero copy', () => {
+    // Arrange
+    const scanResult = makeScanResult({})
+
+    // Act
+    const html = formatScanHtmlReport(scanResult)
+
+    // Assert
+    expect(html).toContain('Is this website readable by AI agents?')
+  })
+})
+
+/**
+ * Builds a minimal, valid `ValidationResult` for level-aware HTML report
+ * tests (T5.14). Mirrors `format.test.ts`'s `buildResult` helper so both
+ * suites exercise `computeLevelResults` through the same fixture shape.
+ */
+function buildLevelAwareResult(
+  checks: ValidationCheck[],
+  overrides?: Partial<ValidationResult>,
+): ValidationResult {
+  const pass = checks.filter((check) => check.severity === 'pass').length
+  const warn = checks.filter((check) => check.severity === 'warn').length
+  const fail = checks.filter((check) => check.severity === 'fail').length
+
+  return {
+    schema_version: '0.1',
+    target: 'https://example.com',
+    generated_at: '2026-06-12T00:00:00.000Z',
+    duration_ms: 12,
+    conformance: 'none',
+    passed: fail === 0,
+    summary: { pass, warn, fail, total: checks.length },
+    metrics: {
+      manifest_found: false,
+      manifest_schema_valid: false,
+      agent_index_found: false,
+      agent_index_schema_valid: false,
+      total_nodes: 0,
+      nodes_with_llm_url: 0,
+      nodes_with_content_chars: 0,
+      nodes_with_content_chars_mode: 0,
+      valid_clean_endpoints: 0,
+      valid_content_chars: 0,
+      html_leaks: 0,
+      secret_findings: 0,
+      coverage: {
+        llm_url_percent: 0,
+        content_chars_percent: 0,
+      },
+    },
+    checks,
+    ...overrides,
+  }
+}

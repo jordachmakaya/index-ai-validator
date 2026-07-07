@@ -1737,6 +1737,53 @@ describe('runCli --target-level option', () => {
   })
 })
 
+// T5.14_html-report-level-aware (V2_BUG.md §BUG-1): `validate --html`
+// currently writes a report with the obsolete "Agent-View LV2" / "Level 1
+// and Level 2" hero copy and no level-aware content at all, because
+// `writeHtmlReport` never receives `options.targetLevel`. This end-to-end
+// test reproduces the human's own acceptance test from V2_BUG.md
+// (`Select-String -Pattern "Requested target level|Tested levels|Achieved
+// level|Failed level|Level 2a|skipped"` finds matches; `Select-String
+// -Pattern "LV2|Level 2[^a]"` finds none). RED until the Coder job plumbs
+// `options.targetLevel` through `writeHtmlReport` -> `formatHtmlReport`.
+describe('runCli validate --html level-aware content (T5.14_html-report-level-aware)', () => {
+  it('writes an HTML report with level-aware content and no obsolete wording when l1 fails under --target-level l2a', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const failingChecks: ValidationCheck[] = [
+        {
+          code: CHECK.L1_MANIFEST_FOUND,
+          severity: 'fail',
+          requirement: 'must',
+          message: 'Manifest not found.',
+        },
+      ]
+      const validate: CliValidationRunner = async (options) => validationResult(options.target, {
+        conformance: 'none',
+        passed: false,
+        summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+        checks: failingChecks,
+      })
+
+      const result = await runCli(
+        ['https://example.com', '--target-level', 'l2a', '--html', reportPath, '--no-exit-code'],
+        { validate },
+      )
+      const html = await readFile(reportPath, 'utf8')
+
+      // Level-aware content is present.
+      expect(result.exitCode).toBe(0)
+      expect(html).toMatch(/Requested target level|Tested levels|Achieved level|Failed level/)
+      expect(html).toContain('Level 2a')
+      expect(html.toLowerCase()).toContain('skipped')
+
+      // Obsolete wording is absent.
+      expect(html).not.toContain('LV2')
+      expect(html).not.toMatch(/Level 2[^ab]/)
+    })
+  })
+})
+
 // T5.10_cli-branding-banner: adds an "Agent View CLI" ASCII banner to
 // human-facing --help output (main program + scan --help) and the default
 // human validation report, gated on a new injectable `isTTY` dependency, plus
