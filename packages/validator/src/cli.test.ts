@@ -471,8 +471,12 @@ describe('runCli', () => {
       expect(html).toContain('/</span>validator')
       expect(html).toContain('@hardmachinelabs/index-ai-validator')
       expect(html).toContain('by Jordach Makaya')
-      expect(html).toContain('This report checks whether your site correctly exposes an AI manifest and Agent View')
-      expect(html).toContain('the index-ai open standard&#39;s Level 1 and Level 2.')
+      // T5.14_html-report-level-aware: the hero copy is level-aware and
+      // driven by the requested --target-level (defaults to l2a here, since
+      // this test passes none) — replaces the obsolete "Agent-View LV2" /
+      // "Level 1 and Level 2." wording locked in by the original T3.2 test.
+      expect(html).toContain('Does this website implement the index-ai standard up to Level 2a?')
+      expect(html).toContain('This report checks whether your site implements the index-ai standard up to the requested target level.')
       expect(html).toContain('PASSED')
       expect(html).toContain('CI Verdict')
       expect(html).toContain('Readiness')
