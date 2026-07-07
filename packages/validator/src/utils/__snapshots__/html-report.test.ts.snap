@@ -12,8 +12,8 @@ index-ai project
 /
 GitHub
 AI-readiness report
-Does this website accurately implement Agent-View LV2?
-This report checks whether your site correctly exposes an AI manifest and Agent View, the index-ai open standard's Level 1 and Level 2.
+Does this website implement the index-ai standard up to Level 2a?
+This report checks whether your site implements the index-ai standard up to the requested target level.
 Target
 https://example.com
 FAILED
@@ -24,6 +24,18 @@ The readiness score is a human-readable progress indicator based on passed check
 Conformance
 level-1
 A Level 1 manifest is present; Agent Index and endpoint readiness may still need work.
+Requested target level
+Level 2a
+Tested levels
+Level 1, Level 2a
+Achieved level
+Level 1
+Failed level
+Level 2a
+Level 1
+2 pass, 0 warn, 0 fail
+Level 2a
+0 pass, 1 warn, 1 fail
 Recommended next steps
 1 actions
 Priority fix

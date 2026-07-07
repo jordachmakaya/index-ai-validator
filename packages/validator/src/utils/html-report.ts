@@ -2,23 +2,37 @@
  * @filemeta
  * type: utility
  * title: HTML validation report formatter
- * description: Formats AI-readiness validation results into a static HTML report with design system tokens and Google Fonts.
- * job_ref: T3.9a_scan-finding-cta
+ * description: Formats AI-readiness validation results into a level-aware static HTML report with design system tokens and Google Fonts.
+ * job_ref: T5.14_html-report-level-aware
  * functions: [formatHtmlReport, formatScanHtmlReport, renderAgentLayerCta]
  * classes: []
- * inputs: [ValidationResult, ScanResult]
+ * inputs: [ValidationResult, HtmlFormatOptions, ScanResult]
  * outputs: [string]
  * relations:
  *   - imports: packages/validator/src/constants.ts
  *   - imports: packages/validator/src/types.ts
+ *   - imports: packages/validator/src/utils/target-level.ts
+ *   - used_by: packages/validator/src/cli.ts
  *   - tested_by: packages/validator/src/utils/html-report.test.ts
- * last_update: 2026-07-04
+ * last_update: 2026-07-07
  */
 
 import { CHECK } from '../constants'
-import type { Severity, ValidationCheck, ValidationMetrics, ValidationResult } from '../types'
+import type {
+  LevelResult,
+  Severity,
+  TargetLevel,
+  ValidationCheck,
+  ValidationMetrics,
+  ValidationResult,
+} from '../types'
 import { rewriteAttributionSrc } from './attribution'
+import { computeLevelResults, LEVEL_LABEL } from './target-level'
 import type { ScanResult } from '../schemas'
+
+type HtmlFormatOptions = {
+  readonly targetLevel: TargetLevel
+}
 
 type RecommendedStep = {
   readonly title: string
@@ -35,11 +49,12 @@ const SEVERITY_PRIORITY: Record<Severity, number> = {
   pass: 2,
 }
 
-export function formatHtmlReport(result: ValidationResult): string {
+export function formatHtmlReport(result: ValidationResult, options: HtmlFormatOptions): string {
   const readiness = getReadiness(result)
   const verdict = result.passed ? 'Passed' : 'Failed'
   const verdictWord = result.passed ? 'PASSED' : 'FAILED'
   const verdictClass = result.passed ? 'pass' : 'fail'
+  const levelResults = computeLevelResultsFor(result.checks, options.targetLevel)
 
   return `<!doctype html>
 <html lang="en">
@@ -669,7 +684,7 @@ export function formatHtmlReport(result: ValidationResult): string {
   <div class="layout">
     ${renderTopbar()}
     <main class="main">
-      ${renderHero(result, readiness, verdictWord, verdictClass)}
+      ${renderHero(result, readiness, verdictWord, verdictClass, options.targetLevel, levelResults)}
       ${renderRecommendedNextSteps(result.checks)}
       ${renderCheckSections(result.checks)}
       ${renderMetrics(result.metrics)}
@@ -704,11 +719,13 @@ function renderHero(
   readiness: number,
   verdictWord: string,
   verdictClass: string,
+  targetLevel: TargetLevel,
+  levelResults: readonly LevelResult[],
 ): string {
   return `<section class="hero">
   <div class="hero-eyebrow">AI-readiness report</div>
-  <h1 class="hero-title">Does this website accurately implement Agent-View LV2?</h1>
-  <p class="hero-copy">${escapeHtml('This report checks whether your site correctly exposes an AI manifest and Agent View, the index-ai open standard\'s Level 1 and Level 2.')}</p>
+  <h1 class="hero-title">Does this website implement the index-ai standard up to ${escapeHtml(LEVEL_LABEL[targetLevel])}?</h1>
+  <p class="hero-copy">${escapeHtml('This report checks whether your site implements the index-ai standard up to the requested target level.')}</p>
   <p class="hero-target">Target <span>${escapeHtml(result.target)}</span></p>
   <div class="verdict-display">
     <div class="verdict-word ${escapeHtml(verdictClass)}">${escapeHtml(verdictWord)}</div>
@@ -727,7 +744,97 @@ function renderHero(
     <span class="conf-value ${escapeHtml(result.conformance)}">${escapeHtml(result.conformance)}</span>
     <span class="conf-hint">${escapeHtml(getConformanceHint(result.conformance))}</span>
   </div>
+  ${renderLevelSummary(targetLevel, levelResults)}
 </section>`
+}
+
+/**
+ * Renders the requested/tested/achieved/failed level summary plus a
+ * per-level pass/warn/fail (or "skipped (<reason>)") breakdown, reusing the
+ * existing `meta-pairs`/`meta-pair` sidebar tokens so the hero stays on the
+ * same visual system without a new CSS surface. `levelResults` is the
+ * cascade-skip output of `computeLevelResults` (target-level.ts) — the
+ * single source of truth also used by `format.ts` and `cli.ts`.
+ */
+function renderLevelSummary(
+  targetLevel: TargetLevel,
+  levelResults: readonly LevelResult[],
+): string {
+  const achievedLevel = formatAchievedLevel(levelResults)
+  const failedLevelLabel = getFailedLevelLabel(levelResults)
+
+  return `<div class="meta-pairs level-summary">
+    ${renderMetaPair('Requested target level', LEVEL_LABEL[targetLevel])}
+    ${renderMetaPair('Tested levels', levelResults.map((levelResult) => LEVEL_LABEL[levelResult.level]).join(', '))}
+    ${renderMetaPair('Achieved level', achievedLevel)}
+    ${failedLevelLabel ? renderMetaPair('Failed level', failedLevelLabel) : ''}
+  </div>
+  <div class="meta-pairs level-results">
+    ${levelResults.map((levelResult) => renderMetaPair(LEVEL_LABEL[levelResult.level], formatLevelResultValue(levelResult))).join('')}
+  </div>`
+}
+
+/**
+ * Calls `computeLevelResults` with `targetLevel` narrowed to one of its
+ * three overloaded literal signatures via an explicit switch — the same
+ * minimal narrowing duplicated in `format.ts`'s `computeLevelResultsFor`,
+ * since a plain `TargetLevel`-typed argument doesn't match any single
+ * overload of a function overloaded on string literals.
+ */
+function computeLevelResultsFor(
+  checks: ValidationCheck[],
+  targetLevel: TargetLevel,
+): LevelResult[] {
+  switch (targetLevel) {
+    case 'l1':
+      return computeLevelResults(checks, 'l1')
+    case 'l2a':
+      return computeLevelResults(checks, 'l2a')
+    case 'l2b':
+      return computeLevelResults(checks, 'l2b')
+  }
+}
+
+/**
+ * Walks the cascade from l1 upward and returns the label of the highest
+ * level that was actually tested with zero failures — mirrors
+ * `format.ts`'s `formatAchievedLevel` so the HTML report and the human-text
+ * report always agree on the achieved level. Returns 'none' if even l1
+ * failed.
+ */
+function formatAchievedLevel(levelResults: readonly LevelResult[]): string {
+  let achieved: TargetLevel | undefined
+
+  for (const levelResult of levelResults) {
+    if (levelResult.status !== 'tested' || levelResult.fail > 0) {
+      break
+    }
+
+    achieved = levelResult.level
+  }
+
+  return achieved === undefined ? 'none' : LEVEL_LABEL[achieved]
+}
+
+/**
+ * Returns the label of the first tested level that has a blocking failure
+ * (the level that triggered the cascade-skip of every level after it), or
+ * `undefined` when no tested level failed.
+ */
+function getFailedLevelLabel(levelResults: readonly LevelResult[]): string | undefined {
+  const failedLevel = levelResults.find(
+    (levelResult) => levelResult.status === 'tested' && levelResult.fail > 0,
+  )
+
+  return failedLevel ? LEVEL_LABEL[failedLevel.level] : undefined
+}
+
+function formatLevelResultValue(levelResult: LevelResult): string {
+  if (levelResult.status === 'skipped') {
+    return `skipped (${levelResult.reason})`
+  }
+
+  return `${levelResult.pass} pass, ${levelResult.warn} warn, ${levelResult.fail} fail`
 }
 
 function getReadiness(result: ValidationResult): number {

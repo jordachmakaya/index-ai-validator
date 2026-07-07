@@ -3,7 +3,7 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
- * job_ref: T5.13_fix-labeling-drift
+ * job_ref: T5.14_html-report-level-aware
  * functions: [runCli, main, createProgram, buildLevelAwareJson, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
@@ -17,7 +17,7 @@
  *   - imports: packages/validator/src/constants.ts
  *   - imports: packages/validator/src/client/scanner-client.ts
  *   - tested_by: packages/validator/src/cli.test.ts
- * last_update: 2026-07-06
+ * last_update: 2026-07-07
  */
 
 import { readFileSync } from 'node:fs'
@@ -143,7 +143,7 @@ export async function runCli(
 
       if (options.html !== undefined) {
         const htmlPath = options.html === true ? DEFAULT_VALIDATE_HTML_PATH : options.html
-        await writeHtmlReport(htmlPath, result)
+        await writeHtmlReport(htmlPath, result, options.targetLevel)
         if (!options.json) {
           stdout += `HTML report written to ${resolve(htmlPath)}\n`
         }
@@ -590,10 +590,14 @@ function toLevelResultJson(levelResult: LevelResult): TargetLevelResultJson {
   return { label, status: 'skipped', reason: levelResult.reason }
 }
 
-async function writeHtmlReport(path: string, result: ValidationResult): Promise<void> {
+async function writeHtmlReport(
+  path: string,
+  result: ValidationResult,
+  targetLevel: CliTargetLevel,
+): Promise<void> {
   try {
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(path, formatHtmlReport(result), 'utf8')
+    await writeFile(path, formatHtmlReport(result, { targetLevel }), 'utf8')
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)
