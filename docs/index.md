@@ -27,7 +27,7 @@ features:
 <br>
 
 <div class="hero-media">
-  <video src="/can_AI_Read_Your_Site_hardmachinelabs.mp4" controls autoplay muted loop playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result">
+  <video src="/clean_Agent_View__The_Machine-Readable_Layer.mp4" controls autoplay muted loop playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="index-ai-validator: from a public website through the AI Manifest, Agent Index, and clean endpoints to a validation result">
     Your browser does not support the video tag. The index-ai-validator demo shows a public website validated through the AI Manifest, Agent Index, and clean endpoints to a validation result.
   </video>
 </div>
