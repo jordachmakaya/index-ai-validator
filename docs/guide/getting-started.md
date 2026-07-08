@@ -40,11 +40,12 @@ npx @hardmachinelabs/index-ai-validator https://example.com
 
 The package name is `@hardmachinelabs/index-ai-validator`.
 
-The CLI binary is `index-ai`, and Default validation mode runs
-automatically — no command keyword is required (`index-ai validate <url>`
-is the same mode with an explicit keyword, if you prefer naming it). The
-rest of this section covers Default validation mode; skip to
-[scan](#scan) below for the remote diagnostic.
+Its CLI binary is installed under two equivalent names, `index-ai` and
+`index-ai-validator` — either one runs the same executable. Default
+validation mode runs automatically — no command keyword is required
+(`index-ai validate <url>` is the same mode with an explicit keyword, if
+you prefer naming it). The rest of this section covers Default validation
+mode; skip to [scan](#scan) below for the remote diagnostic.
 
 ### STEP-2 - Read the human report
 
@@ -57,6 +58,14 @@ Target: https://example.com
 Duration: 42 ms
 Conformance: level-2a
 Passed: true
+
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: Level 2a
+
+Level results:
+- Level 1: 5 pass, 0 warn, 0 fail
+- Level 2a: 7 pass, 0 warn, 0 fail
 
 Summary:
 - pass: 12
@@ -108,6 +117,9 @@ The report renders:
 - Full `Failures` and `Warnings` sections, each check with its code and fix.
 - A `Metrics` section (manifest/Agent Index found and schema-valid, node
   and endpoint counts, `llm_url` and `content_chars` coverage percentages).
+- A level summary in the hero section: requested target level, tested
+  levels, achieved level, failed level (when a level failed), and a
+  per-level pass/warn/fail (or skipped-with-reason) breakdown.
 - A sidebar with the CI verdict, a checks-severity summary, run metadata
   (generated-at, duration, schema version, readiness, target), and
   resource links.
@@ -136,6 +148,11 @@ The top-level JSON fields include:
 - `summary`
 - `metrics`
 - `checks`
+- `requested_level`
+- `tested_levels`
+- `achieved_level`
+- `failed_level`
+- `level_results`
 
 ### What it validates in 0.2.0
 
