@@ -1,55 +1,351 @@
 # Getting Started
 
-![Two features, two jobs: scan is the remote Agent View diagnostic, default mode is the local index-ai conformance check](../hardmachinelab-index-ai-two-cmd-cli.png)
+![Two commands, two jobs: validate checks an Agent View implementation, scan measures agent-readiness](../hardmachinelab-index-ai-two-cmd-cli.png)
 
-## What is @hardmachinelabs/index-ai-validator?
+## Two commands. Two different jobs
 
-`@hardmachinelabs/index-ai-validator` is a free CLI with two features:
-Default validation mode and `scan`.
+`@hardmachinelabs/index-ai-validator` gives you two ways to inspect a public website.
 
->[!note]
->**Default validation mode** is an experimental conformance checker for
-`index-ai` Level 1 and Level 2a. It checks whether a public website exposes
-the files, Agent Index graph, and clean endpoints expected by the current
-Level 1 and Level 2a implementation. It runs entirely locally — no
-dependency beyond the target site itself.
+They answer different questions.
 
-Its counterpart is `scan`:
+```txt
+index-ai scan <url>       Measure whether a site is usable by AI agents.
+index-ai validate <url>   Check whether an Agent View / index-ai implementation is valid.
+```
 
->[!important]
->`scan` calls the remote Agent View scanner and returns an AI-readiness score,
-a verdict, and findings — for any site, whether or not it implements
-`index-ai` yet. This page covers Default validation mode; see
-[CLI](/guide/cli) for the full `scan` reference.
+Use `scan` when you want to know:
 
-## Who is it for?
+**Can AI agents access, extract, cite, and understand this website?**
 
-This package is for developers, maintainers, and technical reviewers working on
-public `index-ai` implementations, and for anyone who wants a quick, free read
-on how AI-ready a site is overall — use Default validation mode once
-`index-ai` is implemented, and `scan` when you just want a score and
-findings first.
+Use `validate` when you want to know:
 
-## Default validation mode
+**Did I implement the Agent View / index-ai layer correctly?**
 
-### STEP-1 - Run the CLI
+> [!tip]
+> `validate` is also the default mode.
+> `index-ai https://example.com` and `index-ai validate https://example.com` run the same local validation mode.
+
+## What is this package?
+
+`@hardmachinelabs/index-ai-validator` is a CLI for AI-readable web infrastructure.
+
+It has two jobs:
+
+1. **`scan`** — a remote Agent View diagnostic for any public website.
+2. **`validate`** — a local conformance check for sites implementing `index-ai`.
+
+These are related, but they are not the same.
+
+`scan` measures the agent-readiness gap.
+
+`validate` checks the proposed fix: the Agent View / index-ai layer.
+
+## Which command should I use?
+
+| If you want to know...                   | Use                                | Why                                                                  |
+| ---------------------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
+| Can AI agents use this website well?     | `scan`                             | It returns an AI-readiness score, verdict, dimensions, and findings. |
+| Is my Agent View implementation correct? | `validate`                         | It checks Level 1 and Level 2a conformance locally.                  |
+| I have not implemented `index-ai` yet    | `scan`                             | It works for any public site.                                        |
+| I already added an Agent View layer      | `validate`                         | It checks whether the implementation is valid.                       |
+| I want a shareable report                | `scan --html` or `validate --html` | Both modes can generate standalone HTML reports.                     |
+| I want automation                        | `--json`                           | Both modes support JSON output.                                      |
+
+## Quick start
+
+### 1. Measure agent-readiness with `scan`
+
+Run:
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com
+```
+
+`scan` calls the remote Agent View scanner.
+
+It is the diagnostic path.
+
+It answers:
+
+**Can AI agents access, extract, cite, and understand this website?**
+
+A scan can return:
+
+* an AI-readiness score;
+* a verdict;
+* prioritized findings;
+* dimension scores;
+* a compact terminal summary;
+* raw JSON for automation;
+* and a shareable HTML report.
+
+Example human output:
+
+```txt
+URL: https://example.com
+Score: 82
+Verdict: good
+P0: 1
+P1: 1
+P2: 0
+```
+
+`Score` is out of 100.
+
+`P0`, `P1`, and `P2` are finding severities, ordered from most urgent to least urgent.
+
+> [!note]
+> `scan` requires the remote scanner service. If the scanner service is unavailable, the CLI can start correctly but still fail with a network error.
+
+### 2. Validate an Agent View implementation with `validate`
+
+Run:
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com
+```
+
+Or use the default mode:
 
 ```bash
 npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-The package name is `@hardmachinelabs/index-ai-validator`.
+Both commands run the same local validation mode.
 
-Its CLI binary is installed under two equivalent names, `index-ai` and
-`index-ai-validator` — either one runs the same executable. Default
-validation mode runs automatically — no command keyword is required
-(`index-ai validate <url>` is the same mode with an explicit keyword, if
-you prefer naming it). The rest of this section covers Default validation
-mode; skip to [scan](#scan) below for the remote diagnostic.
+`validate` answers:
 
-### STEP-2 - Read the human report
+**Is my Agent View / index-ai implementation correct?**
 
-By default, the CLI prints a deterministic summary-first report:
+It checks whether the target site exposes the expected `index-ai` layer.
+
+In version `0.2.0`, the default target level is `l2a`.
+
+You can also choose the target level explicitly:
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --target-level l1
+```
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --target-level l2a
+```
+
+`l2b` is not available yet.
+
+## See the CLI shape
+
+Run:
+
+```bash
+npx @hardmachinelabs/index-ai-validator --help
+```
+
+Expected shape:
+
+```txt
+Agent View CLI
+AI-readable website validation for the Agent Web.
+
+Usage: index-ai [options] <url>
+
+Validate index-ai Level 1 and Level 2a agent-facing content layers.
+
+Two modes:
+  index-ai validate <url>  Run full validation checks (also the default when no
+subcommand is given).
+  index-ai scan <url>      Run the Agent View scanner service against a site and
+print its findings.
+
+Arguments:
+  url                       Site URL to validate, for example
+                            https://example.com
+
+Options:
+  -V, --version             output the version number
+  --json                    Print stable JSON output
+  --verbose                 Print all checks, including passed checks
+  --strict                  Treat should-level warnings as a failed validation
+                            result
+  --strict-security         Fail on private infra patterns such as IPs or
+                            internal hostnames
+  --fail-on-warn            Treat any warning as a failed validation result
+  --allow-private-hosts     Allow private/internal hosts in target and llm_url
+                            fetches
+  --no-exit-code            Return exit code 0 for validation failures
+  --html [path]             Write a standalone HTML report to the provided .html
+                            path, or to .report/validate-report.html if no path
+                            is given
+  --timeout <ms>            Request timeout in milliseconds (default: 10000)
+  --max-concurrency <n>     Maximum concurrent llm_url fetches (default: 5)
+  --target-level <level>    Target conformance level to validate against ('l1'
+                            or 'l2a'; 'l2b' is not yet available) (default:
+                            "l2a")
+  -h, --help                display help for command
+
+Commands:
+  validate [options] <url>  Validate index-ai Level 1 and Level 2a agent-facing
+                            content layers (same as the default mode).
+  scan [options] <url>      Scan a site via the Agent View scanner service and
+                            print the scan result.
+```
+
+The banner line only appears in an interactive terminal — piped or
+redirected output (as in CI) omits it, everything else stays identical.
+
+Run the scan help:
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan --help
+```
+
+Expected shape:
+
+```txt
+Usage: index-ai scan [options] <url>
+
+Scan a site via the Agent View scanner service and print the scan result.
+
+Arguments:
+  url              Site URL to scan, for example https://example.com
+
+Options:
+  --json           Print the raw scanner status as JSON
+  --html [path]    Write a minimal HTML report to the provided .html path, or to
+                   .report/scan-report.html if no path is given
+  --api-key <key>  Reserved for future scanner authentication (currently has no
+                   effect)
+  --timeout <ms>   Scan request timeout in milliseconds (default: 10000)
+  -h, --help       display help for command
+```
+
+## `scan`: remote Agent View diagnostic
+
+Use `scan` when you want a fast diagnostic for any public site.
+
+The site does not need to implement `index-ai`.
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com
+```
+
+The scanner can report:
+
+* AI-readiness score;
+* verdict;
+* prioritized findings;
+* severity counts: `P0`, `P1`, `P2`;
+* dimensions;
+* scan analysis;
+* report links when provided by the scanner service.
+
+### What `scan` measures
+
+`scan` is designed around five dimensions:
+
+* `access`;
+* `extractability`;
+* `citability`;
+* `safety`;
+* `agent_layer`.
+
+It can also include scan analysis signals such as:
+
+* noise ratio;
+* CSR gap;
+* rendered-vs-raw comparison status.
+
+> [!note]
+> Scoring, dimension weights, and finding content are computed by the remote scanner service and can evolve independently of the CLI package version.
+
+### Generate a scan HTML report
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com --html
+```
+
+With no path after `--html`, the report is written to:
+
+```txt
+.report/scan-report.html
+```
+
+With an explicit path:
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com --html scan-report.html
+```
+
+The report is a standalone HTML file.
+
+It can include:
+
+* score out of 100;
+* verdict;
+* recommendation strip;
+* dimension breakdown;
+* findings grouped by severity;
+* effort estimates;
+* fix links when provided by the scanner;
+* noise-ratio panel;
+* CSR-gap panel;
+* render-comparison panel;
+* scan metadata;
+* resource links;
+* full audit link when provided by the scanner.
+
+> [!important]
+> If the remote scanner service cannot be reached, no successful scan report should be treated as generated. A network failure means the service call failed, not that the package failed to install or execute.
+
+### Use scan JSON
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com --json
+```
+
+JSON mode prints the raw scanner status object.
+
+Top-level fields can include:
+
+* `scanId`;
+* `status`;
+* `submittedAt`;
+* `completedAt`;
+* `result`;
+* `meta.links`.
+
+When `status` is `done`, `result` can include:
+
+* `url`;
+* `score`;
+* `verdict`;
+* `dimensions`;
+* `findings`;
+* `noiseRatio`;
+* `engineVersion`;
+* `schemaVersion`.
+
+## `validate`: local conformance check
+
+Use `validate` after you implement Agent View / `index-ai`.
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com
+```
+
+Or:
+
+```bash
+npx @hardmachinelabs/index-ai-validator https://example.com
+```
+
+`validate` runs locally against the target site.
+
+It does not call the remote scanner.
+
+It checks whether the target exposes the expected `index-ai` files, discovery hints, Agent Index graph, clean endpoints, and content-size signals.
+
+### Example human output
 
 ```txt
 index-ai validation result
@@ -64,14 +360,14 @@ Tested levels: Level 1, Level 2a
 Achieved level: Level 2a
 
 Level results:
-- Level 1: 5 pass, 0 warn, 0 fail
-- Level 2a: 7 pass, 0 warn, 0 fail
+- Level 1: 22 pass, 0 warn, 0 fail
+- Level 2a: 37 pass, 0 warn, 0 fail
 
 Summary:
-- pass: 12
+- pass: 59
 - warn: 0
 - fail: 0
-- total: 12
+- total: 59
 
 Metrics:
 - manifest_found: true
@@ -86,112 +382,157 @@ Next:
 - No blocking validation fixes were found.
 ```
 
-Failures and warnings include check codes and fixes where available. Passing
-checks are included only when `--verbose` is used.
+Failures and warnings include check codes and fixes where available.
 
-### STEP-3 - Generate a shareable report
+Passing checks are included only when `--verbose` is used.
 
-```bash
-npx @hardmachinelabs/index-ai-validator https://example.com --html
-```
+### Choose a target level
 
-With no path after `--html`, the report is written to
-`.report/validate-report.html` relative to the current working directory,
-creating that directory if it does not exist; with an explicit path
-(`--html report.html`), it is written exactly there. It is a standalone
-HTML file — no server, no login, nothing else to run — so it opens
-directly in a browser or can be sent to someone else as-is. `--html` never
-changes `passed`, `conformance`, JSON output, or the exit code; it is a
-review aid generated from the same result.
-
-The report renders:
-
-- The CI verdict (`Passed`/`Failed`) and a readiness score — a
-  human-readable progress indicator (percentage of checks that passed),
-  separate from the pass/fail verdict itself.
-- The conformance level (`none`, `level-1`, or `level-2a`) with a short
-  hint.
-- Up to 5 recommended next steps, prioritized and labeled "Priority fix",
-  "Then improve", or "Later", derived from the actual failing/warning
-  checks — not a generic checklist.
-- Full `Failures` and `Warnings` sections, each check with its code and fix.
-- A `Metrics` section (manifest/Agent Index found and schema-valid, node
-  and endpoint counts, `llm_url` and `content_chars` coverage percentages).
-- A level summary in the hero section: requested target level, tested
-  levels, achieved level, failed level (when a level failed), and a
-  per-level pass/warn/fail (or skipped-with-reason) breakdown.
-- A sidebar with the CI verdict, a checks-severity summary, run metadata
-  (generated-at, duration, schema version, readiness, target), and
-  resource links.
-
-See [CLI](/guide/cli) for the full option, exit-code, and TypeScript
-reference.
-
-### STEP-4 - Use JSON for automation
+Validate only Level 1:
 
 ```bash
-npx @hardmachinelabs/index-ai-validator https://example.com --json
+npx @hardmachinelabs/index-ai-validator validate https://example.com --target-level l1
 ```
 
-JSON mode writes JSON only to stdout. Normal validation results keep stderr
-empty. Usage, configuration, or runtime errors before a validation result use
-stderr and exit with code `2`.
+Validate Level 1 plus Level 2a:
 
-The top-level JSON fields include:
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --target-level l2a
+```
 
-- `schema_version`
-- `target`
-- `generated_at`
-- `duration_ms`
-- `conformance`
-- `passed`
-- `summary`
-- `metrics`
-- `checks`
-- `requested_level`
-- `tested_levels`
-- `achieved_level`
-- `failed_level`
-- `level_results`
+Default:
 
-### What it validates in 0.2.0
+```txt
+--target-level l2a
+```
+
+If Level 1 fails, Level 2a is marked as skipped rather than failed.
+
+That makes the report easier to understand: first fix the blocking lower level, then validate the next layer.
+
+### Generate a validate HTML report
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --html
+```
+
+With no path after `--html`, the report is written to:
+
+```txt
+.report/validate-report.html
+```
+
+With an explicit path:
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --html validate-report.html
+```
+
+The report is a standalone HTML file.
+
+It can include:
+
+* CI verdict;
+* readiness score;
+* conformance level;
+* recommended next steps;
+* failures and warnings;
+* check codes;
+* fixes;
+* metrics;
+* requested target level;
+* tested levels;
+* achieved level;
+* failed level when applicable;
+* per-level pass / warn / fail breakdown;
+* skipped levels with reasons;
+* run metadata;
+* resource links.
+
+`--html` does not change the validation result, JSON output, or exit code.
+
+It is a review artifact generated from the same validation result.
+
+### Use validate JSON
+
+```bash
+npx @hardmachinelabs/index-ai-validator validate https://example.com --json
+```
+
+JSON mode writes JSON only to stdout.
+
+Normal validation results keep stderr empty.
+
+Top-level JSON fields include:
+
+* `schema_version`;
+* `target`;
+* `generated_at`;
+* `duration_ms`;
+* `conformance`;
+* `passed`;
+* `summary`;
+* `metrics`;
+* `checks`;
+* `requested_level`;
+* `tested_levels`;
+* `achieved_level`;
+* `failed_level`;
+* `level_results`.
+
+## What `validate` checks in 0.2.0
 
 Implemented scope:
 
-- canonical AI Manifest fetch at `/.well-known/index-ai.json`
-- fallback AI Manifest fetch at `/index-ai.json` with warning
-- AI Manifest JSON content-type check
-- AI Manifest JSON parse check
-- pragmatic AJV Level 1 schema validation
-- `identity.domain` host mismatch warning
-- manifest `access.agent_index`
-- Agent Index graph fetch
-- graph JSON content-type check
-- graph JSON parse check
-- graph schema validation
-- `nodes` array validation
-- deprecated `pages` array failure
-- `total_nodes` mismatch warning
-- per-node `llm_url` structural validation
-- per-node `llm_url` fetch
-- clean endpoint content-type validation
-- hard HTML leak failure
-- soft inline HTML warning
-- `content_chars` exact and max validation
-- Unicode NFC code-point counting
-- obvious secret-shaped value checks outside Markdown code
-- private/internal infrastructure reference checks
-- private `llm_url` blocking by default
-- shallow discovery hint checks for the homepage, `robots.txt`, and `/llms.txt`
-- CLI JSON output, human output, and exit codes
+* canonical AI Manifest fetch at `/.well-known/index-ai.json`;
+* fallback AI Manifest fetch at `/index-ai.json` with warning;
+* AI Manifest JSON content-type check;
+* AI Manifest JSON parse check;
+* pragmatic AJV Level 1 schema validation;
+* `identity.domain` host mismatch warning;
+* manifest `access.agent_index`;
+* Agent Index graph fetch;
+* graph JSON content-type check;
+* graph JSON parse check;
+* graph schema validation;
+* `nodes` array validation;
+* deprecated `pages` array failure;
+* `total_nodes` mismatch warning;
+* per-node `llm_url` structural validation;
+* per-node `llm_url` fetch;
+* clean endpoint content-type validation;
+* hard HTML leak failure;
+* soft inline HTML warning;
+* `content_chars` exact and max validation;
+* Unicode NFC code-point counting;
+* obvious secret-shaped value checks outside Markdown code;
+* private/internal infrastructure reference checks;
+* private `llm_url` blocking by default;
+* shallow discovery hint checks for the homepage, `robots.txt`, and `/llms.txt`;
+* CLI JSON output, human output, and exit codes.
 
-### What it does not validate
+## What this package does not promise
 
-This is an experimental validator, not compliance certification or a traffic
-promise. For the full list of what it does not do — security audits, crawling,
-sitemap and DNS validation, Level 2b, Level 3 MCP — see [Scope](/guide/scope).
+`index-ai-validator` is experimental.
 
-### Architecture overview
+It is not:
+
+* legal compliance certification;
+* SEO ranking certification;
+* traffic guarantee;
+* security audit;
+* vulnerability scan;
+* full crawler;
+* sitemap validator;
+* DNS validator;
+* Level 2b validator;
+* Level 3 MCP validator.
+
+For details, see [Scope](/guide/scope).
+
+## Architecture overview
+
+### validate flow
 
 ```mermaid
 flowchart TD
@@ -199,138 +540,11 @@ flowchart TD
   B --> C["Run validateIndexAi()"]
   C --> D["Generate checks"]
   D --> E["Compute conformance and passed"]
-  E --> F["Format human or JSON output"]
+  E --> F["Format human, JSON, or HTML output"]
   F --> G["Choose exit code"]
 ```
 
->[!note]
->`scan` follows a different flow — it submits the URL to the remote Agent View
-scanner and polls for a result, rather than running checks locally. See
-below.
-
-## scan
-
-`scan` calls the remote Agent View scanner and returns an AI-readiness
-score, a verdict, a dimension breakdown, and findings — for any site,
-whether or not it implements `index-ai` yet. Unlike Default validation
-mode, it requires a network call to the scanner API.
-
-### STEP-1 - Run a scan
-
-```bash
-npx @hardmachinelabs/index-ai-validator scan https://example.com
-```
-
->[!note]
->The CLI submits the URL to the remote scanner, then polls until the scan
-reaches a terminal `done` (or `failed`) result. While it waits, it prints
-progress on stderr, one line per stage:
-
-```txt
-Scan progress: fetch
-Scan progress: robots
-Scan progress: render
-Scan progress: checks
-Scan progress: score
-```
-
-### STEP-2 - Read the response
-
-By default, the CLI prints a compact summary:
-
-```txt
-URL: https://example.com
-Score: 82
-Verdict: good
-P0: 1
-P1: 1
-P2: 0
-```
-
-`Score` is out of 100. `Verdict` is a short label from the scanner service
-— its exact wording can vary, it is not a fixed enum this CLI defines.
-`P0`/`P1`/`P2` count findings by severity, most urgent first.
-
-On stderr (printed with or without `--json`), the CLI also prints a link to
-the full audit:
-
-```txt
-Scan done — score 82, verdict good. Full audit: https://agent-view.com/audit/...
-```
-
-### STEP-3 - Generate a shareable scan report
-
-```bash
-npx @hardmachinelabs/index-ai-validator scan https://example.com --html
-```
-
-With no path after `--html`, the report is written to
-`.report/scan-report.html` relative to the current working directory,
-creating that directory if it does not exist; with an explicit path
-(`--html report.html`), it is written exactly there. It is a standalone
-HTML file — no server, no login, nothing else to run — so it opens
-directly in a browser or can be sent to someone else as-is. This is the
-artifact people forward when they want another person to see the result
-without re-running the scan themselves.
-
->[!note]
->The report renders every field from the JSON result:
->
->- The score out of 100 and the verdict, plus a color-coded recommendation
-> strip that changes with the score tier (high, moderate, or low).
->- A per-dimension breakdown: `access`, `extractability`, `citability`,
-> `safety`, `agent_layer`.
->- Every finding, grouped by severity (`P0`/`P1`/`P2`), each with its effort
-> estimate and a "Fix this" link where the scanner provides one.
->- A noise-ratio, CSR-gap, and render-comparison panel.
->- A sidebar with the verdict, a findings-severity summary, scan metadata
-> (engine version, schema version, target), and resource links — including
-> a link to the full audit when the scanner provides one.
->- When the `agent_layer` dimension is present and scores below 5, a callout
-> pointing to [agent-view.com](https://agent-view.com).
-
-See [CLI](/guide/cli#scan) for the full option, exit-code, and TypeScript
-reference.
-
-### STEP-4 - Automate scan with JSON
-
-```bash
-npx @hardmachinelabs/index-ai-validator scan https://example.com --json
-```
-
-JSON mode prints the raw scanner status object to stdout. Its top-level
-fields:
-
-- `scanId`
-- `status` — `queued`, `running`, `done`, or `failed`
-- `submittedAt`
-- `completedAt`
-- `result` — present once `status` is `done`: `url`, `score`, `verdict`,
-  `dimensions`, `findings`, `noiseRatio`, `engineVersion`, `schemaVersion`
-- `meta.links` — `self`, `shareUrl`, `audit`
-
-### What `scan` checks
-
-- Five scored dimensions: `access`, `extractability`, `citability`,
-  `safety`, `agent_layer`
-- Findings ranked by severity (`P0`, `P1`, `P2`), each with an effort
-  estimate and a fix link where available
-- A noise ratio, a CSR (client-side-rendering) gap percentage, and a
-  rendered-vs-raw comparison status
-
->[!note]
->Scoring, dimension weights, and finding content are computed and owned by
-the remote scanner service, not by this package, and can change
-independently of this package's version.
-
-### What `scan` does not check
-
-`scan` has no separate pass/fail exit code the way Default validation mode
-does — a low score or `P0` findings still exit `0`; only a request or usage
-failure exits non-zero. It is a diagnostic, not compliance certification or
-a traffic promise — see [Scope](/guide/scope).
-
-### Scan architecture overview
+### scan flow
 
 ```mermaid
 flowchart TD
@@ -340,11 +554,3 @@ flowchart TD
   D --> C
   C -->|Yes| E["Format human, JSON, or HTML output"]
 ```
-
-## Next steps
-
-- [Installation](/guide/installation)
-- [CLI](/guide/cli)
-- [JSON Output](/guide/json-output)
-- [Conformance vs Passed](/guide/conformance-vs-passed)
-- [CI](/guide/ci)

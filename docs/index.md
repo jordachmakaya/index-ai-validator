@@ -104,14 +104,14 @@ Tested levels: Level 1, Level 2a
 Achieved level: Level 2a
 
 Level results:
-- Level 1: 5 pass, 0 warn, 0 fail
-- Level 2a: 7 pass, 0 warn, 0 fail
+- Level 1: 22 pass, 0 warn, 0 fail
+- Level 2a: 37 pass, 0 warn, 0 fail
 
 Summary:
-- pass: 12
+- pass: 59
 - warn: 0
 - fail: 0
-- total: 12
+- total: 59
 
 Metrics:
 - manifest_found: true

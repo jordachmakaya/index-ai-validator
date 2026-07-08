@@ -8,14 +8,17 @@ Package: @hardmachinelabs/index-ai-validator
 Binary:  index-ai, index-ai-validator
 ```
 
-The `index-ai` binary has two features that answer two different questions:
+The `index-ai` binary has two commands for two different jobs:
 
-- **Default validation mode** — local, free conformance check against the
-  `index-ai` Level 1 Manifest and Level 2a Agent Index. No network
-  dependency beyond the target site itself.
-- **`scan`** — calls the remote Agent View scanner service and diagnoses how
-  close a site is to full AI-readiness, and what upgrading to the full Agent
-  View would add.
+- **`validate`** — checks whether an Agent View / `index-ai` implementation is valid.
+- **`scan`** — measures whether a public website is usable by AI agents.
+
+>[!tip]
+>Use `scan` to run the remote Agent View diagnostic. It answers a different
+>question from `validate`: **Can AI agents access, extract, cite, and
+>understand this website?** `scan` returns an **agent-readiness score**, a
+>verdict, prioritized findings, dimension scores, scan analysis signals, and
+>an optional shareable HTML report.
 
 ## Default validation mode
 
@@ -24,6 +27,50 @@ The `index-ai` binary has two features that answer two different questions:
 required. `validate <url>` is the same mode with an explicit keyword. Both
 call `validateIndexAi()` and return either a human-readable report or
 stable JSON.
+
+---
+
+### Localhost and private hosts
+
+By default, `validate` protects against private infrastructure exposure.
+
+That means localhost, private IPs, and internal hostnames are treated carefully
+when the validator checks the target URL and `llm_url` endpoints.
+
+For local development, pass:
+
+```bash
+--allow-private-hosts
+```
+
+Example:
+
+```bash
+index-ai validate http://localhost:3000 --allow-private-hosts
+```
+
+Or with the default validation mode:
+
+```bash
+index-ai http://localhost:3000 --allow-private-hosts
+```
+
+With JSON:
+
+```bash
+index-ai validate http://localhost:3000 --allow-private-hosts --json --no-exit-code
+```
+
+Use this mode when:
+
+- testing an Agent View / `index-ai` implementation before deployment;
+- validating a local preview server;
+- checking local `llm_url` endpoints;
+- running trusted internal smoke tests.
+
+> [!caution]
+> Do not use `--allow-private-hosts` for untrusted URLs. For public validation
+> runs, keep the default private-host protection enabled.
 
 ### Basic command
 
@@ -152,14 +199,14 @@ Tested levels: Level 1, Level 2a
 Achieved level: Level 2a
 
 Level results:
-- Level 1: 5 pass, 0 warn, 0 fail
-- Level 2a: 7 pass, 0 warn, 0 fail
+- Level 1: 22 pass, 0 warn, 0 fail
+- Level 2a: 37 pass, 0 warn, 0 fail
 
 Summary:
-- pass: 12
+- pass: 59
 - warn: 0
 - fail: 0
-- total: 12
+- total: 59
 
 Metrics:
 - manifest_found: true
