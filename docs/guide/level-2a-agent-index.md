@@ -81,7 +81,7 @@ Top-level graph fields include:
 | `spec_version` | Yes | Must be `"1.0"`. |
 | `nodes` | Yes | Non-empty array. |
 | `total_nodes` | No | Warns if it does not match `nodes.length`. |
-| `pages` | No | Must not be present as an array. |
+| `pages` | No | Must not be present in any form (array, object, string, etc.) — the schema rejects any value assigned to this key. |
 
 ## Node required fields
 
