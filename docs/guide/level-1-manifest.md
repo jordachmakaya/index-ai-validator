@@ -107,12 +107,12 @@ graph.
 
 The manifest response must be served as JSON.
 
-Accepted content types include:
-
-```txt
-application/json
-application/*+json
-```
+The check accepts a content type if it is exactly `application/json`, or if it
+ends with `+json` — with no constraint that it start with `application/`. For
+example, `application/ld+json`, `text/vnd.api+json`, and even a nonstandard
+type like `foo/bar+json` all pass, alongside the exact match `application/json`.
+Any parameters after a `;` (such as `; charset=utf-8`) are ignored when
+checking the type.
 
 The body must parse as valid JSON before schema validation runs. If JSON parsing
 fails, schema validation is skipped and the result contains a JSON failure check.
