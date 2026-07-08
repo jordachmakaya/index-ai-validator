@@ -266,6 +266,14 @@ Duration: 42 ms
 Conformance: level-2a
 Passed: true
 
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: Level 2a
+
+Level results:
+- Level 1: 5 pass, 0 warn, 0 fail
+- Level 2a: 7 pass, 0 warn, 0 fail
+
 Summary:
 - pass: 12
 - warn: 0
@@ -346,10 +354,12 @@ blocked by default.
 
 ### Current scope
 
-Implemented in 0.1.0:
+Implemented in 0.2.0:
 
 - Level 1 AI Manifest validation
 - Level 2a Agent Index validation
+- `--target-level` cascade validation (`l1` or `l2a`, cumulative, with
+  level-aware human and JSON output)
 - clean endpoint content type checks
 - HTML leak checks
 - `content_chars` exact and max checks
@@ -444,8 +454,9 @@ Scan done — score 82, verdict good. Full audit: https://agent-view.com/audit/.
 index-ai scan https://example.com --json
 ```
 
-`--json` prints the raw scanner status object to stdout. Illustrative
-example — field names and shapes are real, values are made up:
+On a successful scan, `--json` prints the raw scanner status object to
+stdout. Illustrative example — field names and shapes are real, values are
+made up:
 
 ```json
 {
@@ -494,6 +505,25 @@ have `severity` `P0`, `P1`, or `P2`. Scoring, dimension weights, and finding
 content are computed and owned by the remote scanner service, not by this
 package, and can change independently of this package's version.
 
+On failure, `--json` prints a different, CLI-authored JSON error object to
+stdout instead — never the raw scanner status object:
+
+```json
+{
+  "passed": false,
+  "status": "error",
+  "error_type": "network_error",
+  "message": "Network error while calling \"https://agent-view.com/api/v1/scan\": fetch failed."
+}
+```
+
+Fields: `passed` (always `false`), `status` (always `"error"`), `error_type`
+(a CLI-defined error category — one of `network_error`, `server_error`,
+`invalid_request`, `not_found`, `expired`, `rate_limited`, `timeout_error`,
+`result_schema_error`, `response_shape_error`, `scan_failed`, or
+`unknown_error`), and `message` (a human-readable description of what
+failed, reused on stderr).
+
 ### Scan HTML report
 
 ```bash
@@ -515,11 +545,15 @@ in the repository.
 ### Scan exit codes
 
 - `0` — the scan reached a terminal `done` result and printed it, whatever
-  the score or verdict.
+  the score or verdict. Under `--json`, stdout holds the raw scanner status
+  object.
 - non-zero (`2`) — the scan request failed: a scanner transport error, a
   server-side scan failure, a poll timeout, or a usage/configuration error.
-  `scan` has no separate pass/fail exit code the way Default validation
-  mode does — a low score or `P0` findings still exit `0`.
+  Under `--json`, stdout holds the CLI-authored JSON error object
+  (`{ passed, status, error_type, message }`) described above, not the raw
+  scanner status object. `scan` has no separate pass/fail exit code the way
+  Default validation mode does — a low score or `P0` findings still exit
+  `0`.
 
 ### Scope and limits
 
