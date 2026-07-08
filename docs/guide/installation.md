@@ -8,10 +8,13 @@ The package name is:
 @hardmachinelabs/index-ai-validator
 ```
 
-The CLI binary is:
+The CLI binary is available under two equivalent aliases — `index-ai` and
+`index-ai-validator` — both point at the same executable, so either name
+works interchangeably:
 
 ```txt
 index-ai
+index-ai-validator
 ```
 
 ## STEP-1 - Check Node.js
