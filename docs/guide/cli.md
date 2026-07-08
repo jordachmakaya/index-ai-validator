@@ -1,10 +1,11 @@
 # CLI
 
-The package and binary names are different:
+The package name is `@hardmachinelabs/index-ai-validator`. Its CLI binary is
+installed under two equivalent names — either one runs the same executable:
 
 ```txt
 Package: @hardmachinelabs/index-ai-validator
-Binary:  index-ai
+Binary:  index-ai, index-ai-validator
 ```
 
 The `index-ai` binary has two features that answer two different questions:
@@ -40,7 +41,7 @@ npx @hardmachinelabs/index-ai-validator https://example.com
 ### Full command shape
 
 ```bash
-index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts] [--target-level <level>]
+index-ai <url> [--json] [--html [path]] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts] [--target-level <level>]
 ```
 
 ### Options
@@ -57,7 +58,7 @@ index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-securit
 | `--timeout <ms>` | No | `10000` | Request timeout in milliseconds. Must be a positive integer. |
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
-| `--html <path>` | No | - | Writes a standalone local HTML report to a `.html` file. |
+| `--html [path]` | No | - | Writes a standalone local HTML report to a `.html` file. |
 | `--target-level <level>` | No | `l2a` | Conformance level to validate against: `l1` or `l2a`. `l2b` is rejected — see [Target level](#target-level) below. |
 
 ### Examples
@@ -92,7 +93,7 @@ requires.
 index-ai https://example.com --target-level l1
 index-ai https://example.com --target-level l2a
 index-ai https://example.com --target-level l2b
-# Error: Level 2b validation is not yet available. Use --target-level l1 or --target-level l2a instead.
+# error: option '--target-level <level>' argument 'l2b' is invalid. Level 2b validation is not yet available. Use --target-level l1 or --target-level l2a instead.
 ```
 
 **Cascade-skip, not cascade-fail**: if an earlier level has a blocking failure,
@@ -146,6 +147,14 @@ Duration: 42 ms
 Conformance: level-2a
 Passed: true
 
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: Level 2a
+
+Level results:
+- Level 1: 5 pass, 0 warn, 0 fail
+- Level 2a: 7 pass, 0 warn, 0 fail
+
 Summary:
 - pass: 12
 - warn: 0
@@ -189,6 +198,13 @@ Top-level fields include:
 - `summary`
 - `metrics`
 - `checks`
+- `requested_level`
+- `tested_levels`
+- `achieved_level`
+- `failed_level`
+- `level_results`
+
+See [JSON Output](/guide/json-output) for field meanings and shapes.
 
 Normal validation results keep stderr empty. Usage, configuration, or runtime
 errors before a validation result use stderr.
@@ -206,11 +222,15 @@ It does not change validation semantics or exit codes.
 
 HTML reports include a `CI Verdict`, a `Readiness` score, and recommended next
 steps. The readiness score is report-only and does not affect `passed`,
-`conformance`, JSON output, or exit codes.
+`conformance`, JSON output, or exit codes. They also include a level summary
+in the hero section: requested target level, tested levels, achieved level,
+failed level (when a level failed), and a per-level pass/warn/fail (or
+skipped-with-reason) breakdown.
 
 >[!important]
->The report path must be non-empty and end with `.html`. Parent directories are
-not created automatically.
+>The report path must be non-empty and end with `.html`. Parent directories
+are created automatically if missing — the same recursive-create behavior as
+`scan --html` below.
 
 JSON remains the automation format. When used together, stdout stays JSON-only
 and the HTML report is written to the file:
@@ -275,7 +295,7 @@ index-ai scan https://example.com
 ### Full command shape
 
 ```bash
-index-ai scan <url> [--json] [--html <path>] [--api-key <key>] [--timeout <ms>]
+index-ai scan <url> [--json] [--html [path]] [--api-key <key>] [--timeout <ms>]
 ```
 
 ### Options
@@ -283,7 +303,7 @@ index-ai scan <url> [--json] [--html <path>] [--api-key <key>] [--timeout <ms>]
 | Option | Required | Default | Description |
 | --- | ---: | --- | --- |
 | `<url>` | Yes | - | Site URL to scan, for example `https://example.com`. |
-| `--json` | No | - | Prints the raw scanner status as JSON. |
+| `--json` | No | - | Prints the raw scanner status as JSON on success, or a CLI-authored JSON error object on failure — see [JSON output](#json-output-1) below. |
 | `--html [path]` | No | - | Writes a minimal HTML report. With no path, writes to `.report/scan-report.html`. |
 | `--api-key <key>` | No | - | Reserved for future scanner authentication. It currently has no effect: passing it changes nothing about the request or the result. |
 | `--timeout <ms>` | No | `10000` | Scan request timeout in milliseconds. Must be a positive integer. |
@@ -326,8 +346,9 @@ Scan done — score 82, verdict good. Full audit: https://agent-view.com/audit/.
 index-ai scan https://example.com --json
 ```
 
-`--json` prints the raw scanner status object to stdout, and nothing else.
-Illustrative example — field names and shapes are real, values are made up:
+On success, `--json` prints the raw scanner status object to stdout, and
+nothing else. Illustrative example — field names and shapes are real, values
+are made up:
 
 ```json
 {
@@ -357,6 +378,10 @@ Illustrative example — field names and shapes are real, values are made up:
       }
     ],
     "noiseRatio": 0.12,
+    "csrGapPercent": 18.4,
+    "renderedComparison": {
+      "status": "gap"
+    },
     "engineVersion": "1.4.0",
     "schemaVersion": "1.0"
   },
@@ -372,9 +397,30 @@ Illustrative example — field names and shapes are real, values are made up:
 
 `dimensions` always has exactly 5 entries, in this order: `access`,
 `extractability`, `citability`, `safety`, `agent_layer`. `findings` entries
-have `severity` `P0`, `P1`, or `P2`. Scoring, dimension weights, and finding
-content are computed and owned by the remote scanner service, not by this
-package, and can change independently of this package's version.
+have `severity` `P0`, `P1`, or `P2`. `csrGapPercent` and `renderedComparison`
+are optional — present when the scanner computed a client-side-rendering
+comparison. Scoring, dimension weights, and finding content are computed and
+owned by the remote scanner service, not by this package, and can change
+independently of this package's version.
+
+On failure, `--json` prints a different, CLI-authored JSON error object to
+stdout instead — never the raw scanner status object:
+
+```json
+{
+  "passed": false,
+  "status": "error",
+  "error_type": "network_error",
+  "message": "Network error while calling \"https://agent-view.com/api/v1/scan\": fetch failed."
+}
+```
+
+Fields: `passed` (always `false`), `status` (always `"error"`), `error_type`
+(a CLI-defined error category — one of `network_error`, `server_error`,
+`invalid_request`, `not_found`, `expired`, `rate_limited`, `timeout_error`,
+`result_schema_error`, `response_shape_error`, `scan_failed`, or
+`unknown_error`), and `message` (a human-readable description of what
+failed, reused on stderr).
 
 ### HTML report
 
@@ -400,8 +446,8 @@ validation mode HTML report — see [Scope](/guide/scope).
 
 | Code | Meaning |
 | ---: | --- |
-| `0` | The scan reached a terminal `done` result and printed it, whatever the score or verdict. |
-| `2` | The scan request failed: a scanner transport error, a server-side scan failure, a poll timeout, or a usage/configuration error. |
+| `0` | The scan reached a terminal `done` result and printed it, whatever the score or verdict. Under `--json`, stdout holds the raw scanner status object. |
+| `2` | The scan request failed: a scanner transport error, a server-side scan failure, a poll timeout, or a usage/configuration error. Under `--json`, stdout holds the CLI-authored JSON error object (`{ passed, status, error_type, message }`) described above, not the raw scanner status object. |
 
 Unlike Default validation mode, `scan` has no separate pass/fail exit code —
 a low score or `P0` findings still exit `0`.
