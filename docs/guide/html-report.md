@@ -41,6 +41,13 @@ The report renders:
   kept separate from the pass/fail verdict itself.
 - The conformance level (`none`, `level-1`, or `level-2a`) with a short
   hint.
+- A level-aware summary driven by the `--target-level <level>` flag (see
+  [CLI reference](/guide/cli) for the full flag detail): `Requested target
+  level`, `Tested levels`, `Achieved level`, and — only when a tested level
+  failed — `Failed level`. Below that, a per-level breakdown showing either
+  `<pass> pass, <warn> warn, <fail> fail` for each level that was tested, or
+  `skipped (<reason>)` for a level the cascade did not test (for example,
+  because an earlier level failed).
 - Up to 5 recommended next steps, prioritized and labeled "Priority fix",
   "Then improve", or "Later", derived from the actual failing/warning
   checks.
