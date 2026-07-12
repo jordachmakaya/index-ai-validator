@@ -17,6 +17,16 @@
 
 ![Two features, two jobs: scan is the remote Agent View diagnostic, Default validation mode is the local index-ai conformance check](docs/hardmachinelab-index-ai-two-cmd-cli.png)
 
+## What's New in v0.2.0
+
+This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
+
+- **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
+- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a>` to audit specific compliance targets.
+- **Improved CLI UX**: Enhanced terminal output with clean headers, progress spinners, and a robust `--json` error schema.
+
+---
+
 `@hardmachinelabs/index-ai-validator` is a free, experimental CLI for the
 `index-ai` agent-facing content layer, and it has two features that answer
 two different questions:

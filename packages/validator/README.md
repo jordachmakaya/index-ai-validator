@@ -21,6 +21,16 @@
 
 ![The Agent Web, why this matters: what a human sees versus what agents fetch — useful content is often less than 20-30% of total HTML token weight, agents pay a token tax on markup never meant for them](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/the_Agent_Web_why_this_matter-hardmachinelabs.png)
 
+## What's New in v0.2.0
+
+This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
+
+- **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
+- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a>` to audit specific compliance targets.
+- **Improved CLI UX**: Enhanced terminal output with clean headers, progress spinners, and a robust `--json` error schema.
+
+---
+
 ## index-ai-validator
 
 `@hardmachinelabs/index-ai-validator` is a CLI for the `index-ai`
