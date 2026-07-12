@@ -496,8 +496,10 @@ validation mode HTML report — see [Scope](/guide/scope).
 | `0` | The scan reached a terminal `done` result and printed it, whatever the score or verdict. Under `--json`, stdout holds the raw scanner status object. |
 | `2` | The scan request failed: a scanner transport error, a server-side scan failure, a poll timeout, or a usage/configuration error. Under `--json`, stdout holds the CLI-authored JSON error object (`{ passed, status, error_type, message }`) described above, not the raw scanner status object. |
 
-Unlike Default validation mode, `scan` has no separate pass/fail exit code —
-a low score or `P0` findings still exit `0`.
+Unlike Default validation mode, `scan` has no separate pass/fail exit code for audit
+findings — a low score or `P0` findings still exit `0` (as long as the scan successfully
+completes with a `done` status). Server-side scan failures (`failed` status), poll
+timeouts, or transport errors exit non-zero (`2`).
 
 ## Choose the right one
 

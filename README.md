@@ -145,8 +145,10 @@ full Agent View add?
 It prints a score, a verdict, and a list of findings by severity (`P0`,
 `P1`, `P2`), and can print the raw scanner status as JSON with `--json`, or
 write a standalone HTML report with `--html`. Unlike Default validation
-mode, `scan` requires a network call to the scanner API and always exits
-`0` for a completed scan, whatever the score.
+mode, `scan` has no separate pass/fail exit code for audit findings — a low
+score or `P0` findings still exit `0` as long as the scan successfully
+completes with a `done` status. Server-side scan failures (`failed` status),
+poll timeouts, or transport errors exit non-zero (`2`).
 
 Examples:
 

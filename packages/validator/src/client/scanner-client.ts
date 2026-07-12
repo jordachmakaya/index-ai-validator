@@ -14,7 +14,7 @@
  *   - tested_by: packages/validator/src/client/scanner-client.test.ts
  * last_update: 2026-07-05
  */
-import { DEFAULT_TIMEOUT_MS, PACKAGE_NAME } from '../constants'
+import { DEFAULT_TIMEOUT_MS, PACKAGE_NAME, VERSION } from '../constants'
 import { type SchemaValidationError, type ScanResult, validateScanResult } from '../schemas'
 
 const DEFAULT_BASE_URL = 'https://agent-view.com'
@@ -235,7 +235,7 @@ async function fetchScan(
       headers: {
         'content-type': 'application/json',
         'accept': 'application/json',
-        'user-agent': `${PACKAGE_NAME}/0.1 (+https://agent-view.com)`,
+        'user-agent': `${PACKAGE_NAME}/${VERSION} (+https://agent-view.com)`,
       },
       signal: controller.signal,
       // `exactOptionalPropertyTypes` forbids `body: undefined` (RequestInit's

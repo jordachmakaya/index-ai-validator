@@ -58,9 +58,10 @@ caution that applies to any external dependency.
 
 `scan` does not perform Default validation mode's Level 1/Level 2a schema
 and endpoint checks — the two features are independent, not layered. It
-has no separate pass/fail exit code the way Default validation mode does: a
-low score or `P0` findings still exit `0`; only a request or usage failure
-exits non-zero. It does not perform full security audits, vulnerability
+has no separate pass/fail exit code for audit findings: a low score or `P0`
+findings still exit `0` (as long as the scan successfully completes with a
+`done` status). Server-side scan failures (`failed` status), poll timeouts,
+or transport errors exit non-zero (`2`). It does not perform full security audits, vulnerability
 scanning, discovery crawling, sitemap validation, or DNS TXT discovery
 validation either.
 

@@ -1422,6 +1422,72 @@ describe('runCli scan subcommand', () => {
     expect(result.exitCode).toBe(0)
     expect(capturedOptions?.timeoutMs).toBe(5000)
   })
+
+  it('tests a server-side failed scan', async () => {
+    const scanId = 'scan_failed_002'
+    const server = await startServer({
+      '/api/v1/scan': {
+        status: 202,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          scanId,
+          status: 'queued',
+          submittedAt: '2026-07-02T12:00:00Z',
+          completedAt: null,
+          meta: {
+            links: {
+              self: `http://127.0.0.1/api/v1/scan/${scanId}`,
+              shareUrl: `http://127.0.0.1/scan/${scanId}`,
+              audit: `http://127.0.0.1/audit?src=cli-json&scanId=${scanId}`,
+            },
+          },
+        }),
+      },
+      [`/api/v1/scan/${scanId}`]: {
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          scanId,
+          status: 'failed',
+          submittedAt: '2026-07-02T12:00:00Z',
+          completedAt: '2026-07-02T12:00:05Z',
+          failureReason: 'SCAN-002',
+          meta: {
+            links: {
+              self: `http://127.0.0.1/api/v1/scan/${scanId}`,
+              shareUrl: `http://127.0.0.1/scan/${scanId}`,
+              audit: `http://127.0.0.1/audit?src=cli-json&scanId=${scanId}`,
+            },
+          },
+        }),
+      },
+    })
+
+    const originalScannerUrl = process.env.INDEX_AI_SCANNER_URL
+    try {
+      process.env.INDEX_AI_SCANNER_URL = server.origin
+      const result = await runCli(['scan', 'https://example.com', '--json', '--timeout', '1000'])
+      expect(result.exitCode).toBe(2)
+
+      const json = parseJsonObject(result.stdout)
+      expect(json.passed).toBe(false)
+      expect(json.status).toBe('error')
+      expect(json.error_type).toBe('scan_failed')
+      expect(json.message).toContain('SCAN-002')
+      expect(result.stderr).toContain('SCAN-002')
+    } finally {
+      if (originalScannerUrl === undefined) {
+        delete process.env.INDEX_AI_SCANNER_URL
+      } else {
+        process.env.INDEX_AI_SCANNER_URL = originalScannerUrl
+      }
+      const index = servers.indexOf(server)
+      if (index !== -1) {
+        servers.splice(index, 1)
+      }
+      await server.close()
+    }
+  })
 })
 
 function installFailingFetch(): () => void {

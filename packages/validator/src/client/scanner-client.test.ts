@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net'
 
 import { afterEach, describe, expect, test, vi } from 'vitest'
 
+import { version } from '../../package.json'
 import type { ScanResult } from '../schemas'
 import {
   pollScan,
@@ -484,6 +485,22 @@ describe('pollScan', () => {
       expect(result.status).toBe('done')
       expect(result.result?.score).toBe(35)
       expect(requestCount).toBe(2)
+    }
+    finally {
+      await server.close()
+    }
+  })
+
+  test('sends the correct user-agent header containing version and Agent View home page', async () => {
+    let capturedUserAgent: string | undefined
+    const server = await startServer((request, response) => {
+      capturedUserAgent = request.headers['user-agent']
+      sendJson(response, 201, QUEUED_STATUS)
+    })
+
+    try {
+      await submitScan(TARGET_URL, { baseUrl: server.origin, timeoutMs: 1_000 })
+      expect(capturedUserAgent).toBe(`@hardmachinelabs/index-ai-validator/${version} (+https://agent-view.com)`)
     }
     finally {
       await server.close()

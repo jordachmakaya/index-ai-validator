@@ -1,4 +1,8 @@
+import { version } from '../package.json'
+
 export const PACKAGE_NAME = '@hardmachinelabs/index-ai-validator'
+
+export const VERSION = version
 
 export const CLI_NAME = 'index-ai'
 
