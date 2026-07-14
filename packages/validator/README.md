@@ -373,6 +373,8 @@ Implemented in 0.2.0:
 - clean endpoint content type checks
 - HTML leak checks
 - `content_chars` exact and max checks
+- `content_sha256` verification (optional, `exact` mode only) and
+  `content_version` type check (optional)
 - conservative security heuristics
 - shallow discovery hints
 - CLI human output, JSON output, and exit codes

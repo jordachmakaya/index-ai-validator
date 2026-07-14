@@ -106,6 +106,8 @@ Each node `content` object must include:
 | `content_chars_mode` | Yes | `exact` or `max`. |
 | `summary_method` | Yes | `manual`, `truncate`, or `llm`. |
 | `language` | Yes | Non-empty string. |
+| `content_sha256` | No | 64-character lowercase or uppercase hex string. Only checked when `content_chars_mode` is `exact`. |
+| `content_version` | No | Any value. Warns if present and not a string. |
 
 Each node `meta` object must include:
 
@@ -161,6 +163,32 @@ Tolerated inline markup such as `<br>` is reported as a soft warning.
 
 Emoji count as one code point. Decomposed accents are normalized with Unicode
 NFC before counting.
+
+## content_sha256 and content_version (optional)
+
+`content_sha256` and `content_version` are both optional. An Agent Index that
+omits them is still fully Level 2a conformant.
+
+`content_sha256` turns a `content_chars` declaration into a verifiable
+attestation: the exact content served, not just its length. It is only
+meaningful — and only checked — when `content_chars_mode` is `exact`, since
+`max` mode allows the served content to vary.
+
+| Mode | Rule |
+| --- | --- |
+| `exact`, `content_sha256` present | The measured hash must equal the declared `content_sha256`, compared case-insensitively. Mismatch fails with `content drift — declared content_sha256 does not match content served at llm_url`. |
+| `max`, `content_sha256` present | Ignored. Never computed or checked. |
+| `content_sha256` absent | Ignored, in either mode. |
+
+The measured hash is `sha256` of the same Unicode-NFC-normalized, UTF-8-encoded
+text that `content_chars` counts — see [content_chars](/guide/content-chars)
+for the normalization step. See
+[Fix your report](/guide/fix-your-report#if-content_sha256-does-not-match) if
+the validator reports this check.
+
+`content_version` carries no cryptographic verification — it is an opaque,
+free-form version label (a git hash, a tag, an ISO timestamp). The validator
+only checks its type: present and not a string produces a warning.
 
 ## Validation flow
 

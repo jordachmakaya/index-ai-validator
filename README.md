@@ -192,6 +192,7 @@ behavior:
   rejection
 - clean endpoint fetches through `llm_url`
 - clean endpoint content type, HTML leak, and `content_chars` checks
+- optional `content_sha256` verification and `content_version` type check
 - conservative security heuristics
 - shallow discovery hints
 - CLI JSON output, human output, and exit codes

@@ -76,6 +76,17 @@ normalization.
 Do not count the browser page, template HTML, navigation, or a different draft
 of the clean endpoint body.
 
+## If content_sha256 does not match
+
+This only fires in `content_chars_mode: exact`. It means the content served at
+`llm_url` right now is not byte-for-byte (after Unicode NFC normalization) the
+content you declared `content_sha256` for when you last computed it.
+
+Re-hash the current clean endpoint response and update `content_sha256`, or
+restore the content that matches the declared hash. `content_sha256` is
+optional — you can also remove it if you do not want to maintain it, without
+losing Level 2a conformance.
+
 ## If security findings appear
 
 Remove secrets, tokens, private infrastructure references, or sensitive data

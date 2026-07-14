@@ -108,6 +108,17 @@ flowchart TD
   E --> F["Compare using exact or max"]
 ```
 
+## Verifying the declaration: content_sha256
+
+A declared `content_chars` count can be right today and wrong tomorrow if the
+served content changes without the declaration being updated. The optional
+`content_sha256` field closes that gap: it is a `sha256` hash of the same
+NFC-normalized text `content_chars` counts, so the validator can confirm the
+content served right now is exactly the content that was declared — not just
+the same length. See
+[content_sha256 and content_version](/guide/level-2a-agent-index#content_sha256-and-content_version-optional)
+for the full rule.
+
 ## Scope
 
 `content_chars` validation runs on Level 2a Agent Index clean endpoints through
