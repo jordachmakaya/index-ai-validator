@@ -1100,6 +1100,65 @@ describe('Level 2b DAG relations validation (T5.29)', () => {
     expect(check.requirement).toBe('must')
   })
 
+  it('fails the bidirectional-consistency check when a node claims a parent that never lists it as a child, even though another pair in the same graph is genuinely valid (round 2: reverse-direction gap)', async () => {
+    const rootBody = 'Root node content.'
+    const child1Body = 'Child 1 node content, a genuinely valid pair with root.'
+    const ghostBody = 'Ghost claimant node content — falsely claims root as parent.'
+    const graph = graphWithNodes([
+      {
+        id: 'root',
+        llmUrl: '/clean/root.md',
+        contentChars: countContentChars(rootBody),
+        contentCharsMode: 'exact',
+        // Only lists 'child1' — does NOT list 'ghost-claimant', even though
+        // 'ghost-claimant' declares relations.parent: 'root' below.
+        relations: { parent: null, children: ['child1'] },
+      },
+      {
+        id: 'child1',
+        llmUrl: '/clean/child1.md',
+        contentChars: countContentChars(child1Body),
+        contentCharsMode: 'exact',
+        relations: { parent: 'root', children: [] },
+      },
+      {
+        id: 'ghost-claimant',
+        llmUrl: '/clean/ghost-claimant.md',
+        contentChars: countContentChars(ghostBody),
+        contentCharsMode: 'exact',
+        // Claims 'root' as its parent, but 'root'.relations.children never
+        // lists 'ghost-claimant' — an asymmetric, fabricated relationship
+        // that the forward-only walk (root -> its own children) can never
+        // discover, because it is never reached from either direction.
+        relations: { parent: 'root', children: [] },
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/root.md': textRoute(rootBody),
+      '/clean/child1.md': textRoute(child1Body),
+      '/clean/ghost-claimant.md': textRoute(ghostBody),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheck(result.checks, BIDIRECTIONAL_CHECK)
+
+    // The root <-> child1 pair is genuinely valid, so a forward-only walk
+    // (iterating each node's own relations.children) reports 'pass' — this
+    // is exactly the gap: ghost-claimant's asymmetric parent claim must
+    // still be caught by walking the reverse direction too.
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+    expect(check.details).toEqual(
+      expect.objectContaining({
+        inconsistent_pairs: expect.arrayContaining([
+          expect.objectContaining({ child: 'ghost-claimant' }),
+        ]),
+      }),
+    )
+  })
+
   it('does not emit any Level 2b relation check for a pure Level 2a graph with no relations fields, and stays level-2a conformant', async () => {
     const body = 'Pure Level 2a clean endpoint, no relations declared anywhere.'
     const graph = graphWithNodes([
