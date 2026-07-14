@@ -1132,6 +1132,191 @@ describe('formatHtmlReport — copy-exact CSS on the true L2b-pass state (T5.30 
   })
 })
 
+// ---------------------------------------------------------------------------
+// RED tests — T5.32_agent-cta-pulse-accent: discreet looping pulse accent on
+// the `.agent-cta` promo CTA border (human design request 2026-07-14, after
+// visual inspection of the validate report generated on www.jordach.dev —
+// "ajouter une espèce de loop vidéo sur les strok de la box (design et
+// discrète) mais visible pour attirer l'attention ou comme un battement
+// discret").
+//
+// Contract assumed for the Coder — JOB.md left the keyframes name "au choix"
+// (example given: `agentCtaPulse`), so this test file fixes it as the
+// concrete contract:
+//   - keyframes name: `agentCtaPulse`
+//   - the BASE `.agent-cta{...}` rule (not a nested `.agent-cta .xxx` rule)
+//     gets an `animation:` declaration referencing `agentCtaPulse`
+//   - the keyframes reuse the violet already associated with `.agent-cta`
+//     (`rgba(139,92,246,...)` and/or `var(--violet)`) — no new hue
+//   - `@media (prefers-reduced-motion: reduce)` neutralizes it on
+//     `.agent-cta` (`animation:none` or equivalent)
+//   - the existing `@media print` block (html-report.ts ~464-471) also
+//     neutralizes it, without breaking the print rules already there
+// If the Coder picks a different keyframes name or selector shape, this
+// comment block is what needs to change in lockstep with the tests below —
+// never a silent divergence.
+//
+// `buildValidateCss` (html-report.ts:383) is the single CSS source shared by
+// both `renderValidateGeneral` (blocked/general state, called with
+// `buildValidateCss('warn')`) and `renderValidatePassL2b` (true Level 2b
+// pass state, called with `buildValidateCss('pass')`) — so the animation CSS
+// is expected byte-identical in both generated documents. Both states are
+// asserted explicitly below per JOB.md cas de test 5.
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the body of a brace-delimited CSS block starting right after the
+ * first match of `openRegex` (which must end just before, and consume, the
+ * opening `{`). Brace-depth aware, so it survives nested rules inside
+ * `@media`/`@keyframes` blocks — a naive `[^}]*` regex would stop at the
+ * first inner `}` and truncate the match.
+ */
+function extractCssBlock(html: string, openRegex: RegExp): string | undefined {
+  const match = openRegex.exec(html)
+  if (!match) return undefined
+
+  let depth = 1
+  let i = match.index + match[0].length
+  while (depth > 0 && i < html.length) {
+    if (html[i] === '{') depth++
+    else if (html[i] === '}') depth--
+    i++
+  }
+  return html.slice(match.index + match[0].length, i - 1)
+}
+
+describe('formatHtmlReport — .agent-cta pulse accent (T5.32_agent-cta-pulse-accent)', () => {
+  // Blocked/general state fixture — same shape as the V-NO-MANIFEST fixture
+  // above (ADR_008 gap 2): L1 fails, so `findBlockedLevel` is truthy and
+  // `renderValidateGeneral` renders the `.agent-cta` promo card (not `.earn`).
+  const blockedChecks: ValidationCheck[] = [
+    {
+      code: CHECK.L1_MANIFEST_FOUND,
+      severity: 'fail',
+      requirement: 'must',
+      message: 'No index-ai manifest was found at the canonical or fallback manifest path.',
+    },
+  ]
+  const blockedResult = buildLevelAwareResult(blockedChecks, {
+    conformance: 'none',
+    passed: false,
+    summary: { pass: 0, warn: 0, fail: 1, total: 1 },
+  })
+  const blockedHtml = formatHtmlReport(blockedResult, { targetLevel: 'l2b' })
+
+  // True Level 2b pass fixture — identical to the T5.30 round 4 fixture
+  // above: every L1/L2a/L2b check passes, conformance is 'level-2b', so
+  // `formatHtmlReport` dispatches to `renderValidatePassL2b`.
+  const l2bPassChecks: ValidationCheck[] = [
+    {
+      code: CHECK.L1_MANIFEST_FOUND,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'An index-ai manifest was found at the canonical path.',
+    },
+    {
+      code: CHECK.L2A_AGENT_INDEX_DECLARED,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'The manifest declares access.agent_index.',
+    },
+    {
+      code: CHECK.L2B_GRAPH_ROOT_EXISTS,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'The graph declares at least one root node (relations.parent: null).',
+    },
+    {
+      code: CHECK.L2B_GRAPH_RELATION_PAIR_EXISTS,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'The graph declares at least one bidirectionally consistent parent/children relation pair.',
+    },
+    {
+      code: CHECK.L2B_GRAPH_BIDIRECTIONAL,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'Every declared parent/children relation is bidirectionally consistent.',
+    },
+    {
+      code: CHECK.L2B_GRAPH_ACYCLIC,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'The graph relations form an acyclic parent/children structure.',
+    },
+    {
+      code: CHECK.L2B_GRAPH_NO_ORPHANS,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'Every id referenced in relations.children or relations.related exists in the graph.',
+    },
+  ]
+  const l2bPassResult = buildLevelAwareResult(l2bPassChecks, {
+    conformance: 'level-2b',
+    passed: true,
+    summary: { pass: 7, warn: 0, fail: 0, total: 7 },
+  })
+  const l2bPassHtml = formatHtmlReport(l2bPassResult, { targetLevel: 'l2b' })
+
+  it('V-BLOCKED-GENERAL: defines the agentCtaPulse keyframes and applies it on the general/blocked agent-cta card ("Learn about the agent layer")', () => {
+    // Confirms this fixture actually hits the `.agent-cta` promo-card render
+    // site (cas de test 1 + 5, blocked/general half).
+    expect(blockedHtml).toContain('Learn about the agent layer')
+
+    expect(blockedHtml).toMatch(/@keyframes\s+agentCtaPulse\s*\{/)
+
+    const agentCtaRule = extractCssBlock(blockedHtml, /\.agent-cta\{/)
+    expect(agentCtaRule).toBeDefined()
+    expect(agentCtaRule).toMatch(/animation:[^;}]*agentCtaPulse/)
+  })
+
+  it('V-PASS-L2b: applies the same agentCtaPulse animation on the true Level 2b pass agent-cta card ("Learn about Level 3")', () => {
+    // cas de test 5, true-pass half — must be present here too, not only on
+    // the blocked/general state.
+    expect(l2bPassHtml).toContain('Learn about Level 3')
+
+    expect(l2bPassHtml).toMatch(/@keyframes\s+agentCtaPulse\s*\{/)
+
+    const agentCtaRule = extractCssBlock(l2bPassHtml, /\.agent-cta\{/)
+    expect(agentCtaRule).toBeDefined()
+    expect(agentCtaRule).toMatch(/animation:[^;}]*agentCtaPulse/)
+  })
+
+  it('uses the existing violet already associated with .agent-cta for the pulse, not a new color', () => {
+    // cas de test 2 — `.agent-cta`'s own border/tag already use
+    // rgba(139,92,246,...) / var(--violet); the animation must reuse that,
+    // not introduce a new hue outside the palette.
+    const keyframesBody = extractCssBlock(blockedHtml, /@keyframes\s+agentCtaPulse\s*\{/)
+    expect(keyframesBody).toBeDefined()
+    expect(keyframesBody).toMatch(/rgba\(\s*139,\s*92,\s*246|var\(--violet\)/)
+  })
+
+  it('neutralizes the animation under prefers-reduced-motion', () => {
+    // cas de test 3.
+    expect(blockedHtml).toMatch(/@media\s*\(prefers-reduced-motion:\s*reduce\)/)
+
+    const reducedMotionBlock = extractCssBlock(
+      blockedHtml,
+      /@media\s*\(prefers-reduced-motion:\s*reduce\)\{/,
+    )
+    expect(reducedMotionBlock).toBeDefined()
+    expect(reducedMotionBlock).toMatch(/\.agent-cta\{[^}]*animation:\s*none/)
+  })
+
+  it('is suppressed inside the existing @media print block, without breaking the print rules already there', () => {
+    // cas de test 4 + non-regression half of cas de test 6: the existing
+    // print block (html-report.ts ~464-471) must still carry its current
+    // selectors/values untouched.
+    const printBlock = extractCssBlock(blockedHtml, /@media print\{/)
+    expect(printBlock).toBeDefined()
+    expect(printBlock).toMatch(
+      /\.rung,\.chk,\.pitem,\.agent-cta,\.earn,\.earn-badge,\.fixprompt\{background:#fff;border-color:#d9dce1\}/,
+    )
+
+    expect(printBlock).toMatch(/\.agent-cta\{[^}]*animation:\s*none/)
+  })
+})
+
 describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a time (ADR_008 gap 2)', () => {
   it('S-BLOCKED-ALL: recipe covers only unblocking robots.txt when access is fully blocked', () => {
     // Arrange
