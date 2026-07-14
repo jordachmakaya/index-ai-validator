@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
 
@@ -7,6 +8,17 @@ import { CHECK } from '../constants'
 import { countContentChars } from '../utils/content-chars'
 import type { ValidationCheck, ValidatorOptions } from '../types'
 import { validateIndexAi } from '../validator'
+
+// T5.27: check codes for content_sha256 / content_version are not yet
+// registered in ../constants (that's the Coder's job for this sprint) — the
+// literal codes here are the RED-state contract the Coder implements against.
+const CONTENT_SHA256_CHECK = 'L2A_CONTENT_SHA256_MATCH'
+const CONTENT_VERSION_CHECK = 'L2A_CONTENT_VERSION_TYPE'
+const CONTENT_DRIFT_MESSAGE = 'content drift — declared content_sha256 does not match content served at llm_url'
+
+function computeContentSha256(text: string): string {
+  return createHash('sha256').update(text.normalize('NFC'), 'utf-8').digest('hex')
+}
 
 type RouteResponse = {
   readonly status?: number
@@ -24,6 +36,8 @@ type GraphNodeInput = {
   readonly llmUrl: string
   readonly contentChars: number
   readonly contentCharsMode: 'exact' | 'max'
+  readonly contentSha256?: string
+  readonly contentVersion?: unknown
 }
 
 const servers: TestServer[] = []
@@ -67,6 +81,8 @@ function graphWithNodes(nodes: readonly GraphNodeInput[]): Record<string, unknow
         content_chars_mode: node.contentCharsMode,
         summary_method: 'manual',
         language: 'en',
+        ...(node.contentSha256 === undefined ? {} : { content_sha256: node.contentSha256 }),
+        ...(node.contentVersion === undefined ? {} : { content_version: node.contentVersion }),
       },
       meta: {
         updated: '2026-06-12T00:00:00.000Z',
@@ -696,6 +712,188 @@ describe('Level 2a graph validation', () => {
     const result = await validateIndexAi(createOptions(server.origin))
 
     expect(findCheckForNode(result.checks, CHECK.L2A_CONTENT_CHARS_EXACT_MATCH, 'accent').severity).toBe('pass')
+  })
+})
+
+describe('content_sha256 and content_version validation (T5.27)', () => {
+  it('accepts content_sha256 (64 hex chars) and content_version (string) in the graph schema', async () => {
+    const body = 'Schema acceptance content body.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+        contentSha256: computeContentSha256(body),
+        contentVersion: 'git:abc123',
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(findCheck(result.checks, CHECK.L2A_AGENT_INDEX_SCHEMA_VALID).severity).toBe('pass')
+    expect(result.conformance).toBe('level-2a')
+  })
+
+  it('passes the content_sha256 check when the declared hash matches the fetched content (exact mode)', async () => {
+    const body = 'Hash-matched clean endpoint content.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+        contentSha256: computeContentSha256(body),
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(findCheckForNode(result.checks, CONTENT_SHA256_CHECK, 'home').severity).toBe('pass')
+  })
+
+  it('fails the content_sha256 check with the contractual drift message when the hash does not match (exact mode)', async () => {
+    const body = 'Content actually served at llm_url.'
+    const declaredSha256 = computeContentSha256('Completely different declared content.')
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+        contentSha256: declaredSha256,
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheckForNode(result.checks, CONTENT_SHA256_CHECK, 'home')
+
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+    expect(check.message).toBe(CONTENT_DRIFT_MESSAGE)
+  })
+
+  it('ignores content_sha256 in max mode, even when the declared hash is wrong', async () => {
+    const body = 'Max mode content — hash must not be checked here.'
+    const wrongSha256 = computeContentSha256('An unrelated declared string.')
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: 1_000,
+        contentCharsMode: 'max',
+        contentSha256: wrongSha256,
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(result.passed).toBe(true)
+    expect(
+      result.checks.some((check) =>
+        check.details?.node_id === 'home'
+        && check.code === CONTENT_SHA256_CHECK
+        && check.severity === 'fail'),
+    ).toBe(false)
+  })
+
+  it('passes when content_sha256 is absent, even in exact mode', async () => {
+    const body = 'No hash declared for this clean endpoint.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(result.passed).toBe(true)
+    expect(
+      result.checks.some((check) =>
+        check.details?.node_id === 'home'
+        && check.code === CONTENT_SHA256_CHECK
+        && check.severity === 'fail'),
+    ).toBe(false)
+  })
+
+  it('passes when content_version is a string', async () => {
+    const body = 'Versioned clean endpoint content.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+        contentVersion: 'git:abc123',
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(result.passed).toBe(true)
+    expect(
+      result.checks.some((check) =>
+        check.details?.node_id === 'home'
+        && check.code === CONTENT_VERSION_CHECK
+        && check.severity === 'warn'),
+    ).toBe(false)
+  })
+
+  it('warns when content_version is not a string', async () => {
+    const body = 'Bad version type clean endpoint content.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+        contentVersion: 42,
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheckForNode(result.checks, CONTENT_VERSION_CHECK, 'home')
+
+    expect(check.severity).toBe('warn')
+    expect(check.requirement).toBe('should')
   })
 })
 
