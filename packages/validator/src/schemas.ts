@@ -11,7 +11,7 @@
  * relations:
  *   - reads: schemas/scan-result.schema.json
  *   - tested_by: schemas.test.ts
- * last_update: 2026-07-02
+ * last_update: 2026-07-13
  */
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
@@ -241,6 +241,11 @@ export const graphSchema = {
               content_chars_mode: { enum: ['exact', 'max'] },
               summary_method: { enum: ['manual', 'truncate', 'llm'] },
               language: { type: 'string', minLength: 1 },
+              content_sha256: {
+                type: 'string',
+                pattern: '^[a-fA-F0-9]{64}$',
+              },
+              content_version: {},
             },
           },
           meta: {

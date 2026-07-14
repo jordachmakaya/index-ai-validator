@@ -13,7 +13,8 @@
  *   - used_by: packages/validator/src/validator.ts
  *   - used_by: packages/validator/src/utils/format.ts
  *   - used_by: packages/validator/src/utils/target-level.ts
- * last_update: 2026-07-06
+ *   - used_by: packages/validator/src/checks/graph.ts
+ * last_update: 2026-07-13
  */
 
 import type { ScanProgressStep } from './client/scanner-client'
@@ -153,6 +154,8 @@ export type AiGraphNode = {
     content_chars_mode?: 'exact' | 'max'
     summary_method?: 'truncate' | 'llm' | 'manual' | string
     language?: string
+    content_sha256?: string
+    content_version?: unknown
   }
   meta?: {
     updated?: string

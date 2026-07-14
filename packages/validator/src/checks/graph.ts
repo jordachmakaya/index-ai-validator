@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto'
+
 import { CHECK } from '../constants'
 import { fetchTextWithPolicy, type HttpResult } from '../http'
 import { validateGraphSchema, type SchemaValidationError } from '../schemas'
@@ -375,6 +377,18 @@ async function validateGraphNode(input: {
   checks.push(createHtmlLeakCheck(response.text, cleanUrl, nodeId))
   checks.push(createContentCharsCheck(input.node, response.text, cleanUrl, nodeId))
 
+  const contentSha256Check = createContentSha256Check(input.node, response.text, cleanUrl, nodeId)
+
+  if (contentSha256Check) {
+    checks.push(contentSha256Check)
+  }
+
+  const contentVersionCheck = createContentVersionCheck(input.node, nodeId)
+
+  if (contentVersionCheck) {
+    checks.push(contentVersionCheck)
+  }
+
   return {
     checks,
     cleanEndpoints: [
@@ -495,6 +509,63 @@ function createContentCharsCheck(
     fix: measured === declared
       ? undefined
       : 'Set content_chars to the Unicode NFC code point count of the clean endpoint body.',
+  })
+}
+
+function createContentSha256Check(
+  node: AiGraphNode,
+  body: string,
+  url: string,
+  nodeId: string,
+): ValidationCheck | undefined {
+  const mode = node.content?.content_chars_mode ?? 'exact'
+  const declared = node.content?.content_sha256
+
+  if (mode !== 'exact' || declared === undefined) {
+    return undefined
+  }
+
+  const measured = createHash('sha256').update(body.normalize('NFC'), 'utf8').digest('hex')
+
+  if (measured.toLowerCase() === declared.toLowerCase()) {
+    return createNodeCheck({
+      code: CHECK.L2A_CONTENT_SHA256_MATCH,
+      severity: 'pass',
+      requirement: 'must',
+      message: 'The clean endpoint content_sha256 value matches the fetched content.',
+      nodeId,
+      url,
+      details: { declared, measured },
+    })
+  }
+
+  return createNodeCheck({
+    code: CHECK.L2A_CONTENT_SHA256_MATCH,
+    severity: 'fail',
+    requirement: 'must',
+    message: 'content drift — declared content_sha256 does not match content served at llm_url',
+    nodeId,
+    url,
+    details: { declared, measured },
+    fix: 'Update content_sha256 to match the current clean endpoint body, or update the served content.',
+  })
+}
+
+function createContentVersionCheck(node: AiGraphNode, nodeId: string): ValidationCheck | undefined {
+  const version = node.content?.content_version
+
+  if (version === undefined || typeof version === 'string') {
+    return undefined
+  }
+
+  return createNodeCheck({
+    code: CHECK.L2A_CONTENT_VERSION_TYPE,
+    severity: 'warn',
+    requirement: 'should',
+    message: 'The clean endpoint content_version value should be a string.',
+    nodeId,
+    details: { content_version: version },
+    fix: 'Set content_version to a string identifier, such as a git hash or semantic version.',
   })
 }
 
