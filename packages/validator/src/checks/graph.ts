@@ -344,18 +344,23 @@ function createRootExistsCheck(nodes: readonly AiGraphNode[], url: string): Vali
 }
 
 /**
- * For every node A whose relations.children contains id B, B must exist
- * among the graph's nodes AND declare relations.parent === A.id. Every pair
- * that satisfies both conditions counts toward L2B_GRAPH_RELATION_PAIR_EXISTS;
- * every pair that violates either condition is reported as one aggregated
- * L2B_GRAPH_BIDIRECTIONAL failure.
+ * A parent/child pair is bidirectionally consistent only when BOTH
+ * directions agree: the parent's relations.children lists the child, AND
+ * the child's relations.parent points back to the parent. Checking only the
+ * forward direction (walking each node's own relations.children) misses a
+ * node that fabricates a relations.parent claim which the named parent never
+ * reciprocates — that asymmetric edge is only reachable by also walking the
+ * reverse direction (each node's relations.parent). Candidate pairs are
+ * gathered from both directions into one deduped map (keyed by
+ * `${parent}::${child}`) before being judged, so a pair referenced from only
+ * one side is still evaluated, and a pair referenced from both sides is
+ * judged — and reported, if inconsistent — exactly once.
  */
 function computeBidirectionalConsistency(
   nodes: readonly AiGraphNode[],
   nodesById: ReadonlyMap<string, AiGraphNode>,
 ): BidirectionalResult {
-  let validPairCount = 0
-  const inconsistentPairs: RelationsEdge[] = []
+  const candidatePairs = new Map<string, RelationsEdge>()
 
   for (const node of nodes) {
     const parentId = node.id
@@ -365,14 +370,35 @@ function computeBidirectionalConsistency(
     }
 
     for (const childId of node.relations?.children ?? []) {
-      const childNode = nodesById.get(childId)
+      candidatePairs.set(`${parentId}::${childId}`, { parent: parentId, child: childId })
+    }
+  }
 
-      if (childNode !== undefined && childNode.relations?.parent === parentId) {
-        validPairCount += 1
-      }
-      else {
-        inconsistentPairs.push({ parent: parentId, child: childId })
-      }
+  for (const node of nodes) {
+    const childId = node.id
+    const parentId = node.relations?.parent
+
+    if (childId === undefined || parentId === undefined || parentId === null) {
+      continue
+    }
+
+    candidatePairs.set(`${parentId}::${childId}`, { parent: parentId, child: childId })
+  }
+
+  let validPairCount = 0
+  const inconsistentPairs: RelationsEdge[] = []
+
+  for (const edge of candidatePairs.values()) {
+    const parentNode = nodesById.get(edge.parent)
+    const childNode = nodesById.get(edge.child)
+    const forwardOk = parentNode?.relations?.children?.includes(edge.child) ?? false
+    const reverseOk = childNode?.relations?.parent === edge.parent
+
+    if (forwardOk && reverseOk) {
+      validPairCount += 1
+    }
+    else {
+      inconsistentPairs.push(edge)
     }
   }
 
