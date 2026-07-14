@@ -94,6 +94,88 @@ function validGraph(cleanBody: string, llmUrl = '/clean/home.md'): Record<string
   }
 }
 
+/**
+ * T5.30 (ADR_007 D3, round 2) — two-node graph with a real, bidirectionally
+ * consistent, acyclic `relations` DAG (home is root, about is its only
+ * child). Used to exercise `--target-level l2b` end-to-end through the real
+ * `validateGraph`/`validateGraphRelations` engine (T5.29), never mocked —
+ * this is what "Achieved level: Level 2b" actually means once produced by
+ * real `L2B_GRAPH_*` checks, not a hand-built ValidationResult.
+ */
+function validGraphWithRelations(homeBody: string, aboutBody: string): Record<string, unknown> {
+  return {
+    generated: '2026-06-12T00:00:00.000Z',
+    spec_version: '1.0',
+    total_nodes: 2,
+    nodes: [
+      {
+        id: 'home',
+        type: 'page',
+        label: 'Home',
+        description: 'Home clean endpoint.',
+        content: {
+          llm_summary: 'Home summary.',
+          llm_url: '/clean/home.md',
+          content_chars: countContentChars(homeBody),
+          content_chars_mode: 'exact',
+          summary_method: 'manual',
+          language: 'en',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
+        relations: {
+          parent: null,
+          children: ['about'],
+        },
+      },
+      {
+        id: 'about',
+        type: 'page',
+        label: 'About',
+        description: 'About clean endpoint.',
+        content: {
+          llm_summary: 'About summary.',
+          llm_url: '/clean/about.md',
+          content_chars: countContentChars(aboutBody),
+          content_chars_mode: 'exact',
+          summary_method: 'manual',
+          language: 'en',
+        },
+        meta: {
+          updated: '2026-06-12T00:00:00.000Z',
+          refresh_frequency: 'daily',
+        },
+        relations: {
+          parent: 'home',
+          children: [],
+        },
+      },
+    ],
+  }
+}
+
+/**
+ * T5.30 (ADR_007 D3, round 2) — same two nodes as `validGraphWithRelations`,
+ * except `home` and `about` point their `relations.parent` at each other,
+ * forming a real 2-node cycle (home -> about -> home) for T5.29's real DFS
+ * cycle detector to catch. Both nodes still fully pass every Level 2a check
+ * (reachable llm_url, correct content_chars) — only the Level 2b DAG
+ * structure is broken, so this fixture exercises the "L2b fails gracefully,
+ * cascade stops at Level 2a" path end-to-end, never mocked.
+ */
+function cyclicGraphWithRelations(homeBody: string, aboutBody: string): Record<string, unknown> {
+  const graph = validGraphWithRelations(homeBody, aboutBody) as { nodes: Array<Record<string, unknown>> }
+  const [homeNode] = graph.nodes
+
+  if (homeNode) {
+    homeNode.relations = { parent: 'about', children: ['about'] }
+  }
+
+  return graph
+}
+
 function completeRoutes(cleanBody = 'Home clean endpoint'): Record<string, RouteResponse> {
   return {
     '/': {
@@ -440,7 +522,21 @@ describe('runCli', () => {
        expect(result.exitCode).toBe(0)
        expect(result.stderr).toBe('')
        expect(result.stdout).toContain('index-ai validation result')
-       expect(html).toContain('<title>Validate Direction R3v — PASSED Level 2b (success state)</title>')
+       // T5.30 round 2 (gap 6): this fixture only reaches conformance
+       // 'level-2a' under the default --target-level l2a — it never runs or
+       // passes Level 2b. The "PASSED Level 2b (success state)" title is
+       // reserved (per the R3v-pass_split-verdict_validate_L2b.html mockup)
+       // for the one state where Level 2b was actually achieved (see the
+       // dedicated V-PASS-L2b test in html-report.test.ts). Asserting it
+       // here for an L2a-only pass previously overclaimed the achieved
+       // level in the report title — a bug given the whole product's
+       // "verified ≠ declared" thesis. The correct title for every other
+       // passing/failing state is the general split-verdict mockup's own
+       // literal title — "R3", not "R3v" (per
+       // R3v_split-verdict_validate.html:5 — the two mockups use different
+       // prefixes; this is not a typo to normalize, the Coder must
+       // reproduce each file's title exactly, 0% drift).
+       expect(html).toContain('<title>Validate Direction R3 — Split-Verdict (Conformance Ladder)</title>')
        expect(html).toContain('https://example.com')
        expect(html).toContain('2026-06-12')
        expect(html).toContain('Level 2a')
@@ -703,7 +799,12 @@ describe('runCli', () => {
       expect(result.exitCode).toBe(0)
       expect(result.stderr).toBe('')
       expect(await fileExists(reportDir)).toBe(true)
-      expect(html).toContain('<title>Validate Direction R3v — PASSED Level 2b (success state)</title>')
+      // T5.30 round 2 (gap 6): default `validationResult` fixture never
+      // reaches Level 2b (see the fuller comment on the equivalent
+      // assertion above) — the general split-verdict mockup's own title
+      // ("R3", not "R3v" — see the fuller comment above), not the L2b-only
+      // success one.
+      expect(html).toContain('<title>Validate Direction R3 — Split-Verdict (Conformance Ladder)</title>')
       expect(html).toContain('https://example.com')
     })
   })
@@ -718,7 +819,10 @@ describe('runCli', () => {
 
       expect(result.exitCode).toBe(0)
       expect(result.stderr).toBe('')
-      expect(html).toContain('<title>Validate Direction R3v — PASSED Level 2b (success state)</title>')
+      // T5.30 round 2 (gap 6): same fixture/reasoning as the two assertions
+      // above — never reaches Level 2b, so the general split-verdict
+      // mockup's own title applies ("R3", not "R3v").
+      expect(html).toContain('<title>Validate Direction R3 — Split-Verdict (Conformance Ladder)</title>')
       expect(html).toContain('https://example.com')
     })
   })
@@ -1620,6 +1724,10 @@ describe('runCli --help two-mode framing', () => {
 // Scope is intentionally narrow — no grouped-by-level report yet (T5.7) and
 // no level-aware --json fields yet (T5.8). RED until the Coder job wires the
 // option in cli.ts.
+//
+// T5.30 round 2 (ADR_007 D3): l2b is no longer reserved/rejected — see the
+// "accepts --target-level l2b..." tests further below in this describe
+// block, which replaced the old locked "rejects --target-level l2b..." test.
 describe('runCli --target-level option', () => {
   it('accepts --target-level l1 and prints the requested level', async () => {
     const validate: CliValidationRunner = async (options) => validationResult(options.target)
@@ -1644,20 +1752,63 @@ describe('runCli --target-level option', () => {
     expect(withoutFlag.stdout).toBe(withFlag.stdout)
   })
 
-  it('rejects --target-level l2b with a dev-friendly not-yet-available message', async () => {
-    const validate: CliValidationRunner = async () => {
-      throw new Error('Validation should not run when the target level is rejected')
-    }
+  // T5.30 round 2 (ADR_007 D3, gap 5) — locked test rewrite. The original
+  // 'rejects --target-level l2b...' test (sprint T5.6) asserted l2b was
+  // rejected at the CLI parser layer. ADR_007 D3 makes Level 2b a deliberate,
+  // spec-driven contract change: the public validator must ship l2b in all
+  // three surfaces (validate, HTML report, JSON) at launch, now that T5.29
+  // implements real L2b DAG structural validation
+  // (`validateGraphRelations`/`L2B_GRAPH_*`). Rejecting l2b is no longer
+  // correct behavior, so this test is replaced (not just extended) — the
+  // Tester round-2 addendum explicitly authorizes this as a locked-test
+  // rewrite, unlike a silent workaround.
+  //
+  // These two tests exercise `--target-level l2b` end-to-end through the
+  // REAL engine (`validateIndexAi` via `startServer`, no mocked
+  // `CliValidationRunner`) rather than a hand-built ValidationResult,
+  // because the whole point is proving T5.29's real DAG checks now flow all
+  // the way through CLI parsing -> validation -> level-aware human output.
+  it('accepts --target-level l2b and reports Achieved level: Level 2b for a real, valid DAG', async () => {
+    const homeBody = 'Home clean endpoint'
+    const aboutBody = 'About clean endpoint'
+    const server = await startServer({
+      ...completeRoutes(homeBody),
+      '/agent-index.json': jsonRoute(validGraphWithRelations(homeBody, aboutBody)),
+      '/clean/about.md': textRoute(aboutBody, 'text/markdown; charset=utf-8'),
+    })
 
-    const result = await runCli(['https://example.com', '--target-level', 'l2b'], { validate })
+    const result = await runCli([server.origin, '--target-level', 'l2b'])
 
-    expect(result.exitCode).toBe(2)
-    expect(result.stdout).toBe('')
-    expect(result.stderr).toContain('Level 2b')
-    expect(result.stderr).toContain('not yet available')
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain('Requested target level: Level 2b')
+    expect(result.stdout).toContain('Achieved level: Level 2b')
   })
 
-  it('rejects an invalid --target-level value citing the value and the accepted options', async () => {
+  // Documented choice (gap 5 says "your choice" between a passing or a
+  // gracefully-failing L2b fixture): this repo already covers the passing
+  // case above, so this second test covers the graceful-failure path too —
+  // proving --target-level l2b no longer crashes or silently swallows a real
+  // DAG defect (a 2-node mutual cycle, home <-> about), and that the cascade
+  // correctly stops at Level 2a (L2b is 'tested' but failed, never 'none').
+  it('accepts --target-level l2b and cascades to Achieved level: Level 2a when the real DAG has a cycle', async () => {
+    const homeBody = 'Home clean endpoint'
+    const aboutBody = 'About clean endpoint'
+    const server = await startServer({
+      ...completeRoutes(homeBody),
+      '/agent-index.json': jsonRoute(cyclicGraphWithRelations(homeBody, aboutBody)),
+      '/clean/about.md': textRoute(aboutBody, 'text/markdown; charset=utf-8'),
+    })
+
+    const result = await runCli([server.origin, '--target-level', 'l2b'])
+
+    expect(result.exitCode).toBe(1)
+    expect(result.stderr).toBe('')
+    expect(result.stdout).toContain('Requested target level: Level 2b')
+    expect(result.stdout).toContain('Achieved level: Level 2a')
+  })
+
+  it('rejects an invalid --target-level value citing the value and the accepted options, including l2b', async () => {
     const validate: CliValidationRunner = async () => {
       throw new Error('Validation should not run when the target level is rejected')
     }
@@ -1669,6 +1820,9 @@ describe('runCli --target-level option', () => {
     expect(result.stderr).toContain('"bogus"')
     expect(result.stderr).toContain('l1')
     expect(result.stderr).toContain('l2a')
+    // T5.30 round 2 (ADR_007 D3): l2b is now a real accepted value, so the
+    // dev-friendly error listing accepted options must include it too.
+    expect(result.stderr).toContain('l2b')
   })
 
   it('prints Achieved level: l2a for a site that fully passes l2a', async () => {
@@ -1848,16 +2002,39 @@ describe('runCli --target-level option', () => {
     expect(result.stdout).not.toContain('skipped')
   })
 
-  // Note: there is deliberately no "--target-level l2b --json" case here.
-  // parseTargetLevel (cli.ts, T5.6) still rejects l2b at the CLI parser
-  // layer — locked, unchanged behavior per UPGRADE_BRIEF.md §4 ("don't
-  // expose l2b until implemented"), already covered by the pre-existing
-  // 'rejects --target-level l2b...' test above. Since the JSON composition
-  // added by this job is a private function local to cli.ts (no exported
-  // unit-testable entry point), l2b's 3-level JSON shape is not reachable
-  // through the public CLI surface this sprint — mirrors T5.7's own
-  // precedent, where l2b's cascade is only exercised via format.test.ts's
-  // direct unit calls to formatHumanResult, never through the CLI binary.
+  // T5.30 round 2 (ADR_007 D3, gap 5) — this case was deliberately absent
+  // before (see the removed comment this replaces): `parseTargetLevel`
+  // rejected l2b at the CLI parser layer, so l2b's 3-level JSON shape was
+  // never reachable through the public CLI binary, only through direct
+  // format.test.ts unit calls. That reason no longer applies now that l2b is
+  // a real accepted --target-level value (see the "accepts --target-level
+  // l2b" tests above) — this exercises the same real DAG fixture end-to-end
+  // through `--json`, proving all 3 surfaces from ADR_007 D3 (validate, HTML,
+  // JSON) actually compose the l2b level_results entry.
+  it('adds the 5 level-aware JSON fields for --target-level l2b for a real, valid DAG', async () => {
+    const homeBody = 'Home clean endpoint'
+    const aboutBody = 'About clean endpoint'
+    const server = await startServer({
+      ...completeRoutes(homeBody),
+      '/agent-index.json': jsonRoute(validGraphWithRelations(homeBody, aboutBody)),
+      '/clean/about.md': textRoute(aboutBody, 'text/markdown; charset=utf-8'),
+    })
+
+    const result = await runCli([server.origin, '--target-level', 'l2b', '--json'])
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(0)
+    expectJsonResultContract(json)
+    expect(json.requested_level).toBe('l2b')
+    expect(json.tested_levels).toStrictEqual(['l1', 'l2a', 'l2b'])
+    expect(json.achieved_level).toBe('l2b')
+    expect(json.failed_level).toBeNull()
+
+    const levelResults = expectObjectField(json, 'level_results')
+    expect(Object.keys(levelResults)).toStrictEqual(['l1', 'l2a', 'l2b'])
+    expect(levelResults.l2b).toMatchObject({ label: 'Level 2b', status: 'tested', fail: 0 })
+  })
+
   it('adds the 5 level-aware JSON fields for the default --target-level (l2a) alongside the existing JSON contract', async () => {
     const validate: CliValidationRunner = async (options) => validationResult(options.target)
 
