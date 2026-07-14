@@ -12,7 +12,7 @@
  *   - imports: packages/validator/src/utils/html-report.ts
  *   - imports: packages/validator/src/types.ts
  *   - imports: packages/validator/src/schemas.ts
- * last_update: 2026-07-04
+ * last_update: 2026-07-14
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -181,7 +181,7 @@ function main(): void {
   const validateReportPath = join(previewDir, 'validate-report.html')
   const scanReportPath = join(previewDir, 'scan-report.html')
 
-  writeFileSync(validateReportPath, formatHtmlReport(sampleValidationResult), 'utf8')
+  writeFileSync(validateReportPath, formatHtmlReport(sampleValidationResult, { targetLevel: 'l2a' }), 'utf8')
   writeFileSync(
     scanReportPath,
     formatScanHtmlReport(sampleScanResult, 'https://agent-view.com/audit?src=cli-json&scanId=demo'),
