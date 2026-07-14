@@ -7,7 +7,7 @@
  * functions: []
  * classes: []
  * inputs: []
- * outputs: [ValidationResult, ValidatorOptions, ValidationCheck, LevelResult, TargetLevelResultJson]
+ * outputs: [ValidationResult, ValidatorOptions, ValidationCheck, LevelResult, TargetLevelResultJson, AiGraphNodeRelations]
  * relations:
  *   - used_by: packages/validator/src/cli.ts
  *   - used_by: packages/validator/src/validator.ts
@@ -142,6 +142,12 @@ export type AiGraph = {
   nodes?: AiGraphNode[]
 }
 
+export type AiGraphNodeRelations = {
+  parent?: string | null
+  children?: readonly string[]
+  related?: readonly string[]
+}
+
 export type AiGraphNode = {
   id?: string
   type?: string
@@ -162,6 +168,7 @@ export type AiGraphNode = {
     refresh_frequency?: string
     count?: number
   }
+  relations?: AiGraphNodeRelations
 }
 
 export type ScanOptions = {

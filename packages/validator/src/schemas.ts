@@ -11,6 +11,7 @@
  * relations:
  *   - reads: schemas/scan-result.schema.json
  *   - tested_by: schemas.test.ts
+ *   - used_by: packages/validator/src/checks/graph.ts
  * last_update: 2026-07-13
  */
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv'
@@ -258,6 +259,21 @@ export const graphSchema = {
               count: {
                 type: 'number',
                 minimum: 0,
+              },
+            },
+          },
+          relations: {
+            type: 'object',
+            additionalProperties: true,
+            properties: {
+              parent: { type: ['string', 'null'] },
+              children: {
+                type: 'array',
+                items: { type: 'string', minLength: 1 },
+              },
+              related: {
+                type: 'array',
+                items: { type: 'string', minLength: 1 },
               },
             },
           },
