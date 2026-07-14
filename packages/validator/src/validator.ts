@@ -164,7 +164,7 @@ function getConformance(
     && metrics.nodes_with_llm_url === metrics.total_nodes
     && metrics.valid_clean_endpoints === metrics.total_nodes
     && metrics.valid_content_chars === metrics.total_nodes
-    && !hasMustFailure(checks)
+    && !hasNonLevel2bMustFailure(checks)
 
   if (isLevel2a) {
     // T5.30 (ADR_007 D3): Level 2b (Agent Graph) checks — `L2B_GRAPH_*`,
@@ -237,8 +237,16 @@ function percentage(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 100)
 }
 
-function hasMustFailure(checks: readonly ValidationCheck[]): boolean {
-  return checks.some((check) => check.requirement === 'must' && check.severity === 'fail')
+// T5.30 (Reviewer BLOCK finding 1): scoped sibling of the removed
+// `hasMustFailure`. Level 2b is a separate, higher tier layered on top of
+// Level 2a — a failing `L2B_GRAPH_*` `must` check must never demote an
+// otherwise-valid Level 2a result. `hasLevel2bMustFailure` (below) already
+// handles the L2b-specific gate; this scans everything else.
+function hasNonLevel2bMustFailure(checks: readonly ValidationCheck[]): boolean {
+  return checks.some((check) =>
+    !check.code.startsWith('L2B_')
+    && check.requirement === 'must'
+    && check.severity === 'fail')
 }
 
 function hasLevelOneMustFailure(checks: readonly ValidationCheck[]): boolean {

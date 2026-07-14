@@ -229,7 +229,7 @@ function ladderState(levelResults: readonly LevelResult[]): {
   return { lastDoneIndex, blockedIndex }
 }
 
-function renderRung(rung: Rung, levelResult: LevelResult | undefined): string {
+function renderRung(rung: Rung, levelResult: LevelResult | undefined, isCrown: boolean): string {
   if (!levelResult || levelResult.status === 'skipped') {
     return `<div class="rung next"><div class="lv">${rung.code}</div><div class="nm">${rung.name}</div><div class="ds">${rung.desc}</div></div>`
   }
@@ -238,11 +238,21 @@ function renderRung(rung: Rung, levelResult: LevelResult | undefined): string {
     return `<div class="rung here"><span class="mark">blocked here</span><div class="lv">${rung.code}</div><div class="nm">${rung.name}</div><div class="ds">${rung.desc}</div></div>`
   }
 
-  return `<div class="rung done"><span class="mark">reached</span><div class="lv">${rung.code}</div><div class="nm">${rung.name}</div><div class="ds">${rung.desc}</div></div>`
+  // T5.30 (Reviewer BLOCK finding 2a): the highest earned rung on a TRUE
+  // Level 2b pass gets `rung crown` (locked mockup
+  // R3v-pass_split-verdict_validate_L2b.html:117), distinct from lower
+  // reached-but-not-highest rungs which stay `rung done`.
+  const rungClass = isCrown ? 'crown' : 'done'
+
+  return `<div class="rung ${rungClass}"><span class="mark">reached</span><div class="lv">${rung.code}</div><div class="nm">${rung.name}</div><div class="ds">${rung.desc}</div></div>`
 }
 
-function renderLadder(levelResults: readonly LevelResult[], l3State: 'next' | 'reached'): string {
-  const rungs = RUNGS.map((rung, index) => renderRung(rung, levelResults[index])).join('')
+function renderLadder(
+  levelResults: readonly LevelResult[],
+  l3State: 'next' | 'reached',
+  crownIndex?: number,
+): string {
+  const rungs = RUNGS.map((rung, index) => renderRung(rung, levelResults[index], index === crownIndex)).join('')
   const l3Mark = l3State === 'reached' ? '<span class="mark">next</span>' : ''
   const l3 = `<div class="rung next">${l3Mark}<div class="lv">L3</div><div class="nm">Query Interface</div><div class="ds">MCP server</div></div>`
 
@@ -363,7 +373,15 @@ const VALIDATE_RATIONALE_PASS = `<div class="rationale">
   <p>L'état succès de R3v — le rapport qu'un client reçoit après un Pack livré, et l'écran de fin du dogfooding agent-view.com. Trois choix propres à cet état : (1) le panneau <b>Agent Graph</b> remplace la colonne Failures — les stats du graphe (roots, paires cohérentes, zéro cycle, zéro orphelin) sont la preuve concrète du 2b ; (2) le <b>bloc badge</b> apparaît uniquement en état PASSED — c'est le moment où le badge se gagne, avec le lien /verify (BADGE_SPEC §2) — direction badge D2 utilisée en placeholder, à aligner sur la DECISION badge ; (3) la CTA « next rung » pointe vers L3/MCP — même en succès, le rapport maintient une progression. Les checks L2B sont soulignés en vert pour marquer le barreau franchi. Un warn résiduel (verification_hint) garde le rapport honnête : PASSED n'est pas parfait.</p>
 </div>`
 
-const VALIDATE_CSS = `
+/**
+ * T5.30 (Reviewer BLOCK finding 2b): `.ladder-cap b` must render in the pass
+ * (green) color only on the true Level 2b pass state (`renderValidatePassL2b`)
+ * — every other state (general/fail) keeps the mockup's warn (amber) color.
+ * Parameterized rather than a static constant so each caller supplies its
+ * own accent and the non-selected color never appears in that render's output.
+ */
+function buildValidateCss(ladderCapAccent: 'warn' | 'pass'): string {
+  return `
 :root{color-scheme:dark;--bg:#010102;--s1:#0f1011;--s2:#141516;--line:#23252a;
 --text:#e6e7ea;--muted:#8a8f98;--dim:#6b7280;--blue:#3B82F6;--violet:#8B5CF6;
 --pass:#10B981;--warn:#F59E0B;--fail:#EF4444;
@@ -399,7 +417,7 @@ a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
 .rung.here .mark{color:var(--warn);background:rgba(245,158,11,.1)}
 .rung.next .mark{color:var(--violet);background:rgba(139,92,246,.1)}
 .ladder-cap{color:var(--dim);font-size:12px;margin-bottom:28px}
-.ladder-cap b{color:var(--warn)}
+.ladder-cap b{color:var(--${ladderCapAccent})}
 .earn{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:18px 20px;background:linear-gradient(90deg,rgba(16,185,129,.06),transparent 55%),var(--s1);border:1px solid rgba(16,185,129,.35);border-radius:12px;margin-bottom:28px}
 .earn-badge{display:inline-flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--line);border-radius:8px;padding:8px 14px 8px 10px;flex:none}
 .earn-badge .txt b{font:600 12.5px var(--head);display:block}
@@ -453,6 +471,7 @@ ${FIX_PROMPT_CSS}
 }
 @media (max-width:820px){.ladder{grid-template-columns:repeat(2,1fr)}.duo{grid-template-columns:1fr}.vword{font-size:52px}}
 `
+}
 
 function renderValidateGeneral(result: ValidationResult, levelResults: readonly LevelResult[]): string {
   const blockedLevel = findBlockedLevel(levelResults)
@@ -489,7 +508,7 @@ function renderValidateGeneral(result: ValidationResult, levelResults: readonly 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Validate Direction R3 — Split-Verdict (Conformance Ladder)</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>${VALIDATE_CSS}</style>
+<style>${buildValidateCss('warn')}</style>
 </head>
 <body>
 <div class="wrap">
@@ -541,7 +560,7 @@ function renderValidatePassL2b(result: ValidationResult, levelResults: readonly 
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Validate Direction R3v — PASSED Level 2b (success state)</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>${VALIDATE_CSS}</style>
+<style>${buildValidateCss('pass')}</style>
 </head>
 <body>
 <div class="wrap">
@@ -555,7 +574,7 @@ function renderValidatePassL2b(result: ValidationResult, levelResults: readonly 
     </div>
   </div>
 
-  ${renderLadder(levelResults, 'reached')}
+  ${renderLadder(levelResults, 'reached', RUNGS.length - 1)}
   <p class="ladder-cap">The conformance ladder. This site clears <b>three rungs</b> — agents can discover, budget, and traverse its content without parsing HTML.</p>
 
   <div class="earn">
@@ -787,7 +806,15 @@ const SCAN_RATIONALE_SUCCESS = `<div class="rationale">
   <p><b>Rôle</b> : l'état de succès du rapport hybride — 100/100 sur agent-view.com lui-même (le badge « credential, pas pitch » du BUSINESS_VISION). Sert de screenshot marketing pour le site et de preuve que le référentiel s'applique sa propre médecine. <b>Différences vs l'état warn</b> : score et verdict en vert pass, pane agent = dialogue d'endpoints index-ai L2b réussi (au lieu du texte brut troué), section findings remplacée par l'état vide « 0 findings » + badge embeddable, CTA pivotée du funnel audit vers la <b>fake-door monitoring</b> (capteur C du Gate M1 : un 100/100 n'achète pas un audit, il achète la garantie de le rester). <b>Cohérences conservées</b> : fallbacks print ::after, label « Representation » sur le pane humain, note fonts base64, plafond Agent Layer 10/100 rappelé.</p>
 </div>`
 
-const SCAN_CSS = `
+/**
+ * T5.30 (Reviewer BLOCK finding 3): `.split-caption b` must render in the
+ * pass (green) color only on the true 100/100 scan success state
+ * (`renderScanSuccess`) — the general/warn state keeps the mockup's warn
+ * (amber) color. Parameterized like `buildValidateCss` above so the
+ * non-selected color never appears in that render's output.
+ */
+function buildScanCss(splitCaptionAccent: 'warn' | 'pass'): string {
+  return `
 :root{color-scheme:dark;--bg:#010102;--s1:#0f1011;--s2:#141516;--line:#23252a;
 --text:#e6e7ea;--muted:#8a8f98;--dim:#6b7280;--blue:#3B82F6;--violet:#8B5CF6;
 --pass:#10B981;--warn:#F59E0B;--fail:#EF4444;
@@ -852,7 +879,7 @@ p.chap-lead{color:var(--muted);font-size:14px;max-width:620px;margin-bottom:20px
 .pane.agent .pane-foot b{color:var(--warn);font-weight:500}
 .pane.agent.ok .pane-foot b{color:var(--pass);font-weight:500}
 .split-caption{color:var(--dim);font-size:12px;margin-bottom:8px}
-.split-caption b{color:var(--warn)}
+.split-caption b{color:var(--${splitCaptionAccent})}
 .repr-tag{color:var(--dim) !important;background:var(--s2) !important;font-style:normal}
 .dim{display:grid;grid-template-columns:150px minmax(0,1fr) 70px;gap:16px;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
 .dim:last-of-type{border-bottom:none}
@@ -924,6 +951,7 @@ ${FIX_PROMPT_CSS}
  .split{grid-template-columns:1fr}
 }
 `
+}
 
 export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): string {
   const isSuccess = result.score === 100 && result.findings.length === 0
@@ -957,7 +985,7 @@ function renderScanGeneral(result: ScanResult, auditUrl?: string): string {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Report Variant — Hybride (R2 chassis + R3 split)</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>${SCAN_CSS}</style>
+<style>${buildScanCss('warn')}</style>
 </head>
 <body>
 <div class="page">
@@ -1069,7 +1097,7 @@ function renderScanSuccess(result: ScanResult, auditUrl?: string): string {
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Report Variant — Hybride · Success state (100/100)</title>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<style>${SCAN_CSS}</style>
+<style>${buildScanCss('pass')}</style>
 </head>
 <body>
 <div class="page">
