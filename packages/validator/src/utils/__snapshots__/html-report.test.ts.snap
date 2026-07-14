@@ -176,7 +176,7 @@ Implemented — 4/10, index-ai Level 2b. Agents query typed content nodes throug
 The agent index declares relations between nodes and measured payload sizes, so agents plan their token budget before fetching. Freshness signals let them skip unchanged content entirely.
 The index-ai standard
 AI Fix Prompt
-Fix failures automatically with an AI Agent
+Fix findings automatically with an AI Agent
 We provide a pre-configured prompt that you can feed to your coding agent (Claude Code, Cursor, Windsurf, etc.) to automatically resolve the failures found in this validation. Copy the prompt to fix:
 Access Blocked
 .
