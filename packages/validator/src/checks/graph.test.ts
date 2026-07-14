@@ -16,6 +16,17 @@ const CONTENT_SHA256_CHECK = 'L2A_CONTENT_SHA256_MATCH'
 const CONTENT_VERSION_CHECK = 'L2A_CONTENT_VERSION_TYPE'
 const CONTENT_DRIFT_MESSAGE = 'content drift — declared content_sha256 does not match content served at llm_url'
 
+// T5.29: Level 2b DAG relation check codes are not yet registered in
+// ../constants (Coder job for this sprint) — literal codes here are the
+// RED-state contract the Coder implements against. These are graph-level
+// checks (one per graph, not per node), so tests use findCheck, not
+// findCheckForNode.
+const ROOT_EXISTS_CHECK = 'L2B_GRAPH_ROOT_EXISTS'
+const RELATION_PAIR_EXISTS_CHECK = 'L2B_GRAPH_RELATION_PAIR_EXISTS'
+const BIDIRECTIONAL_CHECK = 'L2B_GRAPH_BIDIRECTIONAL'
+const ACYCLIC_CHECK = 'L2B_GRAPH_ACYCLIC'
+const NO_ORPHANS_CHECK = 'L2B_GRAPH_NO_ORPHANS'
+
 function computeContentSha256(text: string): string {
   return createHash('sha256').update(text.normalize('NFC'), 'utf-8').digest('hex')
 }
@@ -31,6 +42,16 @@ type TestServer = {
   readonly close: () => Promise<void>
 }
 
+// T5.29: relations shape is not yet declared on AiGraphNode (types.ts) —
+// this is the RED-state contract the Coder implements against. Field lives
+// at the node level (sibling of `content`/`meta`), not nested under
+// `content`, per IMPLEMENTATION_PLAN.md L797-799.
+type GraphNodeRelations = {
+  readonly parent?: string | null
+  readonly children?: readonly string[]
+  readonly related?: readonly string[]
+}
+
 type GraphNodeInput = {
   readonly id: string
   readonly llmUrl: string
@@ -38,6 +59,7 @@ type GraphNodeInput = {
   readonly contentCharsMode: 'exact' | 'max'
   readonly contentSha256?: string
   readonly contentVersion?: unknown
+  readonly relations?: GraphNodeRelations
 }
 
 const servers: TestServer[] = []
@@ -88,6 +110,7 @@ function graphWithNodes(nodes: readonly GraphNodeInput[]): Record<string, unknow
         updated: '2026-06-12T00:00:00.000Z',
         refresh_frequency: 'daily',
       },
+      ...(node.relations === undefined ? {} : { relations: node.relations }),
     })),
   }
 }
@@ -894,6 +917,209 @@ describe('content_sha256 and content_version validation (T5.27)', () => {
 
     expect(check.severity).toBe('warn')
     expect(check.requirement).toBe('should')
+  })
+})
+
+describe('Level 2b DAG relations validation (T5.29)', () => {
+  it('passes all Level 2b relation checks for a valid DAG (root, bidirectional parent/children, no cycle, no orphans)', async () => {
+    const rootBody = 'Root node content.'
+    const child1Body = 'Child 1 node content.'
+    const child2Body = 'Child 2 node content.'
+    const graph = graphWithNodes([
+      {
+        id: 'root',
+        llmUrl: '/clean/root.md',
+        contentChars: countContentChars(rootBody),
+        contentCharsMode: 'exact',
+        relations: { parent: null, children: ['child1', 'child2'] },
+      },
+      {
+        id: 'child1',
+        llmUrl: '/clean/child1.md',
+        contentChars: countContentChars(child1Body),
+        contentCharsMode: 'exact',
+        relations: { parent: 'root', children: [] },
+      },
+      {
+        id: 'child2',
+        llmUrl: '/clean/child2.md',
+        contentChars: countContentChars(child2Body),
+        contentCharsMode: 'exact',
+        relations: { parent: 'root', children: [], related: ['child1'] },
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/root.md': textRoute(rootBody),
+      '/clean/child1.md': textRoute(child1Body),
+      '/clean/child2.md': textRoute(child2Body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(findCheck(result.checks, ROOT_EXISTS_CHECK).severity).toBe('pass')
+    expect(findCheck(result.checks, RELATION_PAIR_EXISTS_CHECK).severity).toBe('pass')
+    expect(findCheck(result.checks, BIDIRECTIONAL_CHECK).severity).toBe('pass')
+    expect(findCheck(result.checks, ACYCLIC_CHECK).severity).toBe('pass')
+    expect(findCheck(result.checks, NO_ORPHANS_CHECK).severity).toBe('pass')
+  })
+
+  it('fails the acyclic check with the involved ids in details when relations form a direct cycle', async () => {
+    const aBody = 'Node A content.'
+    const bBody = 'Node B content.'
+    const graph = graphWithNodes([
+      {
+        id: 'a',
+        llmUrl: '/clean/a.md',
+        contentChars: countContentChars(aBody),
+        contentCharsMode: 'exact',
+        relations: { parent: 'b', children: ['b'] },
+      },
+      {
+        id: 'b',
+        llmUrl: '/clean/b.md',
+        contentChars: countContentChars(bBody),
+        contentCharsMode: 'exact',
+        relations: { parent: 'a', children: ['a'] },
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/a.md': textRoute(aBody),
+      '/clean/b.md': textRoute(bBody),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheck(result.checks, ACYCLIC_CHECK)
+
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+    expect(check.message.toLowerCase()).toContain('cycle')
+    expect(check.details).toEqual(
+      expect.objectContaining({
+        cycle_ids: expect.arrayContaining(['a', 'b']),
+      }),
+    )
+  })
+
+  it('fails the no-orphans check with the missing id in details when children references a nonexistent node', async () => {
+    const rootBody = 'Root with a ghost child reference.'
+    const graph = graphWithNodes([
+      {
+        id: 'root',
+        llmUrl: '/clean/root.md',
+        contentChars: countContentChars(rootBody),
+        contentCharsMode: 'exact',
+        relations: { parent: null, children: ['ghost'] },
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/root.md': textRoute(rootBody),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheck(result.checks, NO_ORPHANS_CHECK)
+
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+    expect(check.details).toEqual(
+      expect.objectContaining({
+        orphan_ids: expect.arrayContaining(['ghost']),
+      }),
+    )
+  })
+
+  it('fails the root-existence check when no node declares relations.parent: null', async () => {
+    const aBody = 'Node A content, no explicit root declared.'
+    const bBody = 'Node B content, declares no relations at all.'
+    const graph = graphWithNodes([
+      {
+        id: 'a',
+        llmUrl: '/clean/a.md',
+        contentChars: countContentChars(aBody),
+        contentCharsMode: 'exact',
+        relations: { parent: 'b', children: [] },
+      },
+      {
+        id: 'b',
+        llmUrl: '/clean/b.md',
+        contentChars: countContentChars(bBody),
+        contentCharsMode: 'exact',
+        // no `relations` field at all on this node — still, no node in the
+        // graph explicitly declares parent: null, so root existence fails.
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/a.md': textRoute(aBody),
+      '/clean/b.md': textRoute(bBody),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheck(result.checks, ROOT_EXISTS_CHECK)
+
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+  })
+
+  it('fails the bidirectional-consistency check when a declared child does not point its parent back', async () => {
+    const aBody = 'Parent node content.'
+    const bBody = 'Child node content with an inconsistent parent.'
+    const graph = graphWithNodes([
+      {
+        id: 'a',
+        llmUrl: '/clean/a.md',
+        contentChars: countContentChars(aBody),
+        contentCharsMode: 'exact',
+        relations: { parent: null, children: ['b'] },
+      },
+      {
+        id: 'b',
+        llmUrl: '/clean/b.md',
+        contentChars: countContentChars(bBody),
+        contentCharsMode: 'exact',
+        relations: { children: [] }, // parent omitted — does not point back to 'a'
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/a.md': textRoute(aBody),
+      '/clean/b.md': textRoute(bBody),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+    const check = findCheck(result.checks, BIDIRECTIONAL_CHECK)
+
+    expect(check.severity).toBe('fail')
+    expect(check.requirement).toBe('must')
+  })
+
+  it('does not emit any Level 2b relation check for a pure Level 2a graph with no relations fields, and stays level-2a conformant', async () => {
+    const body = 'Pure Level 2a clean endpoint, no relations declared anywhere.'
+    const graph = graphWithNodes([
+      {
+        id: 'home',
+        llmUrl: '/clean/home.md',
+        contentChars: countContentChars(body),
+        contentCharsMode: 'exact',
+      },
+    ])
+    const server = await startServer({
+      '/.well-known/index-ai.json': manifestRoute(),
+      '/agent-index.json': graphRoute(graph),
+      '/clean/home.md': textRoute(body),
+    })
+
+    const result = await validateIndexAi(createOptions(server.origin))
+
+    expect(result.conformance).toBe('level-2a')
+    expect(result.checks.some((check) => check.code.startsWith('L2B_'))).toBe(false)
   })
 })
 
