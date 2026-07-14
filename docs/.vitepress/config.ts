@@ -88,6 +88,7 @@ const config = withMermaid(
           items: [
             { text: 'Level 1 Manifest', link: '/guide/level-1-manifest' },
             { text: 'Level 2a Agent Index', link: '/guide/level-2a-agent-index' },
+            { text: 'Level 2b Agent Graph', link: '/guide/level-2b-agent-graph' },
             { text: 'content_chars', link: '/guide/content-chars' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Discovery', link: '/guide/discovery' },

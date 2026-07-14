@@ -22,7 +22,9 @@
 This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
 
 - **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
-- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a>` to audit specific compliance targets.
+- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a|l2b>` to audit specific compliance targets, including Level 2b Agent Graph DAG relations.
+- **content_sha256 / content_version**: optional node-level content-drift verification and version relay.
+- **AI Fix Prompt**: both HTML reports now include a one-click, copy-to-clipboard remediation prompt for coding agents.
 - **Improved CLI UX**: Enhanced terminal output with clean headers, progress spinners, and a robust `--json` error schema.
 
 ---
@@ -184,8 +186,8 @@ See:
 
 ## Scope
 
-Default validation mode checks public `index-ai` Level 1 and Level 2a
-behavior:
+Default validation mode checks public `index-ai` Level 1, Level 2a, and
+optional Level 2b behavior:
 
 - AI Manifest fetch, JSON parsing, content type, and schema shape
 - Agent Index fetch, graph shape, node fields, and deprecated `pages`
@@ -193,6 +195,9 @@ behavior:
 - clean endpoint fetches through `llm_url`
 - clean endpoint content type, HTML leak, and `content_chars` checks
 - optional `content_sha256` verification and `content_version` type check
+  + relay
+- optional Level 2b Agent Graph DAG validation (root, cycles,
+  bidirectional consistency, orphans)
 - conservative security heuristics
 - shallow discovery hints
 - CLI JSON output, human output, and exit codes
@@ -203,7 +208,7 @@ full Agent View would add.
 
 Neither command provides legal compliance, production certification, a
 security audit, vulnerability scanning, AI traffic guarantees, SEO ranking
-guarantees, Level 2b relations, or Level 3 MCP validation.
+guarantees, or Level 3 MCP validation.
 
 ![Why AI agents prefer Agent View: without it, agents pay a high token cost parsing HTML noise; with it, clean structured content keeps token cost low](docs/hardmachinelabs-agent-view-cost-less-tokens.png)
 

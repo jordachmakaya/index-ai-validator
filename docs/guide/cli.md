@@ -106,7 +106,7 @@ index-ai <url> [--json] [--html [path]] [--verbose] [--strict] [--strict-securit
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
 | `--html [path]` | No | - | Writes a standalone local HTML report to a `.html` file. |
-| `--target-level <level>` | No | `l2a` | Conformance level to validate against: `l1` or `l2a`. `l2b` is rejected — see [Target level](#target-level) below. |
+| `--target-level <level>` | No | `l2a` | Conformance level to validate against: `l1`, `l2a`, or `l2b` — see [Target level](#target-level) below. |
 
 ### Examples
 
@@ -126,22 +126,29 @@ index-ai https://example.com --target-level l1
 
 ### Target level
 
-Levels are progressive and cumulative: Level 2a includes Level 1. `--target-level`
-lets you choose how far to validate, without changing what each level itself
-requires.
+Levels are progressive and cumulative: Level 2a includes Level 1, and Level
+2b includes Level 2a. `--target-level` lets you choose how far to validate,
+without changing what each level itself requires.
 
 | Value | Validates |
 | --- | --- |
 | `l1` | Level 1 manifest requirements only. |
 | `l2a` (default) | Level 1 + Level 2a agent index requirements. |
-| `l2b` | Rejected with a dev-friendly error. Level 2b is not implemented yet — see [Scope](/guide/scope). |
+| `l2b` | Level 1 + Level 2a + Level 2b Agent Graph DAG requirements — see [Level 2b Agent Graph](/guide/level-2b-agent-graph). |
 
 ```bash
 index-ai https://example.com --target-level l1
 index-ai https://example.com --target-level l2a
 index-ai https://example.com --target-level l2b
-# error: option '--target-level <level>' argument 'l2b' is invalid. Level 2b validation is not yet available. Use --target-level l1 or --target-level l2a instead.
 ```
+
+`--target-level l2b` requires at least one graph node to declare a
+`relations` object — a site with no `relations` at all is not Level 2b
+non-conformant, it simply never reaches Level 2b's checks and cascades to
+its real Level 2a result instead. A Level 2b DAG defect (a cycle, a missing
+root, an orphaned reference, or an inconsistent parent/children pair) never
+demotes an already-earned Level 1 or Level 2a result — it only blocks
+Level 2b itself.
 
 **Cascade-skip, not cascade-fail**: if an earlier level has a blocking failure,
 every level after it is reported as `skipped` with the reason, never as a

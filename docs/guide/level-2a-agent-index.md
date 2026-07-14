@@ -218,5 +218,7 @@ is enabled. See [Conformance vs Passed](/guide/conformance-vs-passed).
 
 ## Scope
 
-Level 2a is the highest structural level the validator emits. For what it does
-not implement, see [Scope](/guide/scope).
+Level 2a is a required foundation for Level 2b — see
+[Level 2b Agent Graph](/guide/level-2b-agent-graph) for the DAG relations
+layer built on top of it. For what the validator does not implement, see
+[Scope](/guide/scope).

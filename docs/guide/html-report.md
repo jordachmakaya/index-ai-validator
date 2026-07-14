@@ -31,6 +31,13 @@ missing.
 
 ![index-ai validator HTML report header — CI Verdict FAILED, Checks Summary 2 fail / 2 warn / 6 pass / 10 total, Run metadata, Resources sidebar](../index-ai-default_mode_html_report.PNG)
 
+>[!warning]
+>This screenshot predates the T5.30 report redesign and no longer matches
+the current visual layout (design direction, colors, and structure changed).
+Regenerating it requires a human to run the CLI and capture a fresh
+screenshot — not something an agent can do. The report's actual content
+and behavior described below are current and accurate.
+
 The image above is only the header of the report — the full report
 continues below it on the page.
 
@@ -39,8 +46,8 @@ The report renders:
 - The CI verdict (`Passed`/`Failed`) and a readiness score — a
   human-readable progress indicator (percentage of checks that passed),
   kept separate from the pass/fail verdict itself.
-- The conformance level (`none`, `level-1`, or `level-2a`) with a short
-  hint.
+- The conformance level (`none`, `level-1`, `level-2a`, or `level-2b`) with
+  a short hint.
 - A level-aware summary driven by the `--target-level <level>` flag (see
   [CLI reference](/guide/cli) for the full flag detail): `Requested target
   level`, `Tested levels`, `Achieved level`, and — only when a tested level
@@ -68,6 +75,10 @@ The report renders:
 
 ![index-ai scan HTML report header — Scanner Verdict Agent-readiness moderate, score 65%, Findings Summary 1 P0 / 1 P1 / 1 P2 / 3 total, Scan metadata, Resources sidebar](../scan_mode_html-report-index-ai.PNG)
 
+>[!warning]
+>This screenshot predates the T5.30 report redesign and no longer matches
+the current visual layout. See the note above.
+
 The image above is only the header of the report — the full report
 continues below it on the page.
 
@@ -85,6 +96,26 @@ The report renders:
 - A sidebar with the scanner verdict, a findings-severity summary, scan
   metadata (engine version, schema version, target), and resource links
   — including a link to the full audit when the scanner provides one.
+
+## AI Fix Prompt
+
+When a report has failures or blocking findings (either report — Default
+validation mode or `scan`), it includes an **AI Fix Prompt** card: a
+button labeled "Copy Prompt" that copies a ready-to-paste remediation
+prompt to the clipboard, for coding agents like Claude Code, Cursor, or
+Windsurf.
+
+The prompt itself is never displayed on the page — only the button is
+visible. It is assembled deterministically from stable check codes and
+finding ids, never from raw unsanitized content read off the scanned or
+validated site, so a hostile target site cannot inject arbitrary text into
+what gets pasted into your coding agent.
+
+The card follows the same one-blocker-at-a-time principle as the rest of
+the report: it points at the current blocking issue only, not every issue
+at once, and disappears entirely once there is nothing left to fix — a
+true passing report (including a true Level 2b pass) shows a success state
+instead, with no Fix Prompt card.
 
 ## Clean, professional, shareable
 

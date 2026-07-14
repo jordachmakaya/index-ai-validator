@@ -26,7 +26,9 @@
 This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
 
 - **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
-- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a>` to audit specific compliance targets.
+- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a|l2b>` to audit specific compliance targets, including Level 2b Agent Graph DAG relations.
+- **content_sha256 / content_version**: optional node-level hash verification (content drift detection) and version relay.
+- **AI Fix Prompt**: both HTML reports now include a one-click, copy-to-clipboard remediation prompt for coding agents, built deterministically from stable check codes only.
 - **Improved CLI UX**: Enhanced terminal output with clean headers, progress spinners, and a robust `--json` error schema.
 
 ---
@@ -163,12 +165,15 @@ index-ai validate <url> [options]
   explicit path, writes exactly there (its parent directory is also created
   if missing).
 - `--target-level <level>` — default `l2a`. Conformance level to validate
-  against: `l1` or `l2a`. `l2b` is rejected with a dev-friendly error —
-  Level 2b is not implemented yet. Levels are cumulative: `l2a` validates
-  Level 1 + Level 2a. If an earlier level has a blocking failure, later
-  levels are reported as `skipped` (with a reason), never as a second
-  failure. See [docs/guide/cli.md](../../docs/guide/cli.md#target-level)
-  for the full cascade-skip example.
+  against: `l1`, `l2a`, or `l2b`. Levels are cumulative: `l2b` validates
+  Level 1 + Level 2a + Level 2b Agent Graph DAG relations. If an earlier
+  level has a blocking failure, later levels are reported as `skipped`
+  (with a reason), never as a second failure — and a Level 2b DAG defect
+  never demotes an already-earned Level 1 or Level 2a result. See
+  [docs/guide/cli.md](../../docs/guide/cli.md#target-level) for the full
+  cascade-skip example and
+  [docs/guide/level-2b-agent-graph.md](../../docs/guide/level-2b-agent-graph.md)
+  for the DAG rules.
 
 ### Examples
 
@@ -368,13 +373,17 @@ Implemented in 0.2.0:
 
 - Level 1 AI Manifest validation
 - Level 2a Agent Index validation
-- `--target-level` cascade validation (`l1` or `l2a`, cumulative, with
-  level-aware human and JSON output)
+- Level 2b Agent Graph DAG validation (optional relations: root, cycle,
+  bidirectional consistency, orphan checks)
+- `--target-level` cascade validation (`l1`, `l2a`, or `l2b`, cumulative,
+  with level-aware human and JSON output)
 - clean endpoint content type checks
 - HTML leak checks
 - `content_chars` exact and max checks
 - `content_sha256` verification (optional, `exact` mode only) and
-  `content_version` type check (optional)
+  `content_version` type check + relay (optional)
+- AI Fix Prompt: a deterministic, copy-to-clipboard remediation prompt in
+  both HTML reports, generated only from stable check codes/finding ids
 - conservative security heuristics
 - shallow discovery hints
 - CLI human output, JSON output, and exit codes
@@ -384,7 +393,6 @@ Implemented in 0.2.0:
 
 Default validation mode does not check:
 
-- Level 2b relations
 - Level 3 MCP
 - full `robots.txt` `Disallow` behavior
 - discovery crawling

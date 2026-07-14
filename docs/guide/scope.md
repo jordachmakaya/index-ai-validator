@@ -10,7 +10,7 @@ mode (local, checks an already-implemented `index-ai` layer) and `scan`
 
 ## What Default validation mode checks today
 
-Default validation mode validates `index-ai` Level 1 and Level 2a through `validateIndexAi()` and the `index-ai` CLI:
+Default validation mode validates `index-ai` Level 1, Level 2a, and Level 2b through `validateIndexAi()` and the `index-ai` CLI:
 
 - Level 1 AI Manifest: canonical fetch at `/.well-known/index-ai.json`, fallback at `/index-ai.json` (with a warning), JSON content type, JSON parse, schema shape, and an `identity.domain` host check
 - The manifest `access.agent_index` declaration
@@ -18,10 +18,12 @@ Default validation mode validates `index-ai` Level 1 and Level 2a through `valid
 - Per-node `llm_url`: structural validation, fetch, and clean endpoint content type (`text/markdown` or `text/plain`)
 - Hard HTML leak detection, with tolerated soft inline markup reported as a warning
 - `content_chars` in `exact` and `max` modes, using Unicode NFC code-point counting
+- Optional `content_sha256` verification and `content_version` type check/relay
+- Optional Level 2b Agent Graph relations: DAG structure (root existence, cycle-freedom, bidirectional parent/children consistency, zero orphans) — see [Level 2b Agent Graph](/guide/level-2b-agent-graph)
 - Conservative security heuristics: secret-shaped values, sensitive variable names, and private infrastructure references in public AI-facing content
 - Shallow discovery hints on the homepage, `robots.txt`, and `/llms.txt`
 
-The highest structural level Default validation mode emits is `level-2a`. See [Conformance vs Passed](/guide/conformance-vs-passed).
+The highest structural level Default validation mode emits is `level-2b`. See [Conformance vs Passed](/guide/conformance-vs-passed).
 
 ## What Default validation mode does not validate
 
@@ -30,10 +32,9 @@ Default validation mode does not perform:
 - full security audits or vulnerability scanning
 - discovery crawling, sitemap validation, or DNS TXT discovery validation
 - fixture validation
-- Level 2b relations
 - Level 3 MCP
 
-`level-2b` and `level-3` exist as reserved values in the result type, but the current validator does not emit them.
+`level-3` exists as a reserved value in the result type, but the current validator does not emit it.
 
 ## What `scan` checks today
 

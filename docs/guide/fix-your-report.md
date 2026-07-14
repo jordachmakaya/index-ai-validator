@@ -87,6 +87,27 @@ restore the content that matches the declared hash. `content_sha256` is
 optional — you can also remove it if you do not want to maintain it, without
 losing Level 2a conformance.
 
+## If a Level 2b DAG check fails
+
+This only fires when at least one node declares `relations` and
+`--target-level l2b` (or higher) was requested. It never affects an
+already-earned Level 1 or Level 2a result.
+
+- **`L2B_GRAPH_ROOT_EXISTS` fails**: set `relations.parent` to `null`
+  (explicitly, not just omitted) on the node with no parent in the graph.
+- **`L2B_GRAPH_BIDIRECTIONAL` fails**: for every node listed in another
+  node's `relations.children`, make sure that listed node's own
+  `relations.parent` points back to it — the check requires agreement in
+  both directions.
+- **`L2B_GRAPH_ACYCLIC` fails**: trace the `parent`/`children` chain
+  starting from the reported nodes and break the loop — remove or
+  redirect one of the edges so no path returns to where it started.
+- **`L2B_GRAPH_NO_ORPHANS` fails**: remove the dangling id from
+  `relations.children`/`relations.related`, or add the missing node to
+  the graph.
+
+See [Level 2b Agent Graph](/guide/level-2b-agent-graph) for the full rules.
+
 ## If security findings appear
 
 Remove secrets, tokens, private infrastructure references, or sensitive data
