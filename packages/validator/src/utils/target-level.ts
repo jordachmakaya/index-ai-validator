@@ -3,14 +3,15 @@
  * type: utility
  * title: Target-level result cascade
  * description: Groups ValidationCheck[] by conformance level (l1/l2a/l2b) and applies cascade-skip semantics — a blocking must/fail at one level skips every level after it instead of reporting phantom counts.
- * job_ref: T5.12_fix-level-label-casing
- * functions: [computeLevelResults]
+ * job_ref: T5.30_level-2b-cli-and-reports
+ * functions: [computeLevelResults, levelOfCheck]
  * inputs: [checks, targetLevel]
  * outputs: [LevelResult[] ordered l1 -> l2a -> l2b, truncated to targetLevel]
  * relations:
  *   - tested_by: packages/validator/src/utils/target-level.test.ts
  *   - used_by: packages/validator/src/utils/format.ts
- * last_update: 2026-07-06
+ *   - used_by: packages/validator/src/utils/html-report.ts
+ * last_update: 2026-07-14
  */
 
 import type { LevelResult, TargetLevel, ValidationCheck } from '../types'
@@ -27,8 +28,11 @@ export const LEVEL_LABEL: Record<TargetLevel, string> = {
  * Maps a check's code prefix to the level it counts toward. `L2A_*` counts
  * toward l2a, `L2B_*` toward l2b, and everything else (`L1_*`, plus the
  * cross-cutting `DISCOVERY_*` / `HTTP_*` / `SEC_*` families) counts toward l1.
+ * Exported (T5.30) so html-report.ts's AI Fix Prompt state machine can pick
+ * the primary blocking check for a given level without duplicating this
+ * mapping — single source of truth.
  */
-function levelOfCheck(code: string): TargetLevel {
+export function levelOfCheck(code: string): TargetLevel {
   if (code.startsWith('L2A_')) return 'l2a'
   if (code.startsWith('L2B_')) return 'l2b'
   return 'l1'

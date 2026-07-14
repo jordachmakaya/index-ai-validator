@@ -3,7 +3,7 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
- * job_ref: T5.15_scan-json-error-shape
+ * job_ref: T5.30_level-2b-cli-and-reports
  * functions: [runCli, main, createProgram, buildLevelAwareJson, buildScanJsonError, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
@@ -17,7 +17,7 @@
  *   - imports: packages/validator/src/constants.ts
  *   - imports: packages/validator/src/client/scanner-client.ts
  *   - tested_by: packages/validator/src/cli.test.ts
- * last_update: 2026-07-07
+ * last_update: 2026-07-14
  */
 
 import { readFileSync } from 'node:fs'
@@ -52,12 +52,13 @@ import { computeLevelResults, LEVEL_LABEL } from './utils/target-level'
 import { validateIndexAi } from './validator'
 
 /**
- * Target levels the CLI currently accepts. Level 2b is a real `TargetLevel`
- * in the type system (and in `computeLevelResults`), but is not yet
- * validator-complete, so the CLI rejects it explicitly with a dev-friendly
- * message instead of silently accepting a level it can't actually check.
+ * Target levels the CLI accepts. T5.29 shipped real Level 2b DAG structural
+ * validation (`validateGraphRelations` / `L2B_GRAPH_*` checks in
+ * checks/graph.ts), and ADR_007 D3 made Level 2b a mandatory launch surface
+ * across validate/HTML/JSON — so `l2b` is a first-class `CliTargetLevel`,
+ * same as `l1`/`l2a`.
  */
-type CliTargetLevel = 'l1' | 'l2a'
+type CliTargetLevel = 'l1' | 'l2a' | 'l2b'
 
 type CliOptions = {
   readonly json?: boolean
@@ -383,7 +384,7 @@ function addValidationOptions(command: Command): Command {
     )
     .option(
       '--target-level <level>',
-      "Target conformance level to validate against ('l1' or 'l2a'; 'l2b' is not yet available)",
+      "Target conformance level to validate against ('l1', 'l2a', or 'l2b')",
       parseTargetLevel,
       'l2a',
     )
@@ -484,18 +485,12 @@ function parsePositiveInteger(value: string): number {
 }
 
 function parseTargetLevel(value: string): CliTargetLevel {
-  if (value === 'l1' || value === 'l2a') {
+  if (value === 'l1' || value === 'l2a' || value === 'l2b') {
     return value
   }
 
-  if (value === 'l2b') {
-    throw new InvalidArgumentError(
-      `${LEVEL_LABEL.l2b} validation is not yet available. Use --target-level l1 or --target-level l2a instead.`,
-    )
-  }
-
   throw new InvalidArgumentError(
-    `Invalid --target-level value: "${value}". Accepted values are 'l1' or 'l2a'.`,
+    `Invalid --target-level value: "${value}". Accepted values are 'l1', 'l2a', or 'l2b'.`,
   )
 }
 
@@ -516,9 +511,8 @@ function buildValidatorOptions(target: string, options: CliOptions): ValidatorOp
  * Calls `computeLevelResults` with `targetLevel` narrowed to one of its
  * overloaded literal signatures via an explicit switch, since a plain
  * `CliTargetLevel`-typed argument doesn't match any single overload of a
- * function overloaded on string literals. `l2b` is out of scope: the CLI's
- * `parseTargetLevel` already rejects it before this point (see comment on
- * `CliTargetLevel`). Mirrors format.ts's `computeLevelResultsFor`.
+ * function overloaded on string literals. Mirrors format.ts's
+ * `computeLevelResultsFor`.
  */
 function computeLevelResultsForCliTargetLevel(
   checks: ValidationCheck[],
@@ -529,6 +523,8 @@ function computeLevelResultsForCliTargetLevel(
       return computeLevelResults(checks, 'l1')
     case 'l2a':
       return computeLevelResults(checks, 'l2a')
+    case 'l2b':
+      return computeLevelResults(checks, 'l2b')
   }
 }
 
