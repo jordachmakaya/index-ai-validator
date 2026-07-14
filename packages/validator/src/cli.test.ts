@@ -1806,6 +1806,29 @@ describe('runCli --target-level option', () => {
     expect(result.stderr).toBe('')
     expect(result.stdout).toContain('Requested target level: Level 2b')
     expect(result.stdout).toContain('Achieved level: Level 2a')
+    // T5.30 round 4 (Reviewer BLOCK finding 1): `getConformance`'s
+    // `hasMustFailure(checks)` guard (validator.ts:167, via the `isLevel2a`
+    // condition) scans ALL checks with no code-prefix scoping, unlike its
+    // sibling `hasLevelOneMustFailure`. Since the graph is fully valid
+    // Level 1 + Level 2a and only the L2b DAG is broken (a real cycle), the
+    // top-level `conformance` field must land on 'level-2a' — matching
+    // `Achieved level: Level 2a` printed on the very same line above. The
+    // buggy code instead lets the failing `L2B_GRAPH_*` `must` check demote
+    // `isLevel2a` to false, cascading `conformance` all the way down to
+    // 'level-1', self-contradicting `achieved_level` in the same output.
+    // Also asserted on the `--json` surface (same fixture, same server, a
+    // second run with `--json`): `ValidationResult.conformance` must
+    // independently agree with `achieved_level` there too, not just in the
+    // human-readable text rendering of it.
+    expect(result.stdout).toContain('Conformance: level-2a')
+    expect(result.stdout).not.toContain('Conformance: level-1')
+
+    const jsonResult = await runCli([server.origin, '--target-level', 'l2b', '--json'])
+    const json = parseJsonObject(jsonResult.stdout)
+
+    expect(jsonResult.exitCode).toBe(1)
+    expect(json.achieved_level).toBe('l2a')
+    expect(json.conformance).toBe('level-2a')
   })
 
   it('rejects an invalid --target-level value citing the value and the accepted options, including l2b', async () => {

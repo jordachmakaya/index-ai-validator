@@ -1011,6 +1011,97 @@ describe('formatHtmlReport — AI Fix Prompt state machine, one blocker at a tim
   })
 })
 
+// ---------------------------------------------------------------------------
+// RED tests — T5.30 round 4 (Reviewer BLOCK findings 2 & 3): copy-exact CSS
+// drift on the true-pass/success states. `VALIDATE_CSS`/`SCAN_CSS` are each
+// one shared constant merged from a general mockup and a pass/success
+// mockup. The merge picked up new selectors that only exist in the
+// pass/success mockup, but missed the handful of selectors that exist in
+// BOTH mockups with DIFFERENT values per state (`.ladder-cap b`,
+// `.split-caption b` — amber in the general/fail mockup, green in the
+// pass/success one), and never wired the pass-only `.rung.crown` class
+// (present as dead CSS, copied verbatim) into any render function — the
+// mockup applies it to the highest rung actually earned
+// (`R3v-pass_split-verdict_validate_L2b.html:117`), distinct from the other
+// `done` rungs below it.
+// ---------------------------------------------------------------------------
+describe('formatHtmlReport — copy-exact CSS on the true L2b-pass state (T5.30 round 4)', () => {
+  it('V-PASS-L2b: crowns the highest earned rung (L2b) and colors the ladder-cap <b> green, not amber', () => {
+    // Arrange — same fixture as the "no AI Fix Prompt card" test above: every
+    // L1/L2a/L2b check passes (real T5.29 L2B_GRAPH_* codes).
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'An index-ai manifest was found at the canonical path.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_DECLARED,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The manifest declares access.agent_index.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_ROOT_EXISTS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph declares at least one root node (relations.parent: null).',
+      },
+      {
+        code: CHECK.L2B_GRAPH_RELATION_PAIR_EXISTS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph declares at least one bidirectionally consistent parent/children relation pair.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_BIDIRECTIONAL,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Every declared parent/children relation is bidirectionally consistent.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_ACYCLIC,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph relations form an acyclic parent/children structure.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_NO_ORPHANS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Every id referenced in relations.children or relations.related exists in the graph.',
+      },
+    ]
+    const result = buildLevelAwareResult(checks, {
+      conformance: 'level-2b',
+      passed: true,
+      summary: { pass: 7, warn: 0, fail: 0, total: 7 },
+    })
+
+    // Act
+    const html = formatHtmlReport(result, { targetLevel: 'l2b' })
+
+    // Assert — finding 2a: the highest earned rung (L2b, the last of the
+    // three reached rungs) gets `class="rung crown"`, distinct from the
+    // other two reached-but-not-highest rungs (L1, L2a) which stay
+    // `class="rung done"`. `renderRung` currently has no `crown` branch at
+    // all, so every reached rung comes out `done` and this fails RED.
+    const crownMatches = html.match(/class="rung crown"/g) ?? []
+    const doneMatches = html.match(/class="rung done"/g) ?? []
+    expect(crownMatches.length).toBe(1)
+    expect(doneMatches.length).toBe(2)
+
+    // Assert — finding 2b: on this true-pass state, the ladder caption's
+    // bold text ("three rungs") must render in the pass (green) color, not
+    // the hardcoded warn (amber) color merged in from the general/fail
+    // mockup. `.ladder-cap b{color:var(--warn)}` is currently the only rule
+    // for this selector, so both assertions fail RED.
+    expect(html).toContain('.ladder-cap b{color:var(--pass)}')
+    expect(html).not.toContain('.ladder-cap b{color:var(--warn)}')
+  })
+})
+
 describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a time (ADR_008 gap 2)', () => {
   it('S-BLOCKED-ALL: recipe covers only unblocking robots.txt when access is fully blocked', () => {
     // Arrange
@@ -1165,6 +1256,44 @@ describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a
     // monitoring", never the blocking AI Fix Prompt card.
     expect(html).not.toContain('AI Fix Prompt')
     expect(html).not.toContain('data-prompt=')
+  })
+})
+
+// RED test — T5.30 round 4 (Reviewer BLOCK finding 3): same drift pattern as
+// the validate ladder-cap bug above, on the scan report's true 100/100
+// success state (`renderScanSuccess`, triggered when score === 100 and
+// there are zero findings). See VARIANT_Hybride_success.html:67 for the
+// locked mockup's `.split-caption b{color:var(--pass)}` rule.
+describe('formatScanHtmlReport — copy-exact CSS on the true 100/100 success state (T5.30 round 4)', () => {
+  it('S-SUCCESS-100: colors the split-caption <b> green, not amber', () => {
+    // Arrange — score 100 with zero findings is the only trigger for
+    // `renderScanSuccess` (html-report.ts:929).
+    const result = makeScanResult({
+      score: 100,
+      verdict: 'Agent-ready',
+      dimensions: [
+        { key: 'access', score: 20, max: 20 },
+        { key: 'extractability', score: 30, max: 30 },
+        { key: 'citability', score: 20, max: 20 },
+        { key: 'safety', score: 20, max: 20 },
+        { key: 'agent_layer', score: 10, max: 10 },
+      ],
+      findings: [],
+      renderedComparison: { status: 'match' },
+      csrGapPercent: 0,
+    })
+
+    // Act
+    const html = formatScanHtmlReport(result)
+
+    // Assert — flagship all-green 100/100 report must render its caption's
+    // bold text ("render comparison: aligned") in the pass (green) color,
+    // not the hardcoded warn (amber) color merged in from the general
+    // mockup. `.split-caption b{color:var(--warn)}` is currently the only
+    // rule for this selector, so both assertions fail RED.
+    expect(html).toContain('<title>Report Variant — Hybride · Success state (100/100)</title>')
+    expect(html).toContain('.split-caption b{color:var(--pass)}')
+    expect(html).not.toContain('.split-caption b{color:var(--warn)}')
   })
 })
 
