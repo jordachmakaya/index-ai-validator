@@ -17,7 +17,7 @@
  *   - imports: packages/validator/src/constants.ts
  *   - imports: packages/validator/src/client/scanner-client.ts
  *   - tested_by: packages/validator/src/cli.test.ts
- * last_update: 2026-07-14
+ * last_update: 2026-08-12
  */
 
 import { readFileSync } from 'node:fs'
@@ -738,7 +738,8 @@ async function writeScanHtmlReport(path: string, target: string, outcome: ScanOu
       throw new Error('No scan result available to format')
     }
     await mkdir(dirname(path), { recursive: true })
-    await writeFile(path, formatScanHtmlReport(result, outcome.auditLinks.html), 'utf8')
+    const generatedAt = outcome.status.completedAt ?? outcome.status.submittedAt
+    await writeFile(path, formatScanHtmlReport(result, outcome.auditLinks.html, generatedAt), 'utf8')
   }
   catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)

@@ -16,7 +16,7 @@
  *   - imports: packages/validator/src/schemas.ts
  *   - used_by: packages/validator/src/cli.ts
  *   - tested_by: packages/validator/src/utils/html-report.test.ts
- * last_update: 2026-07-13
+ * last_update: 2026-08-12
  */
 
 import type {
@@ -777,12 +777,12 @@ function renderFinding(finding: ScanFinding, index: number): string {
   </div>`
 }
 
-function renderScanTopbar(result: ScanResult): string {
-  const today = new Date().toISOString().slice(0, 10)
+function renderScanTopbar(result: ScanResult, generatedAt: string): string {
+  const generatedDate = generatedAt.slice(0, 10)
 
   return `<div class="masthead">
     <span class="logo">index-ai<i>/</i>validator</span>
-    <span class="ref">SCAN · ${escapeHtml(hostnameOf(result.url))} · ${escapeHtml(today)} · engine ${SCAN_CHASSIS_ENGINE_VERSION}</span>
+    <span class="ref">SCAN · ${escapeHtml(hostnameOf(result.url))} · ${escapeHtml(generatedDate)} · engine ${SCAN_CHASSIS_ENGINE_VERSION}</span>
   </div>`
 }
 
@@ -953,10 +953,10 @@ ${FIX_PROMPT_CSS}
 `
 }
 
-export function formatScanHtmlReport(result: ScanResult, auditUrl?: string): string {
+export function formatScanHtmlReport(result: ScanResult, auditUrl: string | undefined, generatedAt: string): string {
   const isSuccess = result.score === 100 && result.findings.length === 0
 
-  return isSuccess ? renderScanSuccess(result, auditUrl) : renderScanGeneral(result, auditUrl)
+  return isSuccess ? renderScanSuccess(result, auditUrl, generatedAt) : renderScanGeneral(result, auditUrl, generatedAt)
 }
 
 function renderScanFixPromptCard(result: ScanResult): string {
@@ -965,7 +965,7 @@ function renderScanFixPromptCard(result: ScanResult): string {
   return renderFixPromptCard(label, prompt, 'Fix findings automatically with an AI Agent')
 }
 
-function renderScanGeneral(result: ScanResult, auditUrl?: string): string {
+function renderScanGeneral(result: ScanResult, auditUrl: string | undefined, generatedAt: string): string {
   const finalAuditUrl = auditUrl
     ? rewriteAttributionSrc(auditUrl, 'cli-report')
     : 'https://agent-view.com/audit?src=cli-report&scanId=demo'
@@ -989,7 +989,7 @@ function renderScanGeneral(result: ScanResult, auditUrl?: string): string {
 </head>
 <body>
 <div class="page">
-  ${renderScanTopbar(result)}
+  ${renderScanTopbar(result, generatedAt)}
 
   <section class="cover">
     <div class="eyebrow">AI-readiness scan report</div>
@@ -1080,7 +1080,7 @@ ${CLIPBOARD_COPY_SCRIPT}
 </html>`
 }
 
-function renderScanSuccess(result: ScanResult, auditUrl?: string): string {
+function renderScanSuccess(result: ScanResult, auditUrl: string | undefined, generatedAt: string): string {
   const finalAuditUrl = auditUrl
     ? rewriteAttributionSrc(auditUrl, 'cli-report')
     : 'https://agent-view.com/monitor?src=cli-report&scanId=demo-pass'
@@ -1101,7 +1101,7 @@ function renderScanSuccess(result: ScanResult, auditUrl?: string): string {
 </head>
 <body>
 <div class="page">
-  ${renderScanTopbar(result)}
+  ${renderScanTopbar(result, generatedAt)}
 
   <section class="cover">
     <div class="eyebrow">AI-readiness scan report</div>
