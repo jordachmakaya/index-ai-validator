@@ -350,7 +350,7 @@ function renderPassedSection(checks: readonly ValidationCheck[]): string {
 
 const VALIDATE_TOPBAR = `<div class="top">
     <div style="display:flex;gap:10px;align-items:center"><span class="logo">index-ai<i>/</i>validator</span><span class="pill">v${PACKAGE_VERSION}</span></div>
-    <div style="color:var(--muted);font-size:12px"><a href="https://jordach.dev/projects/index-ai" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">index-ai standard</a> <span style="color:var(--dim)">/</span> <a href="https://github.com/jordachmakaya/index-ai-validator" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+    <div style="color:var(--muted);font-size:12px"><a href="https://jordach.dev/index-ai" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">index-ai standard</a> <span style="color:var(--dim)">/</span> <a href="https://github.com/jordachmakaya/index-ai-validator" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">GitHub</a></div>
   </div>`
 
 function renderValidateFoot(): string {
@@ -492,14 +492,14 @@ function renderValidateGeneral(result: ValidationResult, levelResults: readonly 
       <div class="t">Clear the failures, then aim for the Agent Graph</div>
       <div class="d">Typed relations between nodes let agents traverse your content without parsing HTML anchors.</div>
     </div>
-    <a class="lnk" href="https://agent-view.com" target="_blank" rel="noopener noreferrer">Learn about the agent layer →</a>
+    <a class="lnk" href="https://jordachmakaya.github.io/index-ai/spec/" target="_blank" rel="noopener noreferrer">Learn about the agent layer →</a>
   </div>`
     : `<div class="earn">
     <div>
       <div class="t">This site qualifies for the conformance badge</div>
       <div class="d">Live-verifiable, dated, revoked if verification lapses past 90 days.</div>
     </div>
-    <a class="lnk" href="${escapeHtml(`https://agent-view.com/verify/${result.target}`)}" target="_blank" rel="noopener noreferrer">Get the badge →</a>
+    <a class="lnk" href="${escapeHtml(`https://agent-view.com/verify/${result.target}`)}" target="_blank" rel="noopener noreferrer">Get the badge (coming soon)</a>
   </div>`
 
   return `<!doctype html>
@@ -583,7 +583,7 @@ function renderValidatePassL2b(result: ValidationResult, levelResults: readonly 
       <div class="t">This site qualifies for the conformance badge</div>
       <div class="d">Live-verifiable, dated, revoked if verification lapses past 90 days. Embed snippet available on the verification page.</div>
     </div>
-    <a class="lnk" href="${escapeHtml(`https://agent-view.com/verify/${result.target}`)}" target="_blank" rel="noopener noreferrer">Get the badge →</a>
+    <a class="lnk" href="${escapeHtml(`https://agent-view.com/verify/${result.target}`)}" target="_blank" rel="noopener noreferrer">Get the badge (coming soon)</a>
   </div>
 
   <div class="duo">
@@ -608,7 +608,7 @@ function renderValidatePassL2b(result: ValidationResult, levelResults: readonly 
       <div class="t">The graph is ready — expose it as a Query Interface</div>
       <div class="d">A Level 3 MCP server turns your Agent Graph into typed, parameterized queries. Minimum: one tool with schema and _meta.</div>
     </div>
-    <a class="lnk" href="https://agent-view.com" target="_blank" rel="noopener noreferrer">Learn about Level 3 →</a>
+    <a class="lnk" href="https://jordachmakaya.github.io/index-ai/spec/SPEC-v1.0-rc2#_8-level-3-%E2%80%94-query-interface" target="_blank" rel="noopener noreferrer">Learn about Level 3 →</a>
   </div>
 
   ${renderValidateFoot()}
