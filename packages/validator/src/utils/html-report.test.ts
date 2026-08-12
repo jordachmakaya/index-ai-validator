@@ -234,7 +234,7 @@ describe('formatScanHtmlReport', () => {
 
   it('preserves structure and contains target URL, score, verdict, and findings details', () => {
     // Act
-    const html = formatScanHtmlReport(fakeScanResult)
+    const html = formatScanHtmlReport(fakeScanResult, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert
     expect(html).toContain(targetUrl)
@@ -253,9 +253,9 @@ describe('formatScanHtmlReport', () => {
     const dangerResult: ScanResult = { ...fakeScanResult, score: 25 }
 
     // Act
-    const successHtml = formatScanHtmlReport(successResult)
-    const warnHtml = formatScanHtmlReport(warnResult)
-    const dangerHtml = formatScanHtmlReport(dangerResult)
+    const successHtml = formatScanHtmlReport(successResult, undefined, '2026-06-12T00:00:00.000Z')
+    const warnHtml = formatScanHtmlReport(warnResult, undefined, '2026-06-12T00:00:00.000Z')
+    const dangerHtml = formatScanHtmlReport(dangerResult, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert
     // Success: Positive message about AI readiness
@@ -271,16 +271,46 @@ describe('formatScanHtmlReport', () => {
     const auditUrl = 'https://agent-view.com/audit?src=cli-json&scanId=123'
 
     // Act
-    const html = formatScanHtmlReport(fakeScanResult, auditUrl)
+    const html = formatScanHtmlReport(fakeScanResult, auditUrl, '2026-06-12T00:00:00.000Z')
 
     // Assert
     expect(html).toContain('src=cli-report')
     expect(html).not.toContain('src=cli-json')
   })
 
+  // -------------------------------------------------------------------------
+  // RED test — T5.33_scan-topbar-date-fix
+  //
+  // `renderScanTopbar` (html-report.ts:787) currently reads `new Date()` —
+  // the system clock at render time — instead of the actual scan time,
+  // making the report non-deterministic and, for a report regenerated later
+  // from a saved JSON, misleading (the displayed date drifts from when the
+  // scan actually ran). The real fix (CTO design, corrected 2026-08-12 after
+  // the first Tester round blocked on a false premise — see the tester
+  // report): `formatScanHtmlReport` gains a required third parameter,
+  // `generatedAt: string`, sourced by the Coder in cli.ts from
+  // `outcome.status.completedAt ?? outcome.status.submittedAt` (the
+  // `ScanStatus` envelope around `ScanResult`, which is where the only real
+  // timestamp for a scan lives — `ScanResult` itself carries no date field).
+  // `renderScanTopbar` must render `generatedAt`, never the system clock.
+  // -------------------------------------------------------------------------
+  it('renders the passed generatedAt in the topbar, not the system clock (T5.33)', () => {
+    // Arrange — deliberately a date far in the past, so it can never
+    // coincidentally match the real date the test suite runs on.
+    const fixedGeneratedAt = '2020-01-01T00:00:00Z'
+    const today = new Date().toISOString().slice(0, 10)
+
+    // Act
+    const html = formatScanHtmlReport(fakeScanResult, undefined, fixedGeneratedAt)
+
+    // Assert
+    expect(html).toContain('2020-01-01')
+    expect(html).not.toContain(today)
+  })
+
   it('respects Plain Speech and contains no banned words or exclamation marks in UI text', () => {
     // Act
-    const html = formatScanHtmlReport(fakeScanResult)
+    const html = formatScanHtmlReport(fakeScanResult, undefined, '2026-06-12T00:00:00.000Z')
 
     // Strip HTML tags, style/script blocks and rationale for clean UI text validation
     const uiText = html
@@ -351,7 +381,7 @@ describe('formatScanHtmlReport', () => {
     const auditUrl = 'https://agent-view.com/audit?src=cli-json&scanId=456'
 
     // Act
-    const html = formatScanHtmlReport(richResult, auditUrl)
+    const html = formatScanHtmlReport(richResult, auditUrl, '2026-06-12T00:00:00.000Z')
     const text = extractContentText(html)
 
     // Assert
@@ -416,7 +446,7 @@ describe('formatScanHtmlReport — findings CTA', () => {
         }
       ]
     })
-    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json', '2026-06-12T00:00:00.000Z')
     expect(html).toContain('href="https://docs.example.com/llms-txt"')
   })
 
@@ -433,7 +463,7 @@ describe('formatScanHtmlReport — findings CTA', () => {
         }
       ]
     })
-    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json', '2026-06-12T00:00:00.000Z')
     // Should not contain a dangling empty href
     expect(html).not.toContain('href=""')
     expect(html).not.toContain('href="undefined"')
@@ -449,7 +479,7 @@ describe('formatScanHtmlReport — findings CTA', () => {
         { key: 'agent_layer', score: 0, max: 10 }
       ]
     })
-    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json', '2026-06-12T00:00:00.000Z')
     expect(html).toContain('agent-view.com')
     expect(html).toContain('href="https://agent-view.com"')
   })
@@ -463,7 +493,7 @@ describe('formatScanHtmlReport — findings CTA', () => {
         { key: 'agent_layer', score: 0, max: 10 }
       ]
     })
-    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json')
+    const html = formatScanHtmlReport(result, 'https://agent-view.com/audit?src=cli-json', '2026-06-12T00:00:00.000Z')
     const banned = ['best', 'revolutionary', 'premier', 'amazing', 'powerful', 'leading', 'world-class']
     for (const word of banned) {
       expect(html.toLowerCase()).not.toContain(word)
@@ -645,7 +675,7 @@ describe('formatHtmlReport — level-aware content (T5.14_html-report-level-awar
     const scanResult = makeScanResult({})
 
     // Act
-    const html = formatScanHtmlReport(scanResult)
+    const html = formatScanHtmlReport(scanResult, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert
     expect(html).toContain('What AI agents actually read on')
@@ -757,7 +787,7 @@ describe('formatScanHtmlReport — AI Fix Prompt (ADR_008 gap 1)', () => {
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert — own card/button, separate from formatHtmlReport's, per
     // JOB.md cas de test #2/#3 ("sa propre carte/bouton testés
@@ -788,7 +818,7 @@ describe('formatScanHtmlReport — AI Fix Prompt (ADR_008 gap 1)', () => {
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert
     expect(html).not.toContain('AI Fix Prompt')
@@ -1128,7 +1158,7 @@ describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
     const dataPrompt = extractDataPrompt(html)
 
     // Assert
@@ -1164,7 +1194,7 @@ describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
     const dataPrompt = extractDataPrompt(html)
 
     // Assert
@@ -1213,7 +1243,7 @@ describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
     const dataPrompt = extractDataPrompt(html)
 
     // Assert — every finding id is present (ordered, multi-step recipe),
@@ -1250,7 +1280,7 @@ describe('formatScanHtmlReport — AI Fix Prompt state machine, one blocker at a
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert — ADR_008: "pas de fix bloquant -> optimisation légère ou CTA
     // monitoring", never the blocking AI Fix Prompt card.
@@ -1284,7 +1314,7 @@ describe('formatScanHtmlReport — copy-exact CSS on the true 100/100 success st
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert — flagship all-green 100/100 report must render its caption's
     // bold text ("render comparison: aligned") in the pass (green) color,
@@ -1340,7 +1370,7 @@ describe('AI Fix Prompt — fix_prompt_copied event instrumentation (ADR_008 gap
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
 
     // Assert
     expect(html).toMatch(/<button[^>]*data-event="fix_prompt_copied"[^>]*>/)
@@ -1401,7 +1431,7 @@ describe('AI Fix Prompt — anti-injection (ADR_008 gap 4)', () => {
     })
 
     // Act
-    const html = formatScanHtmlReport(result)
+    const html = formatScanHtmlReport(result, undefined, '2026-06-12T00:00:00.000Z')
     const dataPrompt = extractDataPrompt(html)
 
     // Assert
