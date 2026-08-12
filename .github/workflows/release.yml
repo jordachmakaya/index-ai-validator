@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -59,3 +59,46 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: pnpm publish --access public --provenance
+
+      # Everything below only runs after a real publish succeeded (steps stop
+      # on failure by default) — tag/release always point at a version that
+      # actually made it to the npm registry, never a failed attempt.
+      - name: Read published version
+        id: pkg
+        working-directory: packages/validator
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.pkg.outputs.version }}" -m "v${{ steps.pkg.outputs.version }}"
+          git push origin "v${{ steps.pkg.outputs.version }}"
+
+      # Extracts the section for this version from the changeset-generated
+      # CHANGELOG.md (format: "## <version>" heading, content until the next
+      # "## " heading) so the GitHub Release body always matches what
+      # `pnpm changeset version` already wrote — never duplicated by hand.
+      - name: Extract changelog section
+        id: changelog
+        working-directory: packages/validator
+        run: |
+          NOTES=$(awk -v ver="## ${{ steps.pkg.outputs.version }}" '
+            $0 == ver { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md)
+          {
+            echo "notes<<RELEASE_NOTES_EOF"
+            echo "$NOTES"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.pkg.outputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --title "v${{ steps.pkg.outputs.version }}" \
+            --notes "${{ steps.changelog.outputs.notes }}"
