@@ -184,7 +184,11 @@ function main(): void {
   writeFileSync(validateReportPath, formatHtmlReport(sampleValidationResult, { targetLevel: 'l2a' }), 'utf8')
   writeFileSync(
     scanReportPath,
-    formatScanHtmlReport(sampleScanResult, 'https://agent-view.com/audit?src=cli-json&scanId=demo'),
+    formatScanHtmlReport(
+      sampleScanResult,
+      'https://agent-view.com/audit?src=cli-json&scanId=demo',
+      '2026-08-12T09:00:00Z',
+    ),
     'utf8',
   )
 
