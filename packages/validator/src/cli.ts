@@ -3,8 +3,8 @@
  * type: script
  * title: Command-line interface entrypoint
  * description: Defines Commander CLI commands, runs validation/scanner checks, renders the branded banner/spinner, and composes level-aware --json fields.
- * job_ref: T5.30_level-2b-cli-and-reports
- * functions: [runCli, main, createProgram, buildLevelAwareJson, buildScanJsonError, buildBanner, createTerminalSpinner]
+ * job_ref: T5.34_scan-coming-soon-flag
+ * functions: [runCli, main, createProgram, buildLevelAwareJson, buildScanJsonError, buildScanComingSoonJson, withScanComingSoonSuffix, buildBanner, createTerminalSpinner]
  * classes: []
  * inputs: [process.argv]
  * outputs: [CliRunResult]
@@ -101,6 +101,14 @@ export type CliRunDependencies = {
   readonly scan?: CliScanRunner
   readonly isTTY?: boolean
   readonly spinner?: CliScanSpinner
+  /**
+   * ADR_003: `scan` is neutralized by this runtime flag while
+   * `agent-view.com` (D-003) is not launched — the code and its tests stay,
+   * only the network call is gated. Defaults to `false` (see `runCli`); the
+   * single flip point to reactivate `scan` is that default, not this field
+   * itself (see the "Comment reprendre" section of ADR_003).
+   */
+  readonly scanEnabled?: boolean
 }
 
 export type CliRunResult = {
@@ -118,6 +126,7 @@ export async function runCli(
   let exitCode = 0
   const validate = dependencies.validate ?? validateIndexAi
   const scan = dependencies.scan ?? scanUrl
+  const scanEnabled = dependencies.scanEnabled ?? false
   // The testable default is `false` — no live TTY detection inside `runCli`,
   // which keeps it a pure function of its arguments. Real detection happens
   // once, in `main()`, which passes `process.stdout.isTTY === true` in.
@@ -130,6 +139,7 @@ export async function runCli(
       stderr += value
     },
     isTTY,
+    scanEnabled,
     runValidation: async (target, options) => {
       if (!options.json && isTTY) {
         stdout += `${buildBanner()}\n\n`
@@ -168,6 +178,21 @@ export async function runCli(
       exitCode = result.passed || options.exitCode === false ? 0 : 1
     },
     runScan: async (target, options) => {
+      if (!scanEnabled) {
+        if (options.json) {
+          stdout += `${JSON.stringify(buildScanComingSoonJson(), null, 2)}\n`
+        }
+        else {
+          if (isTTY) {
+            stdout += `${buildBanner()}\n\n`
+          }
+          stdout += `${SCAN_COMING_SOON_MESSAGE}\n`
+        }
+
+        exitCode = 0
+        return
+      }
+
       if (!options.json && isTTY) {
         stdout += `${buildBanner()}\n\n`
       }
@@ -293,12 +318,23 @@ export async function main(argv: readonly string[] = process.argv.slice(2)): Pro
   process.exitCode = result.exitCode
 }
 
+/**
+ * Single source of truth for the `(coming soon)` annotation applied to the
+ * `scan` command's description text (ADR_003) — used for both the top-level
+ * program description's scan line and the `scan` subcommand's own
+ * `.description(...)`, so the two texts never drift out of sync.
+ */
+function withScanComingSoonSuffix(description: string, scanEnabled: boolean): string {
+  return scanEnabled ? description : `${description} (coming soon)`
+}
+
 function createProgram(options: {
   readonly writeOut: (value: string) => void
   readonly writeErr: (value: string) => void
   readonly runValidation: (target: string, options: CliOptions) => Promise<void>
   readonly runScan: (target: string, options: ScanCliOptions) => Promise<void>
   readonly isTTY: boolean
+  readonly scanEnabled: boolean
 }): Command {
   const program = new Command()
   // Captured by closure from the `isTTY` resolved once in `runCli` — never
@@ -315,7 +351,10 @@ function createProgram(options: {
         '',
         'Two modes:',
         `  ${CLI_NAME} validate <url>  Run full validation checks (also the default when no subcommand is given).`,
-        `  ${CLI_NAME} scan <url>      Run the Agent View scanner service against a site and print its findings.`,
+        `  ${CLI_NAME} scan <url>      ${withScanComingSoonSuffix(
+          'Run the Agent View scanner service against a site and print its findings.',
+          options.scanEnabled,
+        )}`,
       ].join('\n'),
     )
     .enablePositionalOptions()
@@ -338,7 +377,12 @@ function createProgram(options: {
 
   program
     .command('scan')
-    .description('Scan a site via the Agent View scanner service and print the scan result.')
+    .description(
+      withScanComingSoonSuffix(
+        'Scan a site via the Agent View scanner service and print the scan result.',
+        options.scanEnabled,
+      ),
+    )
     // No `addHelpText('beforeAll', ...)` here: Commander's `beforeAll` help
     // text on the parent program IS shown for a subcommand's own `--help`
     // (verified empirically — registering it here too produced a duplicated
@@ -666,6 +710,31 @@ function countFindingsBySeverity(
   }
 
   return counts
+}
+
+// ADR_003: single source of truth for the coming-soon copy, shared between
+// human mode and `--json` mode so the two never drift. Never uses the word
+// "error"/an error tone (the code exists and is tested — only the external
+// `agent-view.com` service is missing) and is never merged with
+// `buildScanJsonError`'s shape, since this is not a failure.
+const SCAN_DOCS_URL = 'https://jordachmakaya.github.io/index-ai-validator/guide/cli.html#scan'
+
+const SCAN_COMING_SOON_MESSAGE = 'Scan is not yet publicly available. It depends on '
+  + 'the agent-view.com service, which has not launched yet. '
+  + `See ${SCAN_DOCS_URL} for updates.`
+
+type ScanComingSoonJson = {
+  readonly status: 'coming_soon'
+  readonly message: string
+  readonly docs_url: string
+}
+
+function buildScanComingSoonJson(): ScanComingSoonJson {
+  return {
+    status: 'coming_soon',
+    message: SCAN_COMING_SOON_MESSAGE,
+    docs_url: SCAN_DOCS_URL,
+  }
 }
 
 type ScanJsonError = {
