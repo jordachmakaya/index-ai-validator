@@ -1103,7 +1103,7 @@ describe('runCli scan subcommand', () => {
     const outcome = scanOutcome()
     const scan: CliScanRunner = async () => outcome
 
-    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toBe(`${JSON.stringify(outcome.status, null, 2)}\n`)
@@ -1114,7 +1114,7 @@ describe('runCli scan subcommand', () => {
     const outcome = scanOutcome()
     const scan: CliScanRunner = async () => outcome
 
-    const result = await runCli(['scan', 'https://example.com'], { scan })
+    const result = await runCli(['scan', 'https://example.com'], { scan, scanEnabled: true })
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('https://example.com')
@@ -1130,8 +1130,8 @@ describe('runCli scan subcommand', () => {
     const outcome = scanOutcome()
     const scan: CliScanRunner = async () => outcome
 
-    const withJson = await runCli(['scan', 'https://example.com', '--json'], { scan })
-    const withoutJson = await runCli(['scan', 'https://example.com'], { scan })
+    const withJson = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
+    const withoutJson = await runCli(['scan', 'https://example.com'], { scan, scanEnabled: true })
 
     for (const result of [withJson, withoutJson]) {
       expect(result.stderr).toContain(outcome.auditLinks.terminal)
@@ -1146,10 +1146,10 @@ describe('runCli scan subcommand', () => {
       return scanOutcome()
     }
 
-    const withoutKey = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const withoutKey = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
     const withKey = await runCli(
       ['scan', 'https://example.com', '--json', '--api-key', 'secret-key'],
-      { scan },
+      { scan, scanEnabled: true },
     )
 
     expect(withoutKey.exitCode).toBe(0)
@@ -1169,7 +1169,7 @@ describe('runCli scan subcommand', () => {
 
       const result = await runCli(
         ['scan', 'https://example.com', '--json', '--html', reportPath],
-        { scan },
+        { scan, scanEnabled: true },
       )
       const html = await readFile(reportPath, 'utf8')
 
@@ -1189,10 +1189,10 @@ describe('runCli scan subcommand', () => {
         return scanOutcome()
       }
 
-      const emptyPath = await runCli(['scan', 'https://example.com', '--html', ''], { scan })
+      const emptyPath = await runCli(['scan', 'https://example.com', '--html', ''], { scan, scanEnabled: true })
       const nonHtmlPath = await runCli(
         ['scan', 'https://example.com', '--html', join(directory, 'report.txt')],
-        { scan },
+        { scan, scanEnabled: true },
       )
 
       expect(emptyPath.exitCode).not.toBe(0)
@@ -1213,7 +1213,7 @@ describe('runCli scan subcommand', () => {
 
       expect(await fileExists(reportDir)).toBe(false)
 
-      const result = await runCli(['scan', 'https://example.com', '--html'], { scan })
+      const result = await runCli(['scan', 'https://example.com', '--html'], { scan, scanEnabled: true })
       const html = await readFile(join(reportDir, 'scan-report.html'), 'utf8')
 
       expect(result.exitCode).toBe(0)
@@ -1229,7 +1229,7 @@ describe('runCli scan subcommand', () => {
       const scan: CliScanRunner = async () => outcome
       const reportPath = join(directory, 'missing', 'nested', 'report.html')
 
-      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan })
+      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan, scanEnabled: true })
       const html = await readFile(reportPath, 'utf8')
 
       expect(result.exitCode).toBe(0)
@@ -1254,7 +1254,7 @@ describe('runCli scan subcommand', () => {
 
       const result = await runCli(
         ['scan', 'https://example.com', '--json', '--html', reportPath],
-        { scan },
+        { scan, scanEnabled: true },
       )
       const json = parseJsonObject(result.stdout)
 
@@ -1281,7 +1281,7 @@ describe('runCli scan subcommand', () => {
 
       const result = await runCli(
         ['scan', 'https://example.com', '--json', '--html', reportPath],
-        { scan },
+        { scan, scanEnabled: true },
       )
       const json = parseJsonObject(result.stdout)
 
@@ -1302,7 +1302,7 @@ describe('runCli scan subcommand', () => {
       throw timeoutError
     }
 
-    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
     const json = parseJsonObject(result.stdout)
 
     expect(result.exitCode).not.toBe(0)
@@ -1320,7 +1320,7 @@ describe('runCli scan subcommand', () => {
       throw failedError
     }
 
-    const result = await runCli(['scan', 'https://example.com'], { scan })
+    const result = await runCli(['scan', 'https://example.com'], { scan, scanEnabled: true })
 
     expect(result.exitCode).not.toBe(0)
     expect(result.stdout).toBe('')
@@ -1344,9 +1344,9 @@ describe('runCli scan subcommand', () => {
     const timeoutScan: CliScanRunner = async () => { throw timeoutError }
     const businessScan: CliScanRunner = async () => { throw businessError }
 
-    const networkResult = await runCli(['scan', 'https://example.com', '--json'], { scan: networkScan })
-    const timeoutResult = await runCli(['scan', 'https://example.com', '--json'], { scan: timeoutScan })
-    const businessResult = await runCli(['scan', 'https://example.com', '--json'], { scan: businessScan })
+    const networkResult = await runCli(['scan', 'https://example.com', '--json'], { scan: networkScan, scanEnabled: true })
+    const timeoutResult = await runCli(['scan', 'https://example.com', '--json'], { scan: timeoutScan, scanEnabled: true })
+    const businessResult = await runCli(['scan', 'https://example.com', '--json'], { scan: businessScan, scanEnabled: true })
 
     const networkJson = parseJsonObject(networkResult.stdout)
     const timeoutJson = parseJsonObject(timeoutResult.stdout)
@@ -1374,7 +1374,7 @@ describe('runCli scan subcommand', () => {
       throw networkError
     }
 
-    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
 
     expect(() => JSON.parse(result.stdout)).not.toThrow()
     const parsed: unknown = JSON.parse(result.stdout)
@@ -1393,7 +1393,7 @@ describe('runCli scan subcommand', () => {
       throw networkError
     }
 
-    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, isTTY: true })
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true, isTTY: true })
 
     expect(result.stdout).not.toContain('Agent View CLI')
     expect(result.stdout).not.toContain('Score:')
@@ -1433,7 +1433,7 @@ describe('runCli scan subcommand', () => {
       return outcome
     }
 
-    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan, scanEnabled: true })
 
     expect(result.exitCode).toBe(0)
     expect(result.stderr).toContain('Scan progress: fetch')
@@ -1454,7 +1454,7 @@ describe('runCli scan subcommand', () => {
 
     const result = await runCli(
       ['scan', 'https://example.com', '--json', '--timeout', '5000'],
-      { scan },
+      { scan, scanEnabled: true },
     )
 
     expect(result.exitCode).toBe(0)
@@ -1504,7 +1504,10 @@ describe('runCli scan subcommand', () => {
     const originalScannerUrl = process.env.INDEX_AI_SCANNER_URL
     try {
       process.env.INDEX_AI_SCANNER_URL = server.origin
-      const result = await runCli(['scan', 'https://example.com', '--json', '--timeout', '1000'])
+      const result = await runCli(
+        ['scan', 'https://example.com', '--json', '--timeout', '1000'],
+        { scanEnabled: true },
+      )
       expect(result.exitCode).toBe(2)
 
       const json = parseJsonObject(result.stdout)
@@ -1525,6 +1528,110 @@ describe('runCli scan subcommand', () => {
       }
       await server.close()
     }
+  })
+})
+
+// T5.34_scan-coming-soon-flag (ADR_003_scan-feature-flag-release-scope):
+// `scan`'s code stays intact, but a runtime `scanEnabled` flag (default
+// `false` for this release) makes `runScan` short-circuit before any
+// network call and return a deterministic "coming soon" response instead.
+// Every test below omits `scanEnabled` (or could pass `scanEnabled: false`
+// explicitly, equivalent) to exercise the release default. All still inject
+// a `scan` mock rather than relying on the real `scanUrl` default, purely so
+// a RED run (flag not implemented yet) fails fast on an assertion instead of
+// attempting a real network call to agent-view.com. RED until the Coder job
+// adds `scanEnabled` to `CliRunDependencies`, `runCli`, and `createProgram`.
+describe('runCli scan coming-soon flag (T5.34, ADR_003)', () => {
+  it('prints an honest coming-soon message on stdout in human mode, with exit code 0', async () => {
+    const scan: CliScanRunner = vi.fn(async () => scanOutcome())
+
+    const result = await runCli(['scan', 'https://example.com'], { scan })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.toLowerCase()).toContain('agent-view.com')
+    expect(result.stdout).toMatch(/coming soon|not yet (?:publicly )?available/i)
+    expect(result.stdout.toLowerCase()).not.toContain('not implemented')
+  })
+
+  it('never calls the injected scan runner or drives the spinner when scanEnabled is false (default)', async () => {
+    const scan: CliScanRunner = vi.fn(async () => scanOutcome())
+    const spinner = {
+      start: vi.fn(),
+      step: vi.fn(),
+      stop: vi.fn(),
+    }
+
+    const result = await runCli(['scan', 'https://example.com'], { scan, spinner, isTTY: true })
+
+    expect(result.exitCode).toBe(0)
+    expect(scan).not.toHaveBeenCalled()
+    expect(spinner.start).not.toHaveBeenCalled()
+    expect(spinner.step).not.toHaveBeenCalled()
+    expect(spinner.stop).not.toHaveBeenCalled()
+  })
+
+  it('prints a {status: "coming_soon", message, docs_url} JSON contract on stdout for scan --json, never the error_type shape, with exit code 0', async () => {
+    const scan: CliScanRunner = vi.fn(async () => scanOutcome())
+
+    const result = await runCli(['scan', 'https://example.com', '--json'], { scan })
+    const json = parseJsonObject(result.stdout)
+
+    expect(result.exitCode).toBe(0)
+    expect(json.status).toBe('coming_soon')
+    expect(typeof json.message).toBe('string')
+    expect((json.message as string).length).toBeGreaterThan(0)
+    expect(typeof json.docs_url).toBe('string')
+    expect((json.docs_url as string).length).toBeGreaterThan(0)
+    expect(json).not.toHaveProperty('error_type')
+    expect(json).not.toHaveProperty('passed')
+    expect(scan).not.toHaveBeenCalled()
+  })
+
+  it('treats scan --html as a silent no-op: writes no file and prints no "HTML report written to" confirmation', async () => {
+    await withTempDir(async (directory) => {
+      const reportPath = join(directory, 'report.html')
+      const scan: CliScanRunner = vi.fn(async () => scanOutcome())
+
+      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan })
+
+      expect(result.exitCode).toBe(0)
+      expect(await fileExists(reportPath)).toBe(false)
+      expect(result.stdout).not.toContain('HTML report written to')
+      expect(scan).not.toHaveBeenCalled()
+    })
+  })
+
+  it('accepts --api-key and --timeout without a Commander "unknown option" crash, even though they have no effect', async () => {
+    const scan: CliScanRunner = vi.fn(async () => scanOutcome())
+
+    const result = await runCli(
+      ['scan', 'https://example.com', '--api-key', 'secret-key', '--timeout', '5000'],
+      { scan },
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stderr).not.toContain('unknown option')
+    expect(scan).not.toHaveBeenCalled()
+  })
+
+  it('suffixes the scan description with "(coming soon)" in --help when scanEnabled is false, derived from the same flag rather than a hardcoded string', async () => {
+    const topLevelHelp = await runCli(['--help'])
+    const scanHelp = await runCli(['scan', '--help'])
+    const scanHelpEnabled = await runCli(['scan', '--help'], { scanEnabled: true })
+
+    expect(topLevelHelp.stdout).toContain('(coming soon)')
+    expect(scanHelp.stdout).toContain('(coming soon)')
+    expect(scanHelpEnabled.stdout).not.toContain('(coming soon)')
+  })
+
+  it('leaves validate completely unaffected: the default mode still calls the injected validate runner normally', async () => {
+    const validate: CliValidationRunner = vi.fn(async (options) => validationResult(options.target))
+
+    const result = await runCli(['https://example.com'], { validate })
+
+    expect(result.exitCode).toBe(0)
+    expect(validate).toHaveBeenCalledTimes(1)
+    expect(result.stdout.toLowerCase()).not.toContain('coming soon')
   })
 })
 
@@ -1680,7 +1787,7 @@ describe('runCli --html confirmation message', () => {
       const outcome = scanOutcome()
       const scan: CliScanRunner = async () => outcome
 
-      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan })
+      const result = await runCli(['scan', 'https://example.com', '--html', reportPath], { scan, scanEnabled: true })
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain(reportPath)
@@ -1693,7 +1800,7 @@ describe('runCli --html confirmation message', () => {
       const scan: CliScanRunner = async () => outcome
       const expectedPath = join(directory, '.report', 'scan-report.html')
 
-      const result = await runCli(['scan', 'https://example.com', '--html'], { scan })
+      const result = await runCli(['scan', 'https://example.com', '--html'], { scan, scanEnabled: true })
 
       expect(result.exitCode).toBe(0)
       expect(result.stdout).toContain(expectedPath)
@@ -2214,7 +2321,7 @@ describe('runCli branding banner + scan spinner', () => {
       stop: vi.fn(() => callOrder.push('spinner:stop')),
     }
 
-    const result = await runCli(['scan', 'https://example.com'], { scan, spinner, isTTY: true })
+    const result = await runCli(['scan', 'https://example.com'], { scan, scanEnabled: true, spinner, isTTY: true })
 
     expect(result.exitCode).toBe(0)
     expect(spinner.start).toHaveBeenCalledTimes(1)
@@ -2252,7 +2359,7 @@ describe('runCli branding banner + scan spinner', () => {
         stop: vi.fn(),
       }
 
-      const result = await runCli(scenario.argv, { scan, spinner, isTTY: scenario.isTTY })
+      const result = await runCli(scenario.argv, { scan, scanEnabled: true, spinner, isTTY: scenario.isTTY })
 
       expect(result.exitCode).toBe(0)
       expect(spinner.start).not.toHaveBeenCalled()
@@ -2270,7 +2377,7 @@ describe('runCli branding banner + scan spinner', () => {
       return outcome
     }
 
-    const result = await runCli(['scan', 'https://example.com'], { scan })
+    const result = await runCli(['scan', 'https://example.com'], { scan, scanEnabled: true })
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).not.toContain('Agent View CLI')
