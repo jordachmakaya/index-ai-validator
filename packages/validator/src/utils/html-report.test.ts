@@ -1445,3 +1445,202 @@ describe('AI Fix Prompt — anti-injection (ADR_008 gap 4)', () => {
     expect(dataPrompt).not.toContain('reveal')
   })
 })
+
+// ---------------------------------------------------------------------------
+// RED tests — T5.39_validate-report-cta-links (D-004 resolution)
+//
+// Four human-decided link/text replacements on the validate HTML report:
+// `agent-view.com` is not publicly live, so every CTA pointing at it (and one
+// incorrect masthead portfolio URL) must be fixed. Exact target values are
+// human decisions (see JOB.md table), not judgment calls:
+//   1. Masthead "index-ai standard" -> https://jordach.dev/index-ai
+//   2. "Learn about Level 3 ->" (PASS-L2b state) ->
+//      https://jordachmakaya.github.io/index-ai/spec/SPEC-v1.0-rc2#_8-level-3-%E2%80%94-query-interface
+//   3. "Learn about the agent layer ->" (blocked state) ->
+//      https://jordachmakaya.github.io/index-ai/spec/
+//   4. "Get the badge ->" (blocked non-conformant "earn" sub-state AND
+//      PASS-L2b state) -> softened to "Get the badge (coming soon)", no
+//      arrow, href left untouched (still agent-view.com, revalidated at
+//      launch — consistent with the scan/agent-layer treatment elsewhere in
+//      this release).
+//
+// These CTAs live in three rendered states of `formatHtmlReport`, dispatched
+// by `result.conformance`/blockedLevel (html-report.ts:155-160, 476-542,
+// 550-619):
+//   - "blocked" state (renderValidateGeneral, blockedLevel truthy): shows
+//     the agent-cta "Learn about the agent layer ->".
+//   - "earn" state (renderValidateGeneral, blockedLevel falsy, conformance
+//     not yet level-2b): shows the earn/badge CTA "Get the badge ->".
+//   - "PASS-L2b" state (renderValidatePassL2b, conformance === 'level-2b'):
+//     shows both the earn/badge CTA and "Learn about Level 3 ->".
+// ---------------------------------------------------------------------------
+describe('formatHtmlReport — CTA link fixes (T5.39, D-004 resolution)', () => {
+  const NEW_MASTHEAD_URL = 'https://jordach.dev/index-ai'
+  const OLD_MASTHEAD_URL = 'https://jordach.dev/projects/index-ai'
+  const NEW_LEVEL3_URL =
+    'https://jordachmakaya.github.io/index-ai/spec/SPEC-v1.0-rc2#_8-level-3-%E2%80%94-query-interface'
+  const NEW_AGENT_LAYER_URL = 'https://jordachmakaya.github.io/index-ai/spec/'
+  const NEW_BADGE_TEXT = 'Get the badge (coming soon)'
+  const OLD_BADGE_TEXT = 'Get the badge →'
+
+  // Blocked state: L2A fail, targetLevel l2a -> blockedLevel truthy ->
+  // agent-cta ("Learn about the agent layer ->") renders, badge does not.
+  function buildBlockedResult(): ValidationResult {
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'An index-ai manifest was found at the canonical path.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_DECLARED,
+        severity: 'fail',
+        requirement: 'must',
+        message: 'The manifest declares Level 2a but does not declare access.agent_index.',
+        fix: 'Declare access.agent_index when the site intends to provide Level 2a graph validation.',
+      },
+    ]
+    return buildLevelAwareResult(checks, {
+      conformance: 'none',
+      passed: false,
+      summary: { pass: 1, warn: 0, fail: 1, total: 2 },
+    })
+  }
+
+  // "Earn" state: everything up to l2a passes, conformance stops at
+  // level-2a (never reaches level-2b) -> blockedLevel falsy for l2a target
+  // -> earn/badge CTA ("Get the badge ->") renders, agent-cta does not.
+  function buildEarnResult(): ValidationResult {
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'An index-ai manifest was found at the canonical path.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Agent Index graph found.',
+      },
+    ]
+    return buildLevelAwareResult(checks, { conformance: 'level-2a', passed: true })
+  }
+
+  // PASS-L2b state: every L1/L2a/L2b check passes -> renderValidatePassL2b
+  // -> both "Get the badge ->" and "Learn about Level 3 ->" render.
+  function buildPassL2bResult(): ValidationResult {
+    const checks: ValidationCheck[] = [
+      {
+        code: CHECK.L1_MANIFEST_FOUND,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'An index-ai manifest was found at the canonical path.',
+      },
+      {
+        code: CHECK.L2A_AGENT_INDEX_DECLARED,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The manifest declares access.agent_index.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_ROOT_EXISTS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph declares at least one root node (relations.parent: null).',
+      },
+      {
+        code: CHECK.L2B_GRAPH_RELATION_PAIR_EXISTS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph declares at least one bidirectionally consistent parent/children relation pair.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_BIDIRECTIONAL,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Every declared parent/children relation is bidirectionally consistent.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_ACYCLIC,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'The graph relations form an acyclic parent/children structure.',
+      },
+      {
+        code: CHECK.L2B_GRAPH_NO_ORPHANS,
+        severity: 'pass',
+        requirement: 'must',
+        message: 'Every id referenced in relations.children or relations.related exists in the graph.',
+      },
+    ]
+    return buildLevelAwareResult(checks, {
+      conformance: 'level-2b',
+      passed: true,
+      summary: { pass: 7, warn: 0, fail: 0, total: 7 },
+    })
+  }
+
+  it('Case 1 — masthead: fixes the shared VALIDATE_TOPBAR link in both the blocked and PASS-L2b states', () => {
+    // Act
+    const blockedHtml = formatHtmlReport(buildBlockedResult(), { targetLevel: 'l2a' })
+    const passL2bHtml = formatHtmlReport(buildPassL2bResult(), { targetLevel: 'l2b' })
+
+    // Assert
+    for (const html of [blockedHtml, passL2bHtml]) {
+      expect(html).toContain(`href="${NEW_MASTHEAD_URL}"`)
+      expect(html).not.toContain(OLD_MASTHEAD_URL)
+      // Text label is unchanged per the human decision.
+      expect(html).toContain('index-ai standard')
+    }
+  })
+
+  it('Case 2 — "Learn about Level 3": PASS-L2b state points at the SPEC-v1.0-rc2 Level 3 anchor, never agent-view.com', () => {
+    // Act
+    const html = formatHtmlReport(buildPassL2bResult(), { targetLevel: 'l2b' })
+
+    // Assert
+    expect(html).toContain(`href="${NEW_LEVEL3_URL}" target="_blank" rel="noopener noreferrer">Learn about Level 3 →`)
+    expect(html).not.toMatch(/href="https:\/\/agent-view\.com"[^>]*>Learn about Level 3/)
+  })
+
+  it('Case 3 — "Learn about the agent layer": blocked state points at the spec index, never agent-view.com', () => {
+    // Act
+    const html = formatHtmlReport(buildBlockedResult(), { targetLevel: 'l2a' })
+
+    // Assert
+    expect(html).toContain(
+      `href="${NEW_AGENT_LAYER_URL}" target="_blank" rel="noopener noreferrer">Learn about the agent layer →`,
+    )
+    expect(html).not.toMatch(/href="https:\/\/agent-view\.com"[^>]*>Learn about the agent layer/)
+  })
+
+  it('Case 4 — "Get the badge" is softened to "(coming soon)" with no arrow, in both the earn and PASS-L2b states', () => {
+    // Act
+    const earnHtml = formatHtmlReport(buildEarnResult(), { targetLevel: 'l2a' })
+    const passL2bHtml = formatHtmlReport(buildPassL2bResult(), { targetLevel: 'l2b' })
+
+    // Assert
+    for (const html of [earnHtml, passL2bHtml]) {
+      expect(html).toContain(NEW_BADGE_TEXT)
+      expect(html).not.toContain(OLD_BADGE_TEXT)
+      // href is left untouched (still agent-view.com/verify/{target}) per
+      // the human decision — only the visible text/arrow changes.
+      expect(html).toMatch(/href="https:\/\/agent-view\.com\/verify\/[^"]*"[^>]*>Get the badge \(coming soon\)</)
+    }
+  })
+
+  it('Case 5 — scope confinement: the GitHub masthead link is untouched by these changes', () => {
+    // Act
+    const blockedHtml = formatHtmlReport(buildBlockedResult(), { targetLevel: 'l2a' })
+    const passL2bHtml = formatHtmlReport(buildPassL2bResult(), { targetLevel: 'l2b' })
+
+    // Assert
+    for (const html of [blockedHtml, passL2bHtml]) {
+      expect(html).toContain('href="https://github.com/jordachmakaya/index-ai-validator"')
+      expect(html).toContain('>GitHub<')
+    }
+  })
+})
