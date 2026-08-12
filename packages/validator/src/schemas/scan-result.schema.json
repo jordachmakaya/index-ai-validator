@@ -1,0 +1,105 @@
+{
+  "$id": "https://index-ai.dev/schemas/scan-result.v1.json",
+  "type": "object",
+  "required": [
+    "url",
+    "score",
+    "verdict",
+    "dimensions",
+    "findings",
+    "noiseRatio",
+    "engineVersion",
+    "schemaVersion"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "url": { "type": "string", "minLength": 1 },
+    "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "verdict": { "type": "string", "minLength": 1 },
+    "dimensions": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "additionalItems": false,
+      "items": [
+        {
+          "type": "object",
+          "required": ["key", "score", "max"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "const": "access" },
+            "score": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["key", "score", "max"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "const": "extractability" },
+            "score": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["key", "score", "max"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "const": "citability" },
+            "score": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["key", "score", "max"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "const": "safety" },
+            "score": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["key", "score", "max"],
+          "additionalProperties": true,
+          "properties": {
+            "key": { "const": "agent_layer" },
+            "score": { "type": "number" },
+            "max": { "type": "number" }
+          }
+        }
+      ]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "title"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["P0", "P1", "P2"] },
+          "title": { "type": "string", "minLength": 1 },
+          "detail": { "type": "string" },
+          "effort": { "enum": ["small", "medium", "large"] }
+        }
+      }
+    },
+    "noiseRatio": { "type": ["number", "null"] },
+    "csrGapPercent": { "type": ["number", "null"] },
+    "renderedComparison": {
+      "type": "object",
+      "required": ["status"],
+      "additionalProperties": true,
+      "properties": {
+        "status": { "enum": ["match", "gap", "severe-gap", "unknown"] }
+      }
+    },
+    "engineVersion": { "type": "string", "minLength": 1 },
+    "schemaVersion": { "const": "1.0" }
+  }
+}

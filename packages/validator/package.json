@@ -1,6 +1,6 @@
 {
   "name": "@hardmachinelabs/index-ai-validator",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Free, experimental CLI that makes a website's agent-facing layer testable: validates the index-ai AI Manifest, Agent Index, and clean endpoints.",
   "author": {
     "name": "Jordach Makaya",
@@ -45,6 +45,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "fixture:serve": "sirv fixtures/valid-level-2a/public --host 127.0.0.1 --port 4173",
+    "preview:reports": "tsx scripts/generate-preview-reports.ts",
     "validate:fixture": "tsx src/cli.ts http://127.0.0.1:4173 --strict --verbose",
     "pack:check": "pnpm check && pnpm test && pnpm build && node dist/cli.js --help",
     "prepublishOnly": "pnpm pack:check"

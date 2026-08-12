@@ -1,7 +1,27 @@
 # Discovery Checks
 
+
 An agent can only use your AI Manifest if it can find it. These checks inspect
 the hints that point agents to it.
+
+
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="How AI agents find your site manifest — audio explainer">
+    <source src="/discovery-explained.mp4" type="video/mp4">
+    Your browser does not support the video tag. Listen to the audio explainer: <a href="/How_AI_agents_find_your_site_manifest.m4a">How_AI_agents_find_your_site_manifest.m4a</a>.
+  </video>
+  <p class="audio-explainer-caption">🔊 Audio explainer — how AI agents find your site manifest.</p>
+</div>
+
+<div class="illustration-note">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Illustrative example — for visual reference only.</span>
+</div>
+
 
 The validator runs shallow discovery checks through `validateIndexAi()` and the
 `index-ai` CLI.

@@ -1,6 +1,23 @@
+/**
+ * @filemeta
+ * type: schema
+ * title: index-ai and scan-result schema validators
+ * description: Compiles and runs AJV validation for the manifest, graph, and vendored ScanResult JSON schemas, returning typed valid/invalid results.
+ * job_ref: T1.0_pin-scanner-schema
+ * functions: [validateManifestSchema, validateGraphSchema, validateScanResult, formatAjvErrors]
+ * classes: []
+ * inputs: [unknown manifest payload, unknown graph payload, unknown scan result payload]
+ * outputs: [ManifestSchemaValidationResult, GraphSchemaValidationResult, ScanResultSchemaValidationResult]
+ * relations:
+ *   - reads: schemas/scan-result.schema.json
+ *   - tested_by: schemas.test.ts
+ *   - used_by: packages/validator/src/checks/graph.ts
+ * last_update: 2026-07-13
+ */
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv'
 import addFormats from 'ajv-formats'
 
+import scanResultJsonSchema from './schemas/scan-result.schema.json'
 import type { AiGraph, IndexAiManifest } from './types'
 
 export type SchemaValidationError = {
@@ -23,6 +40,44 @@ export type GraphSchemaValidationResult =
   | {
     valid: true
     graph: AiGraph
+  }
+  | {
+    valid: false
+    errors: SchemaValidationError[]
+  }
+
+export type ScanDimensionKey = 'access' | 'extractability' | 'citability' | 'safety' | 'agent_layer'
+
+export type ScanResult = {
+  url: string
+  score: number
+  verdict: string
+  dimensions: Array<{
+    key: ScanDimensionKey
+    score: number
+    max: number
+  }>
+  findings: Array<{
+    id: string
+    severity: 'P0' | 'P1' | 'P2'
+    title: string
+    detail?: string
+    effort?: 'small' | 'medium' | 'large'
+    fix_url?: string
+  }>
+  noiseRatio: number | null
+  csrGapPercent?: number | null
+  renderedComparison?: {
+    status: 'match' | 'gap' | 'severe-gap' | 'unknown'
+  }
+  engineVersion: string
+  schemaVersion: string
+}
+
+export type ScanResultSchemaValidationResult =
+  | {
+    valid: true
+    result: ScanResult
   }
   | {
     valid: false
@@ -187,6 +242,11 @@ export const graphSchema = {
               content_chars_mode: { enum: ['exact', 'max'] },
               summary_method: { enum: ['manual', 'truncate', 'llm'] },
               language: { type: 'string', minLength: 1 },
+              content_sha256: {
+                type: 'string',
+                pattern: '^[a-fA-F0-9]{64}$',
+              },
+              content_version: {},
             },
           },
           meta: {
@@ -202,6 +262,21 @@ export const graphSchema = {
               },
             },
           },
+          relations: {
+            type: 'object',
+            additionalProperties: true,
+            properties: {
+              parent: { type: ['string', 'null'] },
+              children: {
+                type: 'array',
+                items: { type: 'string', minLength: 1 },
+              },
+              related: {
+                type: 'array',
+                items: { type: 'string', minLength: 1 },
+              },
+            },
+          },
         },
       },
     },
@@ -210,6 +285,7 @@ export const graphSchema = {
 
 let cachedManifestValidator: ValidateFunction<IndexAiManifest> | null = null
 let cachedGraphValidator: ValidateFunction<AiGraph> | null = null
+let cachedScanResultValidator: ValidateFunction<ScanResult> | null = null
 
 export function validateManifestSchema(input: unknown): ManifestSchemaValidationResult {
   const validate = getManifestValidator()
@@ -243,18 +319,49 @@ export function validateGraphSchema(input: unknown): GraphSchemaValidationResult
   }
 }
 
+export function validateScanResult(payload: unknown): ScanResultSchemaValidationResult {
+  const validate = getScanResultValidator()
+
+  if (validate(payload)) {
+    return {
+      valid: true,
+      result: payload,
+    }
+  }
+
+  return {
+    valid: false,
+    // Unlike the manifest/graph readers, the scanner CLI needs the exact
+    // missing field on required-field errors (e.g. `/score`), not just the
+    // parent object path, so callers can point users at the field directly.
+    errors: formatAjvErrors(validate.errors, { appendMissingPropertyToRequiredPath: true }),
+  }
+}
+
 export function formatAjvErrors(
   errors: readonly ErrorObject[] | null | undefined,
+  options?: { appendMissingPropertyToRequiredPath?: boolean },
 ): SchemaValidationError[] {
   return (errors ?? []).map((error) => {
     const message = error.message ?? `Schema validation failed for ${error.keyword}.`
+    const missingProperty =
+      options?.appendMissingPropertyToRequiredPath && error.keyword === 'required'
+        ? readMissingProperty(error)
+        : null
 
     return {
-      path: error.instancePath || '/',
+      path: missingProperty ? `${error.instancePath}/${missingProperty}` : error.instancePath || '/',
       keyword: error.keyword,
       message,
     }
   })
+}
+
+function readMissingProperty(error: ErrorObject): string | null {
+  const params = error.params as { missingProperty?: unknown } | undefined
+  const missingProperty = params?.missingProperty
+
+  return typeof missingProperty === 'string' ? missingProperty : null
 }
 
 function getManifestValidator(): ValidateFunction<IndexAiManifest> {
@@ -269,12 +376,22 @@ function getGraphValidator(): ValidateFunction<AiGraph> {
   return cachedGraphValidator
 }
 
+function getScanResultValidator(): ValidateFunction<ScanResult> {
+  cachedScanResultValidator ??= createScanResultValidator()
+
+  return cachedScanResultValidator
+}
+
 function createManifestValidator(): ValidateFunction<IndexAiManifest> {
   return createValidator().compile<IndexAiManifest>(manifestSchema)
 }
 
 function createGraphValidator(): ValidateFunction<AiGraph> {
   return createValidator().compile<AiGraph>(graphSchema)
+}
+
+function createScanResultValidator(): ValidateFunction<ScanResult> {
+  return createValidator().compile<ScanResult>(scanResultJsonSchema)
 }
 
 function createValidator(): Ajv {

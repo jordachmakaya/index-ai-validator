@@ -4,6 +4,7 @@ import { validateGraph } from './checks/graph'
 import { validateManifest } from './checks/manifest'
 import { validateSecurity } from './checks/security'
 import type {
+  AiGraphNode,
   ConformanceLevel,
   ValidationCheck,
   ValidationMetrics,
@@ -11,6 +12,38 @@ import type {
   ValidationSummary,
   ValidatorOptions,
 } from './types'
+
+/**
+ * One node's declared `content_version` label, surfaced in `--json` output
+ * (T5.30, gap flagged by T5.27's reviewer). `checks/graph.ts` only ever
+ * emits a check when `content_version` is present but NOT a string
+ * (`CHECK.L2A_CONTENT_VERSION_TYPE`, a warn) — a *valid* string
+ * `content_version` never produced any check at all, so it never reached the
+ * result object. This type/field is additive-only (see
+ * `MetricsWithContentVersions` below); it does not change
+ * `ValidationMetrics` itself (out of this job's allowed-files scope — see
+ * the coder report).
+ */
+type ContentVersionEntry = {
+  readonly node_id: string
+  readonly content_version: string
+}
+
+/**
+ * `ValidationMetrics` widened with an optional `content_versions` list.
+ * Deliberately a local intersection type, not an edit to `types.ts`
+ * (`ValidationMetrics`'s own module, out of this job's allowed-files scope):
+ * assigning a `MetricsWithContentVersions` value into a `ValidationResult`'s
+ * `metrics: ValidationMetrics` field is structurally sound (every
+ * `ValidationMetrics` property is present) and — because the value is a
+ * variable, not a fresh object literal, at the assignment site — TypeScript
+ * does not excess-property-check it away. The extra field still serializes
+ * through `JSON.stringify`, which is what actually "relays" it to `--json`
+ * output.
+ */
+type MetricsWithContentVersions = ValidationMetrics & {
+  readonly content_versions?: readonly ContentVersionEntry[]
+}
 
 export async function validateIndexAi(options: ValidatorOptions): Promise<ValidationResult> {
   const startedAt = Date.now()
@@ -32,6 +65,10 @@ export async function validateIndexAi(options: ValidatorOptions): Promise<Valida
   const summary = summarizeChecks(checks)
   const metrics = createMetrics(checks, graphResult?.graph?.nodes?.length ?? 0)
   const conformance = getConformance(metrics, checks)
+  const contentVersions = collectContentVersions(graphResult?.graph?.nodes ?? [])
+  const metricsWithContentVersions: MetricsWithContentVersions = contentVersions.length > 0
+    ? { ...metrics, content_versions: contentVersions }
+    : metrics
 
   return {
     schema_version: SCHEMA_VERSION,
@@ -41,9 +78,30 @@ export async function validateIndexAi(options: ValidatorOptions): Promise<Valida
     conformance,
     passed: isPassed(checks, options),
     summary,
-    metrics,
+    metrics: metricsWithContentVersions,
     checks,
   }
+}
+
+/**
+ * Collects `{ node_id, content_version }` for every graph node whose
+ * `content.content_version` is a valid (non-empty) string — the "should
+ * relay" half of the content_version contract; the "should warn when not a
+ * string" half already lives in `checks/graph.ts`'s
+ * `createContentVersionCheck`.
+ */
+function collectContentVersions(nodes: readonly AiGraphNode[]): ContentVersionEntry[] {
+  const entries: ContentVersionEntry[] = []
+
+  for (const node of nodes) {
+    const version = node.content?.content_version
+
+    if (typeof version === 'string' && version.length > 0 && node.id !== undefined) {
+      entries.push({ node_id: node.id, content_version: version })
+    }
+  }
+
+  return entries
 }
 
 function summarizeChecks(checks: readonly ValidationCheck[]): ValidationSummary {
@@ -98,8 +156,7 @@ function getConformance(
   metrics: ValidationMetrics,
   checks: readonly ValidationCheck[],
 ): ConformanceLevel {
-  if (
-    metrics.manifest_found
+  const isLevel2a = metrics.manifest_found
     && metrics.manifest_schema_valid
     && metrics.agent_index_found
     && metrics.agent_index_schema_valid
@@ -107,8 +164,19 @@ function getConformance(
     && metrics.nodes_with_llm_url === metrics.total_nodes
     && metrics.valid_clean_endpoints === metrics.total_nodes
     && metrics.valid_content_chars === metrics.total_nodes
-    && !hasMustFailure(checks)
-  ) {
+    && !hasNonLevel2bMustFailure(checks)
+
+  if (isLevel2a) {
+    // T5.30 (ADR_007 D3): Level 2b (Agent Graph) checks — `L2B_GRAPH_*`,
+    // shipped by T5.29's `validateGraphRelations` — only run at all when at
+    // least one node declares `relations` (checks/graph.ts). A pure Level 2a
+    // graph with no declared relations emits zero `L2B_*` checks, so
+    // "level-2b" is only reported when those checks actually ran AND all
+    // passed — never inferred from their mere absence.
+    if (hasLevel2bChecks(checks) && !hasLevel2bMustFailure(checks)) {
+      return 'level-2b'
+    }
+
     return 'level-2a'
   }
 
@@ -169,13 +237,32 @@ function percentage(numerator: number, denominator: number): number {
   return Math.round((numerator / denominator) * 100)
 }
 
-function hasMustFailure(checks: readonly ValidationCheck[]): boolean {
-  return checks.some((check) => check.requirement === 'must' && check.severity === 'fail')
+// T5.30 (Reviewer BLOCK finding 1): scoped sibling of the removed
+// `hasMustFailure`. Level 2b is a separate, higher tier layered on top of
+// Level 2a — a failing `L2B_GRAPH_*` `must` check must never demote an
+// otherwise-valid Level 2a result. `hasLevel2bMustFailure` (below) already
+// handles the L2b-specific gate; this scans everything else.
+function hasNonLevel2bMustFailure(checks: readonly ValidationCheck[]): boolean {
+  return checks.some((check) =>
+    !check.code.startsWith('L2B_')
+    && check.requirement === 'must'
+    && check.severity === 'fail')
 }
 
 function hasLevelOneMustFailure(checks: readonly ValidationCheck[]): boolean {
   return checks.some((check) =>
     check.code.startsWith('L1_')
+    && check.requirement === 'must'
+    && check.severity === 'fail')
+}
+
+function hasLevel2bChecks(checks: readonly ValidationCheck[]): boolean {
+  return checks.some((check) => check.code.startsWith('L2B_'))
+}
+
+function hasLevel2bMustFailure(checks: readonly ValidationCheck[]): boolean {
+  return checks.some((check) =>
+    check.code.startsWith('L2B_')
     && check.requirement === 'must'
     && check.severity === 'fail')
 }

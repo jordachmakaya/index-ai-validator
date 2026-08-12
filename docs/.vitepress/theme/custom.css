@@ -116,6 +116,54 @@
   border-radius: 8px;
 }
 
+/* Content images on regular guide pages (not the homepage, see .VPHome img
+   below): breathing room above and below so they don't crowd surrounding
+   prose. */
+.vp-doc img {
+  margin: 32px 0;
+}
+
+/* Mermaid diagrams: same breathing room as .vp-doc img above, so a diagram
+   gets consistent spacing from surrounding prose without hand-placed <br>
+   tags in the Markdown source. */
+.vp-doc .mermaid {
+  margin: 32px 0;
+}
+
+/* Audio explainer, rendered as a static-image video so it reads as playable
+   media rather than a plain <audio> tag easily missed on the page. */
+.audio-explainer {
+  margin: 32px 0;
+}
+
+.audio-explainer-caption {
+  margin-top: 10px;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Illustrative-only badge under a screenshot/explainer whose visuals are a
+   simplified example, not a literal spec/schema reference. */
+.illustration-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -20px 0 28px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--vp-c-bg-soft);
+  border: 1px solid var(--vp-c-border);
+  color: var(--vp-c-text-2);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.illustration-note svg {
+  flex-shrink: 0;
+  color: var(--vp-c-brand-1);
+}
+
 /* Explainer image on the home page: framed, full-width band */
 .VPHome img {
   width: 100%;

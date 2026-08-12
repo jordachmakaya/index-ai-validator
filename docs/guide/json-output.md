@@ -18,7 +18,11 @@ When `--json` is used:
 
 ## Top-level contract
 
-The JSON result is the `ValidationResult` shape returned by `validateIndexAi()`.
+The JSON result is the `ValidationResult` shape returned by `validateIndexAi()`,
+plus five level-aware fields the CLI adds for `--json` output (see
+[Target level fields](#target-level-fields) below). `ValidationResult` itself
+is unchanged by `--target-level` — the five extra fields are additive
+CLI-output composition, not a new field on the validator's own result type.
 
 Top-level fields:
 
@@ -33,6 +37,11 @@ Top-level fields:
 | `summary` | Counts of pass, warn, fail, and total checks. |
 | `metrics` | Implemented counters for manifest, Agent Index, endpoint, and coverage behavior. |
 | `checks` | Detailed validation checks with stable codes and severities. |
+| `requested_level` | The `--target-level` value used (`l1` or `l2a`). |
+| `tested_levels` | Every level actually reached by the cascade, in order (`l1`, then `l2a` if requested). |
+| `achieved_level` | The highest level reached with zero failures, or `"none"`. |
+| `failed_level` | The first tested level with a blocking failure, or `null` if none. |
+| `level_results` | Per-level breakdown — see [Target level fields](#target-level-fields). |
 
 ## Example
 
@@ -93,9 +102,45 @@ Top-level fields:
 }
 ```
 
-The `metrics` object above is complete. The `checks` array is shortened to two
+>[!note]
+>The `metrics` object above is complete. The `checks` array is shortened to two
 representative entries — a real result lists every generated check. In this
 passing example the summary totals 59 checks.
+
+## Target level fields
+
+Real output, `index-ai https://example.com --target-level l2a --json` against
+a site with no manifest — Level 1 fails, so Level 2a is cascade-skipped rather
+than reported as a second failure:
+
+```json
+{
+  "requested_level": "l2a",
+  "tested_levels": ["l1", "l2a"],
+  "achieved_level": "none",
+  "failed_level": "l1",
+  "level_results": {
+    "l1": {
+      "label": "Level 1",
+      "status": "tested",
+      "pass": 0,
+      "warn": 5,
+      "fail": 1
+    },
+    "l2a": {
+      "label": "Level 2a",
+      "status": "skipped",
+      "reason": "Level 1 failed"
+    }
+  }
+}
+```
+
+`level_results` only has a key for each level actually reached by the cascade —
+`--target-level l1` produces a `level_results` with only an `l1` key, never an
+`l2a` entry for a level that was never targeted. A `"tested"` entry always has
+`pass`/`warn`/`fail` counts; a `"skipped"` entry always has a `reason` instead,
+and never carries pass/warn/fail counts of its own — a skipped level never ran.
 
 ## Reading the result quickly
 

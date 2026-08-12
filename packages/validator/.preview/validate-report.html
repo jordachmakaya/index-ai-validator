@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Validate Direction R3 — Split-Verdict (Conformance Ladder)</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--bg:#010102;--s1:#0f1011;--s2:#141516;--line:#23252a;
+--text:#e6e7ea;--muted:#8a8f98;--dim:#6b7280;--blue:#3B82F6;--violet:#8B5CF6;
+--pass:#10B981;--warn:#F59E0B;--fail:#EF4444;
+--sans:'Inter',system-ui,sans-serif;--head:'Outfit',var(--sans);--mono:'JetBrains Mono',monospace}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font:14px/1.6 var(--sans)}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.logo{font:700 13px var(--head);letter-spacing:-.02em}.logo i{font-style:normal;color:var(--dim)}
+.pill{color:var(--muted);background:var(--s1);border:1px solid var(--line);border-radius:9999px;padding:3px 8px;font:600 11px var(--mono)}
+.vband{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:30px 0 22px}
+.vword{font:700 64px/1 var(--head);letter-spacing:-.04em;color:var(--fail)}
+.vword.pass{color:var(--pass)}
+.vtxt h1{font:600 21px/1.2 var(--head);letter-spacing:-.02em}
+.vtxt p{color:var(--muted);font-size:13px;margin-top:4px}
+.vtxt p b{color:var(--blue);font-weight:500;font-family:var(--mono);font-size:12px}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
+.rung{background:var(--s1);padding:16px;position:relative}
+.rung .lv{font:700 13px var(--mono);margin-bottom:4px}
+.rung .nm{font:600 13px var(--head)}
+.rung .ds{color:var(--dim);font-size:11px;margin-top:4px}
+.rung.done{background:linear-gradient(180deg,rgba(16,185,129,.07),transparent)}
+.rung.done .lv{color:var(--pass)}
+.rung.here{background:linear-gradient(180deg,rgba(245,158,11,.09),transparent);outline:1px solid rgba(245,158,11,.4);outline-offset:-1px}
+.rung.here .lv{color:var(--warn)}
+.rung.crown{background:linear-gradient(180deg,rgba(16,185,129,.12),transparent);outline:1px solid rgba(16,185,129,.45);outline-offset:-1px}
+.rung.crown .lv{color:var(--pass)}
+.rung.next .lv{color:var(--dim)}
+.rung.next .nm,.rung.next .ds{color:var(--dim)}
+.rung .mark{position:absolute;top:12px;right:12px;font:700 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;border-radius:9999px;padding:2px 8px}
+.rung.done .mark,.rung.crown .mark{color:var(--pass);background:rgba(16,185,129,.1)}
+.rung.here .mark{color:var(--warn);background:rgba(245,158,11,.1)}
+.rung.next .mark{color:var(--violet);background:rgba(139,92,246,.1)}
+.ladder-cap{color:var(--dim);font-size:12px;margin-bottom:28px}
+.ladder-cap b{color:var(--warn)}
+.earn{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:18px 20px;background:linear-gradient(90deg,rgba(16,185,129,.06),transparent 55%),var(--s1);border:1px solid rgba(16,185,129,.35);border-radius:12px;margin-bottom:28px}
+.earn-badge{display:inline-flex;align-items:center;gap:10px;background:var(--s2);border:1px solid var(--line);border-radius:8px;padding:8px 14px 8px 10px;flex:none}
+.earn-badge .txt b{font:600 12.5px var(--head);display:block}
+.earn-badge .txt span{color:var(--dim);font:11px var(--mono)}
+.earn .t{font:600 14px var(--head)}
+.earn .d{color:var(--muted);font-size:12px;margin-top:3px;max-width:480px}
+.earn .lnk{margin-left:auto;color:var(--pass);font-size:12px;font-weight:600;white-space:nowrap}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-bottom:8px}
+.sec-h{display:flex;gap:10px;align-items:center;padding-bottom:9px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.sec-h h2{font:700 13px var(--head)}
+.cnt{border-radius:9999px;padding:2px 8px;font:700 11px var(--mono)}
+.cnt.f{color:var(--fail);background:rgba(239,68,68,.08)}.cnt.w{color:var(--warn);background:rgba(245,158,11,.08)}.cnt.p{color:var(--pass);background:rgba(16,185,129,.08)}
+.chk{background:var(--s1);border:1px solid var(--line);border-left-width:3px;border-radius:8px;padding:13px 16px;margin-bottom:8px}
+.chk.f{border-left-color:var(--fail)}.chk.w{border-left-color:var(--warn)}
+.chk .hd{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:5px}
+.code{font:700 12px var(--mono)}
+.req{color:var(--dim);font:11px var(--mono)}
+.bdg{margin-left:auto;border-radius:9999px;padding:2px 9px;font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.bdg.f{color:var(--fail);background:rgba(239,68,68,.08)}.bdg.w{color:var(--warn);background:rgba(245,158,11,.08)}
+.chk .msg{font-size:13px}
+.fix{display:flex;gap:8px;font-size:12px;color:var(--muted);background:var(--s2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;margin-top:8px}
+.fix b{color:var(--text)}
+.evid{background:var(--s2);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font:11px/1.6 var(--mono);color:var(--muted);white-space:pre-wrap;margin-top:8px}
+.gstat{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.gstat:last-child{border-bottom:none}
+.gstat .k{color:var(--muted)}
+.gstat .n{font:700 15px var(--mono)}.gstat .n.p{color:var(--pass)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:26px}
+.pitem{display:flex;align-items:center;gap:10px;background:var(--s1);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.pitem svg{flex:none}
+.pitem .c{font:700 11px var(--mono)}
+.pitem .m{color:var(--dim);font-size:11px}
+.pitem.l2b{border-color:rgba(16,185,129,.3)}
+.agent-cta{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:14px 18px;background:var(--s1);border:1px solid rgba(139,92,246,.4);border-radius:10px;margin-bottom:26px;animation:agentCtaPulse 2.6s ease-in-out infinite}
+.agent-cta .tagv{flex:none;color:var(--violet);background:rgba(139,92,246,.12);border-radius:9999px;padding:3px 10px;font:700 11px var(--mono)}
+.agent-cta .t{font:600 13px var(--head)}
+.agent-cta .d{color:var(--muted);font-size:12px;margin-top:2px;max-width:520px}
+.agent-cta .lnk{margin-left:auto;color:var(--violet);font-size:12px;font-weight:600;white-space:nowrap}
+@keyframes agentCtaPulse{
+ 0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,.35)}
+ 50%{box-shadow:0 0 0 4px rgba(139,92,246,0)}
+}
+@media (prefers-reduced-motion:reduce){.agent-cta{animation:none}}
+.foot{display:flex;justify-content:space-between;gap:24px;padding:22px 0 30px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.foot b{color:var(--text)}
+.rationale{max-width:1080px;margin:0 auto;padding:24px;color:var(--muted);font-size:13px;line-height:1.6;border-top:2px dashed var(--line)}
+.rationale h2{font:600 16px var(--head);color:var(--text);margin-bottom:8px}
+
+.fixprompt{margin-bottom:26px;padding:20px 22px;background:linear-gradient(90deg,rgba(16,185,129,.07),transparent 60%),var(--s1);border:1px solid rgba(16,185,129,.35);border-radius:12px}
+.fixprompt h2{font:600 15px var(--head);margin-bottom:6px}
+.fixprompt-tag{color:var(--pass);font:700 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+.fixprompt-copy{color:var(--muted);font-size:13px;max-width:640px;margin-bottom:14px}
+.fixprompt-copy code{color:var(--pass);font:600 12px var(--mono)}
+.fixprompt-btn{appearance:none;cursor:pointer;background:var(--pass);color:#04110c;border:none;border-radius:6px;padding:10px 18px;font:700 13px var(--head)}
+.fixprompt-btn:hover{filter:brightness(1.08)}
+
+@media print{
+ :root{color-scheme:light}
+ body{background:#fff;color:#16181d}
+ .ladder{background:#d9dce1;border-color:#d9dce1}
+ .rung,.chk,.pitem,.agent-cta,.earn,.earn-badge,.fixprompt{background:#fff;border-color:#d9dce1}
+ .agent-cta{animation:none}
+ .fix,.evid{background:#fff}
+ .rationale{display:none}
+}
+@media (max-width:820px){.ladder{grid-template-columns:repeat(2,1fr)}.duo{grid-template-columns:1fr}.vword{font-size:52px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div style="display:flex;gap:10px;align-items:center"><span class="logo">index-ai<i>/</i>validator</span><span class="pill">v0.2.0</span></div>
+    <div style="color:var(--muted);font-size:12px"><a href="https://jordach.dev/projects/index-ai" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">index-ai standard</a> <span style="color:var(--dim)">/</span> <a href="https://github.com/jordachmakaya/index-ai-validator" style="color:var(--muted)" target="_blank" rel="noopener noreferrer">GitHub</a></div>
+  </div>
+
+  <div class="vband">
+    <span class="vword fail">FAILED</span>
+    <div class="vtxt">
+      <h1>2 MUST checks block the Passed verdict</h1>
+      <p>index-ai conformance validation · <b>https://example.com</b> · 2026-07-04 · readiness 60%</p>
+    </div>
+  </div>
+
+  <div class="ladder"><div class="rung done"><span class="mark">reached</span><div class="lv">L1</div><div class="nm">AI Manifest</div><div class="ds">Identity, freshness, policy</div></div><div class="rung here"><span class="mark">blocked here</span><div class="lv">L2a</div><div class="nm">Agent Index</div><div class="ds">Nodes, clean endpoints, measured size</div></div><div class="rung next"><div class="lv">L2b</div><div class="nm">Agent Graph</div><div class="ds">Typed relations, valid DAG</div></div><div class="rung next"><div class="lv">L3</div><div class="nm">Query Interface</div><div class="ds">MCP server</div></div></div>
+  <p class="ladder-cap">The conformance ladder. This site reaches L1 and enters L2a — <b>2 failures below</b> keep it from clearing the rung.</p>
+
+  <div class="duo">
+    <section>
+      <div class="sec-h"><h2>Failures</h2><span class="cnt f">2</span></div>
+      <div class="chk f">
+        <div class="hd"><span class="code">L2A_CLEAN_ENDPOINT_HTML_LEAK</span><span class="req">must</span><span class="bdg f">fail</span></div>
+        <p class="msg">A clean endpoint returned HTML markup instead of plain content.</p>
+        <div class="fix"><span>→</span><span><b>Fix:</b> Strip HTML tags and navigation chrome from the clean endpoint response.</span></div>
+        <pre class="evid">{
+  &quot;nodeId&quot;: &quot;blog-announcing-v2&quot;,
+  &quot;type&quot;: &quot;page&quot;
+}</pre>
+      </div>
+      <div class="chk f">
+        <div class="hd"><span class="code">L2A_NODE_LLM_URL_REQUIRED</span><span class="req">must</span><span class="bdg f">fail</span></div>
+        <p class="msg">Node is missing a required llm_url.</p>
+        <div class="fix"><span>→</span><span><b>Fix:</b> Add an llm_url pointing to a clean, markup-free version of this page.</span></div>
+        <pre class="evid">{
+  &quot;nodeId&quot;: &quot;pricing-page&quot;,
+  &quot;type&quot;: &quot;page&quot;
+}</pre>
+      </div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Warnings</h2><span class="cnt w">2</span></div>
+      <div class="chk w">
+        <div class="hd"><span class="code">L2A_NODE_LLM_URL_COVERAGE</span><span class="req">should</span><span class="bdg w">warn</span></div>
+        <p class="msg">Only 71% of nodes expose a clean llm_url endpoint.</p>
+        <div class="fix"><span>→</span><span><b>Fix:</b> Add an llm_url field to the remaining Agent Index nodes so agents can fetch clean content.</span></div>
+        
+      </div>
+      <div class="chk w">
+        <div class="hd"><span class="code">L2A_NODE_CONTENT_CHARS_COVERAGE</span><span class="req">should</span><span class="bdg w">warn</span></div>
+        <p class="msg">Only 67% of nodes report content_chars.</p>
+        <div class="fix"><span>→</span><span><b>Fix:</b> Report content_chars on every node so agents can budget context before fetching.</span></div>
+        
+      </div>
+    </section>
+  </div>
+
+  <section style="margin-bottom:4px">
+    <div class="sec-h"><h2>Passed</h2><span class="cnt p">6</span></div>
+    <div class="pgrid"><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L1_MANIFEST_FOUND</div><div class="m">AI Manifest was successfully discovered.</div></div></div><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L1_MANIFEST_SCHEMA_VALID</div><div class="m">Manifest schema validation succeeded.</div></div></div><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L2A_AGENT_INDEX_FOUND</div><div class="m">Agent Index was successfully discovered.</div></div></div><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L1_FRESHNESS_VALID_UNTIL</div><div class="m">Manifest freshness window is within bounds.</div></div></div><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L2A_SECRET_SCAN</div><div class="m">No secrets detected in clean endpoint responses.</div></div></div><div class="pitem"><svg width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="#10B981" stroke-width="1.6"/><path d="M5 8.2 L7 10.2 L11 5.8" fill="none" stroke="#10B981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div><div class="c">L2A_NODE_LANGUAGE_HEURISTIC</div><div class="m">Declared node languages are consistent with page content.</div></div></div></div>
+  </section>
+
+  <div class="fixprompt">
+    <h2>AI Fix Prompt</h2>
+    <p class="fixprompt-tag">Fix failures automatically with an AI Agent</p>
+    <p class="fixprompt-copy">We provide a pre-configured prompt that you can feed to your coding agent (Claude Code, Cursor, Windsurf, etc.) to automatically resolve the failures found in this validation. Copy the prompt to fix: <code>L2A_CLEAN_ENDPOINT_HTML_LEAK</code>.</p>
+    <button type="button" id="copy-fix-prompt" class="fixprompt-btn" data-prompt="You are an expert AI coder. Use the index-ai validator diagnosis below to fix the blocking conformance issue, then re-run the validator to confirm.
+
+Diagnosis:
+{
+  &quot;id&quot;: &quot;L2A_CLEAN_ENDPOINT_HTML_LEAK&quot;
+}
+
+Generate /agent-index.json declaring your content nodes. Each node needs an llm_url pointing at a clean text/markdown or text/plain endpoint and a measured content_chars value, then declare access.agent_index in your manifest and re-run the validator." data-event="fix_prompt_copied">Copy Prompt</button>
+  </div>
+
+  <div class="agent-cta">
+    <span class="tagv">Next rung · L2b</span>
+    <div>
+      <div class="t">Clear the failures, then aim for the Agent Graph</div>
+      <div class="d">Typed relations between nodes let agents traverse your content without parsing HTML anchors.</div>
+    </div>
+    <a class="lnk" href="https://agent-view.com" target="_blank" rel="noopener noreferrer">Learn about the agent layer →</a>
+  </div>
+
+  <footer class="foot">
+    <div>
+      <p>Generated by <b>@hardmachinelabs/index-ai-validator</b> — local conformance check.</p>
+      <p>Deterministic diagnostic. Not legal compliance, certification, traffic or ranking guarantee, security audit.</p>
+    </div>
+    <div>cli v0.2.0</div>
+  </footer>
+</div>
+<div class="rationale">
+  <h2>R3v — Split-Verdict · validate (rationale)</h2>
+  <p>Compagnon validate de R3. Le split humain/agent n'a pas de sens en validation locale — l'équivalent narratif est <b>l'échelle de conformance</b> (L1 → L2a → L2b → L3) avec la position du site et le barreau bloquant : le rapport raconte OÙ on est sur le standard et POURQUOI on n'avance pas. Failures/warnings en deux colonnes denses, passed en grille compacte, CTA « next rung » qui transforme la validation en progression. C'est la direction qui vend la spec elle-même.</p>
+</div>
+<script>
+document.getElementById('copy-fix-prompt')?.addEventListener('click', function(e) {
+  e.preventDefault();
+  const promptText = this.getAttribute('data-prompt');
+  if (promptText) {
+    navigator.clipboard.writeText(promptText).then(() => {
+      window.dispatchEvent(new CustomEvent('fix_prompt_copied', { bubbles: true }));
+      console.log('Event emitted: fix_prompt_copied');
+      const originalText = this.innerText;
+      this.innerText = 'Copied';
+      this.style.color = '#10B981';
+      setTimeout(() => {
+        this.innerText = originalText;
+        this.style.color = '';
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy prompt: ', err);
+    });
+  }
+});
+</script>
+</body>
+</html>

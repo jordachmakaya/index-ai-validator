@@ -15,11 +15,48 @@ const config = withMermaid(
       optimizeDeps: {
         include: ['mermaid'],
       },
+      assetsInclude: ['**/*.PNG'],
+    },
+    // Mermaid ships a generic grey default theme. These values mirror the
+    // brand tokens in theme/custom.css (--vp-c-bg-soft, --vp-c-border,
+    // --vp-c-text-1, --vp-c-text-3) so flowcharts read as part of the same
+    // amber/navy product, not a library default. Keep in sync with that file.
+    mermaid: {
+      theme: 'base',
+      // Default node/label padding (15) and rankSpacing (50) pack decision
+      // branches (e.g. security.md's finding -> none/secret-shaped
+      // value/private infra reference) too tightly against each other and
+      // against the connecting lines. rankSpacing is the vertical gap
+      // between ranks, which only grows the diagram's height (the page
+      // scrolls, so this is "free"). nodeSpacing is horizontal and grows
+      // the diagram's width, which VitePress then scales down to fit the
+      // content column if pushed too far — kept close to the 50 default for
+      // that reason, with rankSpacing and padding doing most of the work.
+      flowchart: {
+        nodeSpacing: 55,
+        rankSpacing: 95,
+        padding: 22,
+      },
+      themeVariables: {
+        primaryColor: '#0d1320',
+        primaryBorderColor: '#5f6e85',
+        primaryTextColor: '#e8edf5',
+        lineColor: '#5f6e85',
+        textColor: '#e8edf5',
+        mainBkg: '#0d1320',
+        nodeBorder: '#5f6e85',
+        clusterBkg: '#0d1320',
+        clusterBorder: '#1e2d44',
+        edgeLabelBackground: '#0d1320',
+        fontFamily:
+          'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif',
+      },
     },
     themeConfig: {
       nav: [
         { text: 'Guide', link: '/guide/getting-started' },
         { text: 'CLI', link: '/guide/cli' },
+        { text: 'HTML Report', link: '/guide/html-report' },
         { text: 'Scope', link: '/guide/scope' },
         { text: 'About', link: '/about' },
       ],
@@ -42,6 +79,7 @@ const config = withMermaid(
             { text: 'Fix Your Report', link: '/guide/fix-your-report' },
             { text: 'Conformance vs Passed', link: '/guide/conformance-vs-passed' },
             { text: 'JSON Output', link: '/guide/json-output' },
+            { text: 'HTML Report', link: '/guide/html-report' },
             { text: 'CI', link: '/guide/ci' },
           ],
         },
@@ -50,6 +88,7 @@ const config = withMermaid(
           items: [
             { text: 'Level 1 Manifest', link: '/guide/level-1-manifest' },
             { text: 'Level 2a Agent Index', link: '/guide/level-2a-agent-index' },
+            { text: 'Level 2b Agent Graph', link: '/guide/level-2b-agent-graph' },
             { text: 'content_chars', link: '/guide/content-chars' },
             { text: 'Security', link: '/guide/security' },
             { text: 'Discovery', link: '/guide/discovery' },

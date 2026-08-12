@@ -1,13 +1,34 @@
-import type { ValidationCheck, ValidationResult } from '../types'
+/**
+ * @filemeta
+ * type: utility
+ * title: Human-readable validation report formatter
+ * description: Renders a ValidationResult as a plain-text CLI report, including a grouped-by-level cascade block driven by computeLevelResults.
+ * job_ref: T5.12_fix-level-label-casing
+ * functions: [formatHumanResult]
+ * classes: []
+ * inputs: [ValidationResult, HumanFormatOptions]
+ * outputs: [plain-text human validation report]
+ * relations:
+ *   - imports: packages/validator/src/utils/target-level.ts
+ *   - used_by: packages/validator/src/cli.ts
+ *   - tested_by: packages/validator/src/utils/format.test.ts
+ * last_update: 2026-07-06
+ */
+
+import type { LevelResult, TargetLevel, ValidationCheck, ValidationResult } from '../types'
+import { computeLevelResults, LEVEL_LABEL } from './target-level'
 
 type HumanFormatOptions = {
   readonly verbose: boolean
+  readonly targetLevel: TargetLevel
 }
 
 export function formatHumanResult(
   result: ValidationResult,
   options: HumanFormatOptions,
 ): string {
+  const levelResults = computeLevelResultsFor(result.checks, options.targetLevel)
+
   const lines = [
     'index-ai validation result',
     '',
@@ -15,6 +36,13 @@ export function formatHumanResult(
     `Duration: ${result.duration_ms} ms`,
     `Conformance: ${result.conformance}`,
     `Passed: ${String(result.passed)}`,
+    '',
+    `Requested target level: ${LEVEL_LABEL[options.targetLevel]}`,
+    `Tested levels: ${levelResults.map((levelResult) => LEVEL_LABEL[levelResult.level]).join(', ')}`,
+    `Achieved level: ${formatAchievedLevel(levelResults)}`,
+    '',
+    'Level results:',
+    ...levelResults.map(formatLevelResultLine),
     '',
     'Summary:',
     `- pass: ${result.summary.pass}`,
@@ -47,6 +75,58 @@ export function formatHumanResult(
   appendNextSection(lines, result)
 
   return lines.join('\n')
+}
+
+/**
+ * Calls `computeLevelResults` with `targetLevel` narrowed to one of its
+ * three overloaded literal signatures via an explicit switch, since a plain
+ * `TargetLevel`-typed argument doesn't match any single overload of a
+ * function overloaded on string literals.
+ */
+function computeLevelResultsFor(
+  checks: ValidationCheck[],
+  targetLevel: TargetLevel,
+): LevelResult[] {
+  switch (targetLevel) {
+    case 'l1':
+      return computeLevelResults(checks, 'l1')
+    case 'l2a':
+      return computeLevelResults(checks, 'l2a')
+    case 'l2b':
+      return computeLevelResults(checks, 'l2b')
+  }
+}
+
+function formatLevelResultLine(levelResult: LevelResult): string {
+  const label = LEVEL_LABEL[levelResult.level]
+
+  if (levelResult.status === 'skipped') {
+    return `- ${label}: skipped (${levelResult.reason})`
+  }
+
+  return `- ${label}: ${levelResult.pass} pass, ${levelResult.warn} warn, ${levelResult.fail} fail`
+}
+
+/**
+ * Walks the cascade from l1 upward and returns the label of the highest
+ * level that was actually tested with zero failures, stopping at the first
+ * level that either was never tested (skipped) or failed itself — mirrors
+ * computeLevelResults' cascade-skip semantics. Returns 'none' if even l1
+ * failed. Ported from cli.ts's T5.6 `deriveAchievedLevel` (now removed
+ * there) so this render has a single source of truth.
+ */
+function formatAchievedLevel(levelResults: readonly LevelResult[]): string {
+  let achieved: TargetLevel | undefined
+
+  for (const levelResult of levelResults) {
+    if (levelResult.status !== 'tested' || levelResult.fail > 0) {
+      break
+    }
+
+    achieved = levelResult.level
+  }
+
+  return achieved === undefined ? 'none' : LEVEL_LABEL[achieved]
 }
 
 function appendCheckSection(

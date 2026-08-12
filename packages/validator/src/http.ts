@@ -1,4 +1,5 @@
 import { isHttpUrl, isLocalhost, isPrivateHostname, resolveUrl } from './utils/url'
+import { PACKAGE_NAME, VERSION } from './constants'
 
 const DEFAULT_ACCEPT_HEADER = 'application/json,text/markdown,text/plain,text/html,*/*'
 const DEFAULT_MAX_REDIRECTS = 3
@@ -131,7 +132,7 @@ async function fetchOnce(url: string, input: FetchTextOptions): Promise<FetchOnc
     const response = await fetch(url, {
       headers: {
         Accept: input.accept ?? DEFAULT_ACCEPT_HEADER,
-        'User-Agent': '@hardmachinelabs/index-ai-validator/0.1',
+        'User-Agent': `${PACKAGE_NAME}/${VERSION}`,
       },
       redirect: 'manual',
       signal: controller.signal,

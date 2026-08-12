@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net'
 import { describe, expect, test } from 'vitest'
 
 import { fetchTextWithPolicy } from './http'
+import { version } from '../package.json'
 
 type TestServer = {
   origin: string
@@ -99,6 +100,28 @@ describe('fetchTextWithPolicy', () => {
     expect(result.ok).toBe(false)
     expect(result.error?.code).toBe('HTTP_PRIVATE_HOST_BLOCKED')
     expect(result.status).toBe(0)
+  })
+
+  test('sends the correct User-Agent header with the package version', async () => {
+    let capturedUserAgent: string | undefined
+    const server = await startServer((request, response) => {
+      capturedUserAgent = request.headers['user-agent']
+      response.writeHead(200, { 'content-type': 'text/plain' })
+      response.end('ok')
+    })
+
+    try {
+      await fetchTextWithPolicy({
+        url: `${server.origin}/ua`,
+        timeoutMs: 1_000,
+        targetHost: 'localhost',
+      })
+
+      expect(capturedUserAgent).toBe(`@hardmachinelabs/index-ai-validator/${version}`)
+    }
+    finally {
+      await server.close()
+    }
   })
 })
 

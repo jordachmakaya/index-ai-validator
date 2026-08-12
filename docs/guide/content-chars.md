@@ -7,8 +7,27 @@ honest.
 `content_chars` is the declared Unicode code point count for a clean `llm_url`
 response.
 
-The validator checks `content_chars` as part of Level 2a Agent Index
+>[!important]
+>The validator checks `content_chars` as part of Level 2a Agent Index
 validation through both `validateIndexAi()` and the `index-ai` CLI.
+
+
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="Why AI agents prioritize content_chars — audio explainer">
+    <source src="/content-chars-explained.mp4" type="video/mp4">
+    Your browser does not support the video tag. Listen to the audio explainer: <a href="/why_AI_agents_prioritize_contentchars.m4a">why_AI_agents_prioritize_contentchars.m4a</a>.
+  </video>
+  <p class="audio-explainer-caption">🔊 Audio explainer — why <code>content_chars</code> matters to AI agents.</p>
+</div>
+
+<div class="illustration-note">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Illustrative example — for visual reference only.</span>
+</div>
 
 ## What is implemented now
 
@@ -88,6 +107,17 @@ flowchart TD
   D --> E["Count code points"]
   E --> F["Compare using exact or max"]
 ```
+
+## Verifying the declaration: content_sha256
+
+A declared `content_chars` count can be right today and wrong tomorrow if the
+served content changes without the declaration being updated. The optional
+`content_sha256` field closes that gap: it is a `sha256` hash of the same
+NFC-normalized text `content_chars` counts, so the validator can confirm the
+content served right now is exactly the content that was declared — not just
+the same length. See
+[content_sha256 and content_version](/guide/level-2a-agent-index#content_sha256-and-content_version-optional)
+for the full rule.
 
 ## Scope
 

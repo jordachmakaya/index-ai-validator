@@ -1,19 +1,87 @@
 # CLI
 
-The package and binary names are different:
+The package name is `@hardmachinelabs/index-ai-validator`. Its CLI binary is
+installed under two equivalent names — either one runs the same executable:
 
 ```txt
 Package: @hardmachinelabs/index-ai-validator
-Binary:  index-ai
+Binary:  index-ai, index-ai-validator
 ```
 
-The `index-ai` binary calls `validateIndexAi()` and returns either a
-human-readable report or stable JSON.
+The `index-ai` binary has two commands for two different jobs:
 
-## Basic command
+- **`validate`** — checks whether an Agent View / `index-ai` implementation is valid.
+- **`scan`** (coming soon) — measures whether a public website is usable by AI agents.
+
+>[!warning]
+>`scan` is not yet publicly available. It depends on the agent-view.com
+>service, which has not launched yet. See [the `scan` reference](#scan)
+>below for updates. `validate` is fully available today.
+
+>[!tip]
+>Once available, `scan` will run the remote Agent View diagnostic. It
+>answers a different question from `validate`: **Can AI agents access,
+>extract, cite, and understand this website?** `scan` returns an
+>**agent-readiness score**, a verdict, prioritized findings, dimension
+>scores, scan analysis signals, and an optional shareable HTML report.
+
+## Default validation mode
+
+>[!note]
+>Default validation mode runs automatically — no command keyword is
+required. `validate <url>` is the same mode with an explicit keyword. Both
+call `validateIndexAi()` and return either a human-readable report or
+stable JSON.
+
+---
+
+### Localhost and private hosts
+
+By default, `validate` protects against private infrastructure exposure.
+
+That means localhost, private IPs, and internal hostnames are treated carefully
+when the validator checks the target URL and `llm_url` endpoints.
+
+For local development, pass:
+
+```bash
+--allow-private-hosts
+```
+
+Example:
+
+```bash
+index-ai validate http://localhost:3000 --allow-private-hosts
+```
+
+Or with the default validation mode:
+
+```bash
+index-ai http://localhost:3000 --allow-private-hosts
+```
+
+With JSON:
+
+```bash
+index-ai validate http://localhost:3000 --allow-private-hosts --json --no-exit-code
+```
+
+Use this mode when:
+
+- testing an Agent View / `index-ai` implementation before deployment;
+- validating a local preview server;
+- checking local `llm_url` endpoints;
+- running trusted internal smoke tests.
+
+> [!caution]
+> Do not use `--allow-private-hosts` for untrusted URLs. For public validation
+> runs, keep the default private-host protection enabled.
+
+### Basic command
 
 ```bash
 index-ai https://example.com
+index-ai validate https://example.com
 ```
 
 When running directly from the package:
@@ -22,13 +90,13 @@ When running directly from the package:
 npx @hardmachinelabs/index-ai-validator https://example.com
 ```
 
-## Full command shape
+### Full command shape
 
 ```bash
-index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts]
+index-ai <url> [--json] [--html [path]] [--verbose] [--strict] [--strict-security] [--fail-on-warn] [--no-exit-code] [--timeout <ms>] [--max-concurrency <n>] [--allow-private-hosts] [--target-level <level>]
 ```
 
-## Options
+### Options
 
 | Option | Required | Default | Description |
 | --- | ---: | --- | --- |
@@ -42,9 +110,10 @@ index-ai <url> [--json] [--html <path>] [--verbose] [--strict] [--strict-securit
 | `--timeout <ms>` | No | `10000` | Request timeout in milliseconds. Must be a positive integer. |
 | `--max-concurrency <n>` | No | `5` | Maximum concurrent clean endpoint checks. Must be a positive integer. |
 | `--allow-private-hosts` | No | `false` | Allows private/local hosts for trusted local development. |
-| `--html <path>` | No | - | Writes a standalone local HTML report to a `.html` file. |
+| `--html [path]` | No | - | Writes a standalone local HTML report to a `.html` file. |
+| `--target-level <level>` | No | `l2a` | Conformance level to validate against: `l1`, `l2a`, or `l2b` — see [Target level](#target-level) below. |
 
-## Examples
+### Examples
 
 ```bash
 index-ai https://example.com
@@ -57,9 +126,75 @@ index-ai https://example.com --no-exit-code
 index-ai https://example.com --timeout 10000
 index-ai https://example.com --max-concurrency 5
 index-ai https://example.com --html report.html
+index-ai https://example.com --target-level l1
 ```
 
-## Human output
+### Target level
+
+Levels are progressive and cumulative: Level 2a includes Level 1, and Level
+2b includes Level 2a. `--target-level` lets you choose how far to validate,
+without changing what each level itself requires.
+
+| Value | Validates |
+| --- | --- |
+| `l1` | Level 1 manifest requirements only. |
+| `l2a` (default) | Level 1 + Level 2a agent index requirements. |
+| `l2b` | Level 1 + Level 2a + Level 2b Agent Graph DAG requirements — see [Level 2b Agent Graph](/guide/level-2b-agent-graph). |
+
+```bash
+index-ai https://example.com --target-level l1
+index-ai https://example.com --target-level l2a
+index-ai https://example.com --target-level l2b
+```
+
+`--target-level l2b` requires at least one graph node to declare a
+`relations` object — a site with no `relations` at all is not Level 2b
+non-conformant, it simply never reaches Level 2b's checks and cascades to
+its real Level 2a result instead. A Level 2b DAG defect (a cycle, a missing
+root, an orphaned reference, or an inconsistent parent/children pair) never
+demotes an already-earned Level 1 or Level 2a result — it only blocks
+Level 2b itself.
+
+**Cascade-skip, not cascade-fail**: if an earlier level has a blocking failure,
+every level after it is reported as `skipped` with the reason, never as a
+second `failed` — a later level was never actually run once an earlier one
+blocked it. The human report gains four fields plus a level-by-level
+breakdown: `Requested target level`, `Tested levels`, `Achieved level`, and
+`Level results`.
+
+Real output, `index-ai https://example.com --target-level l2a` against a site
+with no manifest:
+
+```txt
+index-ai validation result
+
+Target: https://example.com
+Duration: 441 ms
+Conformance: none
+Passed: false
+
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: none
+
+Level results:
+- Level 1: 0 pass, 5 warn, 1 fail
+- Level 2a: skipped (Level 1 failed)
+
+Summary:
+- pass: 0
+- warn: 5
+- fail: 1
+- total: 6
+```
+
+`Achieved level` is derived from the same per-level pass/fail results as
+`Level results`, not from `conformance` — it reflects the highest level
+actually reached with zero failures under the requested target, and reads
+`none` if even Level 1 didn't pass. See [JSON Output](/guide/json-output) for
+the equivalent machine-readable fields.
+
+### Human output
 
 Human output is deterministic and summary-first:
 
@@ -71,11 +206,19 @@ Duration: 42 ms
 Conformance: level-2a
 Passed: true
 
+Requested target level: Level 2a
+Tested levels: Level 1, Level 2a
+Achieved level: Level 2a
+
+Level results:
+- Level 1: 22 pass, 0 warn, 0 fail
+- Level 2a: 37 pass, 0 warn, 0 fail
+
 Summary:
-- pass: 12
+- pass: 59
 - warn: 0
 - fail: 0
-- total: 12
+- total: 59
 
 Metrics:
 - manifest_found: true
@@ -94,7 +237,7 @@ After the summary, the report prints a `Metrics` block, then any `Failures` and
 `Warnings` with check codes and fixes, and a closing `Next` line. Passing checks
 are hidden unless `--verbose` is used.
 
-## JSON output
+### JSON output
 
 ```bash
 index-ai https://example.com --json
@@ -114,26 +257,39 @@ Top-level fields include:
 - `summary`
 - `metrics`
 - `checks`
+- `requested_level`
+- `tested_levels`
+- `achieved_level`
+- `failed_level`
+- `level_results`
+
+See [JSON Output](/guide/json-output) for field meanings and shapes.
 
 Normal validation results keep stderr empty. Usage, configuration, or runtime
 errors before a validation result use stderr.
 
-## HTML report
+### HTML report
 
 ```bash
 index-ai https://example.com --html report.html
 ```
 
-The HTML report is optional and intended for local or shareable human review.
+>[!note]
+>The HTML report is optional and intended for local or shareable human review.
 It is generated from the same validation result as the human and JSON output.
 It does not change validation semantics or exit codes.
 
 HTML reports include a `CI Verdict`, a `Readiness` score, and recommended next
 steps. The readiness score is report-only and does not affect `passed`,
-`conformance`, JSON output, or exit codes.
+`conformance`, JSON output, or exit codes. They also include a level summary
+in the hero section: requested target level, tested levels, achieved level,
+failed level (when a level failed), and a per-level pass/warn/fail (or
+skipped-with-reason) breakdown.
 
-The report path must be non-empty and end with `.html`. Parent directories are
-not created automatically.
+>[!important]
+>The report path must be non-empty and end with `.html`. Parent directories
+are created automatically if missing — the same recursive-create behavior as
+`scan --html` below.
 
 JSON remains the automation format. When used together, stdout stays JSON-only
 and the HTML report is written to the file:
@@ -144,7 +300,7 @@ index-ai https://example.com --json --html report.html
 
 The HTML report is a review aid, not a guarantee — see [Scope](/guide/scope).
 
-## Exit codes
+### Exit codes
 
 | Code | Meaning |
 | ---: | --- |
@@ -156,7 +312,7 @@ The HTML report is a review aid, not a guarantee — see [Scope](/guide/scope).
 `0`. It does not hide usage, configuration, or runtime errors that happen before
 a validation result exists.
 
-## Warning-sensitive modes
+### Warning-sensitive modes
 
 `conformance` is structural. It can be `level-2a` even when `passed` is false.
 
@@ -166,7 +322,7 @@ a validation result exists.
 - `--fail-on-warn` makes any warning fail.
 - `--strict-security` upgrades private infrastructure findings from warn to fail.
 
-## Private hosts
+### Private hosts
 
 Private and local hosts are blocked by default for public validation paths that
 could otherwise probe internal networks.
@@ -177,10 +333,204 @@ Use this only for trusted local or private development:
 index-ai http://localhost:3000 --allow-private-hosts
 ```
 
-Do not use `--allow-private-hosts` as evidence that private endpoints are
+>[!caution]
+>Do not use `--allow-private-hosts` as evidence that private endpoints are
 appropriate for public `index-ai` implementations.
+
+## `scan`
+
+>[!warning]
+>**Coming soon.** `scan` is not yet publicly available. It depends on the
+>agent-view.com service, which has not launched yet. See
+>[the CLI reference](https://jordachmakaya.github.io/index-ai-validator/guide/cli.html#scan)
+>for updates. The rest of this section documents `scan` as it will behave
+>once the service is live.
+
+Use `scan` to run the Agent View scanner: one URL, one score, one shareable
+report showing the gap between what humans see and what bots can extract.
+`scan` calls the remote Agent View scanner service — this package has no
+scanning logic of its own, and the scan result is owned and computed by that
+service, not by this CLI.
+
+### Basic command
+
+```bash
+index-ai scan https://example.com
+```
+
+### Full command shape
+
+```bash
+index-ai scan <url> [--json] [--html [path]] [--api-key <key>] [--timeout <ms>]
+```
+
+### Options
+
+| Option | Required | Default | Description |
+| --- | ---: | --- | --- |
+| `<url>` | Yes | - | Site URL to scan, for example `https://example.com`. |
+| `--json` | No | - | Prints the raw scanner status as JSON on success, or a CLI-authored JSON error object on failure — see [JSON output](#json-output-1) below. |
+| `--html [path]` | No | - | Writes a minimal HTML report. With no path, writes to `.report/scan-report.html`. |
+| `--api-key <key>` | No | - | Reserved for future scanner authentication. It currently has no effect: passing it changes nothing about the request or the result. |
+| `--timeout <ms>` | No | `10000` | Scan request timeout in milliseconds. Must be a positive integer. |
+
+### Examples
+
+```bash
+index-ai scan https://example.com
+index-ai scan https://example.com --json
+index-ai scan https://example.com --html
+index-ai scan https://example.com --html report.html
+index-ai scan https://example.com --json --html
+index-ai scan https://example.com --timeout 20000
+index-ai scan https://example.com --api-key my-key
+```
+
+### Human output
+
+Without `--json`, the CLI prints a compact summary and, on stderr, a link to
+the full audit:
+
+```txt
+URL: https://example.com
+Score: 82
+Verdict: good
+P0: 1
+P1: 1
+P2: 0
+```
+
+The stderr line (printed with or without `--json`) looks like:
+
+```txt
+Scan done — score 82, verdict good. Full audit: https://agent-view.com/audit/...
+```
+
+### JSON output
+
+```bash
+index-ai scan https://example.com --json
+```
+
+On success, `--json` prints the raw scanner status object to stdout, and
+nothing else. Illustrative example — field names and shapes are real, values
+are made up:
+
+```json
+{
+  "scanId": "scan_abc123",
+  "status": "done",
+  "submittedAt": "2026-07-04T00:00:00.000Z",
+  "completedAt": "2026-07-04T00:00:20.000Z",
+  "result": {
+    "url": "https://example.com",
+    "score": 82,
+    "verdict": "good",
+    "dimensions": [
+      { "key": "access", "score": 18, "max": 20 },
+      { "key": "extractability", "score": 20, "max": 25 },
+      { "key": "citability", "score": 15, "max": 20 },
+      { "key": "safety", "score": 20, "max": 20 },
+      { "key": "agent_layer", "score": 9, "max": 15 }
+    ],
+    "findings": [
+      {
+        "id": "SCAN-FIND-012",
+        "severity": "P1",
+        "title": "No Agent Index declared",
+        "detail": "The site does not expose an index-ai Agent Index.",
+        "effort": "medium",
+        "fix_url": "https://jordachmakaya.github.io/index-ai-validator/"
+      }
+    ],
+    "noiseRatio": 0.12,
+    "csrGapPercent": 18.4,
+    "renderedComparison": {
+      "status": "gap"
+    },
+    "engineVersion": "1.4.0",
+    "schemaVersion": "1.0"
+  },
+  "meta": {
+    "links": {
+      "self": "https://agent-view.com/api/v1/scan/scan_abc123",
+      "shareUrl": "https://agent-view.com/s/scan_abc123",
+      "audit": "https://agent-view.com/audit/scan_abc123"
+    }
+  }
+}
+```
+
+`dimensions` always has exactly 5 entries, in this order: `access`,
+`extractability`, `citability`, `safety`, `agent_layer`. `findings` entries
+have `severity` `P0`, `P1`, or `P2`. `csrGapPercent` and `renderedComparison`
+are optional — present when the scanner computed a client-side-rendering
+comparison. Scoring, dimension weights, and finding content are computed and
+owned by the remote scanner service, not by this package, and can change
+independently of this package's version.
+
+On failure, `--json` prints a different, CLI-authored JSON error object to
+stdout instead — never the raw scanner status object:
+
+```json
+{
+  "passed": false,
+  "status": "error",
+  "error_type": "network_error",
+  "message": "Network error while calling \"https://agent-view.com/api/v1/scan\": fetch failed."
+}
+```
+
+Fields: `passed` (always `false`), `status` (always `"error"`), `error_type`
+(a CLI-defined error category — one of `network_error`, `server_error`,
+`invalid_request`, `not_found`, `expired`, `rate_limited`, `timeout_error`,
+`result_schema_error`, `response_shape_error`, `scan_failed`, or
+`unknown_error`), and `message` (a human-readable description of what
+failed, reused on stderr).
+
+### HTML report
+
+```bash
+index-ai scan https://example.com --html
+index-ai scan https://example.com --html report.html
+```
+
+With no path after `--html`, the report is written to
+`.report/scan-report.html` relative to the current working directory, creating
+that directory automatically if it does not exist. With an explicit path, the
+report is written exactly there (its parent directory is also created
+automatically if missing).
+
+The HTML report renders the score, verdict, per-dimension breakdown, and
+findings with fix links where the scanner provides one. A generated example is
+committed at
+[`packages/validator/.preview/scan-report.html`](https://github.com/jordachmakaya/index-ai-validator/blob/main/packages/validator/.preview/scan-report.html)
+in the repository. It carries the same review-aid disclaimer as the Default
+validation mode HTML report — see [Scope](/guide/scope).
+
+### Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| `0` | The scan reached a terminal `done` result and printed it, whatever the score or verdict. Under `--json`, stdout holds the raw scanner status object. |
+| `2` | The scan request failed: a scanner transport error, a server-side scan failure, a poll timeout, or a usage/configuration error. Under `--json`, stdout holds the CLI-authored JSON error object (`{ passed, status, error_type, message }`) described above, not the raw scanner status object. |
+
+Unlike Default validation mode, `scan` has no separate pass/fail exit code for audit
+findings — a low score or `P0` findings still exit `0` (as long as the scan successfully
+completes with a `done` status). Server-side scan failures (`failed` status), poll
+timeouts, or transport errors exit non-zero (`2`).
+
+## Choose the right one
+
+| Feature | Use it for | Output |
+| --- | --- | --- |
+| Default validation mode (`index-ai <url>`) | Check `index-ai` conformance | Manifest checks, Agent Index checks, clean endpoint checks, CI-friendly JSON |
+| `scan <url>` (coming soon) | Diagnose the AI-readability gap | Score, verdict, findings, scanner payload, shareable HTML report |
 
 ## Scope
 
-The CLI validates `index-ai` Level 1 and Level 2a. For the full list of what it
-does and does not check, see [Scope](/guide/scope).
+Default validation mode checks `index-ai` Level 1, Level 2a, and Level 2b.
+`scan` (coming soon) will call the remote Agent View scanner service for a
+broader AI-readiness diagnostic once the agent-view.com service is
+publicly available. For the full list of what each feature does and does
+not check, see [Scope](/guide/scope).

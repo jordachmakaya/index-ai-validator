@@ -1,3 +1,24 @@
+/**
+ * @filemeta
+ * type: type-definition
+ * title: Shared validator types
+ * description: Defines the ValidationResult contract, its supporting types, and the additive TargetLevelResultJson shape used by --json output.
+ * job_ref: T5.8_target-level-json-output
+ * functions: []
+ * classes: []
+ * inputs: []
+ * outputs: [ValidationResult, ValidatorOptions, ValidationCheck, LevelResult, TargetLevelResultJson, AiGraphNodeRelations]
+ * relations:
+ *   - used_by: packages/validator/src/cli.ts
+ *   - used_by: packages/validator/src/validator.ts
+ *   - used_by: packages/validator/src/utils/format.ts
+ *   - used_by: packages/validator/src/utils/target-level.ts
+ *   - used_by: packages/validator/src/checks/graph.ts
+ * last_update: 2026-07-13
+ */
+
+import type { ScanProgressStep } from './client/scanner-client'
+
 export type Severity = 'pass' | 'warn' | 'fail'
 
 export type RequirementKind = 'must' | 'should' | 'heuristic' | 'experimental'
@@ -121,6 +142,12 @@ export type AiGraph = {
   nodes?: AiGraphNode[]
 }
 
+export type AiGraphNodeRelations = {
+  parent?: string | null
+  children?: readonly string[]
+  related?: readonly string[]
+}
+
 export type AiGraphNode = {
   id?: string
   type?: string
@@ -133,10 +160,45 @@ export type AiGraphNode = {
     content_chars_mode?: 'exact' | 'max'
     summary_method?: 'truncate' | 'llm' | 'manual' | string
     language?: string
+    content_sha256?: string
+    content_version?: unknown
   }
   meta?: {
     updated?: string
     refresh_frequency?: string
     count?: number
   }
+  relations?: AiGraphNodeRelations
 }
+
+export type ScanOptions = {
+  target: string
+  baseUrl?: string
+  timeoutMs?: number
+  intervalMs?: number
+  budgetMs?: number
+  onProgress?: (progress: { currentStep: ScanProgressStep }) => void
+}
+
+export type TargetLevel = 'l1' | 'l2a' | 'l2b'
+
+export type LevelStatus = 'tested' | 'skipped'
+
+export type LevelResult = {
+  level: TargetLevel
+  status: LevelStatus
+  pass: number
+  warn: number
+  fail: number
+  reason?: string
+}
+
+/**
+ * The JSON-shaped rendering of a single `LevelResult` entry, keyed by
+ * `TargetLevel` under `level_results` in `--json` output (see cli.ts's
+ * `buildLevelAwareJson`). Additive to `ValidationResult` — composed onto the
+ * JSON object by spread, never merged into the type itself.
+ */
+export type TargetLevelResultJson =
+  | { label: string; status: 'tested'; pass: number; warn: number; fail: number }
+  | { label: string; status: 'skipped'; reason: string }

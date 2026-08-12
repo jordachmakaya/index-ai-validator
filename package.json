@@ -6,6 +6,12 @@
   "type": "module",
   "packageManager": "pnpm@10.22.0",
   "scripts": {
+    "errors:check": "node scripts/check-error-registry.mjs",
+    "errors:check:strict": "node scripts/check-error-registry.mjs --strict",
+    "errors:check:json": "node scripts/check-error-registry.mjs --json",
+    "logic:check": "node scripts/check-logic.mjs",
+    "logic:check:strict": "node scripts/check-logic.mjs --strict",
+    "logic:check:json": "node scripts/check-logic.mjs --json",
     "dev": "turbo run dev",
     "check": "turbo run check",
     "build": "turbo run build",

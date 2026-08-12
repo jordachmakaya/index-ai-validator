@@ -4,7 +4,26 @@ Level 2a extends Level 1 with an Agent Index graph. The graph lists clean,
 AI-readable endpoints and declares the metadata needed to validate those
 endpoints.
 
-Level 2a Agent Index validation is available through `validateIndexAi()` and
+
+<div class="audio-explainer">
+  <video controls playsinline style="width: 100%; height: auto; border-radius: 12px;" aria-label="Winning AI search with Agent View — audio explainer">
+    <source src="/level-2a-agent-index-explained.mp4" type="video/mp4">
+    Your browser does not support the video tag. Listen to the audio explainer: <a href="/Winning_AI_search_with_Agent_View.m4a">Winning_AI_search_with_Agent_View.m4a</a>.
+  </video>
+  <p class="audio-explainer-caption">🔊 Audio explainer — winning AI search with Agent View.</p>
+</div>
+
+<div class="illustration-note">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="16" x2="12" y2="12"></line>
+    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+  </svg>
+  <span>Illustrative example — for visual reference only.</span>
+</div>
+
+>[!important]
+>Level 2a Agent Index validation is available through `validateIndexAi()` and
 the `index-ai` CLI.
 
 ## Level 2a scope
@@ -62,7 +81,7 @@ Top-level graph fields include:
 | `spec_version` | Yes | Must be `"1.0"`. |
 | `nodes` | Yes | Non-empty array. |
 | `total_nodes` | No | Warns if it does not match `nodes.length`. |
-| `pages` | No | Must not be present as an array. |
+| `pages` | No | Must not be present in any form (array, object, string, etc.) — the schema rejects any value assigned to this key. |
 
 ## Node required fields
 
@@ -87,6 +106,8 @@ Each node `content` object must include:
 | `content_chars_mode` | Yes | `exact` or `max`. |
 | `summary_method` | Yes | `manual`, `truncate`, or `llm`. |
 | `language` | Yes | Non-empty string. |
+| `content_sha256` | No | 64-character lowercase or uppercase hex string. Only checked when `content_chars_mode` is `exact`. |
+| `content_version` | No | Any value. Warns if present and not a string. |
 
 Each node `meta` object must include:
 
@@ -143,6 +164,32 @@ Tolerated inline markup such as `<br>` is reported as a soft warning.
 Emoji count as one code point. Decomposed accents are normalized with Unicode
 NFC before counting.
 
+## content_sha256 and content_version (optional)
+
+`content_sha256` and `content_version` are both optional. An Agent Index that
+omits them is still fully Level 2a conformant.
+
+`content_sha256` turns a `content_chars` declaration into a verifiable
+attestation: the exact content served, not just its length. It is only
+meaningful — and only checked — when `content_chars_mode` is `exact`, since
+`max` mode allows the served content to vary.
+
+| Mode | Rule |
+| --- | --- |
+| `exact`, `content_sha256` present | The measured hash must equal the declared `content_sha256`, compared case-insensitively. Mismatch fails with `content drift — declared content_sha256 does not match content served at llm_url`. |
+| `max`, `content_sha256` present | Ignored. Never computed or checked. |
+| `content_sha256` absent | Ignored, in either mode. |
+
+The measured hash is `sha256` of the same Unicode-NFC-normalized, UTF-8-encoded
+text that `content_chars` counts — see [content_chars](/guide/content-chars)
+for the normalization step. See
+[Fix your report](/guide/fix-your-report#if-content_sha256-does-not-match) if
+the validator reports this check.
+
+`content_version` carries no cryptographic verification — it is an opaque,
+free-form version label (a git hash, a tag, an ISO timestamp). The validator
+only checks its type: present and not a string produces a warning.
+
 ## Validation flow
 
 ```mermaid
@@ -171,5 +218,7 @@ is enabled. See [Conformance vs Passed](/guide/conformance-vs-passed).
 
 ## Scope
 
-Level 2a is the highest structural level the validator emits. For what it does
-not implement, see [Scope](/guide/scope).
+Level 2a is a required foundation for Level 2b — see
+[Level 2b Agent Graph](/guide/level-2b-agent-graph) for the DAG relations
+layer built on top of it. For what the validator does not implement, see
+[Scope](/guide/scope).
