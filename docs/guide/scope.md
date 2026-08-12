@@ -5,8 +5,15 @@ This is the single source of truth for what `@hardmachinelabs/index-ai-validator
 The validator is honest by design. It measures a specific, public layer and reports what it found. It does not inflate that into a promise.
 
 The package has two features, each with its own scope: Default validation
-mode (local, checks an already-implemented `index-ai` layer) and `scan`
-(remote, diagnoses AI-readiness overall). This page covers both.
+mode (local, checks an already-implemented `index-ai` layer, shipped
+today) and `scan` (remote, diagnoses AI-readiness overall — coming soon).
+This page covers both.
+
+> [!warning]
+> `scan` is not yet publicly available. It depends on the agent-view.com
+> service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+> for updates. The `scan` sections below document its scope as it will
+> apply once the service is live.
 
 ## What Default validation mode checks today
 
@@ -36,7 +43,7 @@ Default validation mode does not perform:
 
 `level-3` exists as a reserved value in the result type, but the current validator does not emit it.
 
-## What `scan` checks today
+## What `scan` will check (coming soon)
 
 `scan` calls the remote Agent View scanner service and returns a broader,
 independently-computed model of AI-readiness — it does not run Default
@@ -55,7 +62,7 @@ the remote scanner service, not by this package, and can change
 independently of this package's version — the same version-pinned-contract
 caution that applies to any external dependency.
 
-## What `scan` does not check
+## What `scan` will not check
 
 `scan` does not perform Default validation mode's Level 1/Level 2a schema
 and endpoint checks — the two features are independent, not layered. It

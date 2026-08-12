@@ -11,14 +11,19 @@ Binary:  index-ai, index-ai-validator
 The `index-ai` binary has two commands for two different jobs:
 
 - **`validate`** — checks whether an Agent View / `index-ai` implementation is valid.
-- **`scan`** — measures whether a public website is usable by AI agents.
+- **`scan`** (coming soon) — measures whether a public website is usable by AI agents.
+
+>[!warning]
+>`scan` is not yet publicly available. It depends on the agent-view.com
+>service, which has not launched yet. See [the `scan` reference](#scan)
+>below for updates. `validate` is fully available today.
 
 >[!tip]
->Use `scan` to run the remote Agent View diagnostic. It answers a different
->question from `validate`: **Can AI agents access, extract, cite, and
->understand this website?** `scan` returns an **agent-readiness score**, a
->verdict, prioritized findings, dimension scores, scan analysis signals, and
->an optional shareable HTML report.
+>Once available, `scan` will run the remote Agent View diagnostic. It
+>answers a different question from `validate`: **Can AI agents access,
+>extract, cite, and understand this website?** `scan` returns an
+>**agent-readiness score**, a verdict, prioritized findings, dimension
+>scores, scan analysis signals, and an optional shareable HTML report.
 
 ## Default validation mode
 
@@ -334,6 +339,13 @@ appropriate for public `index-ai` implementations.
 
 ## `scan`
 
+>[!warning]
+>**Coming soon.** `scan` is not yet publicly available. It depends on the
+>agent-view.com service, which has not launched yet. See
+>[the CLI reference](https://jordachmakaya.github.io/index-ai-validator/guide/cli.html#scan)
+>for updates. The rest of this section documents `scan` as it will behave
+>once the service is live.
+
 Use `scan` to run the Agent View scanner: one URL, one score, one shareable
 report showing the gap between what humans see and what bots can extract.
 `scan` calls the remote Agent View scanner service — this package has no
@@ -513,11 +525,12 @@ timeouts, or transport errors exit non-zero (`2`).
 | Feature | Use it for | Output |
 | --- | --- | --- |
 | Default validation mode (`index-ai <url>`) | Check `index-ai` conformance | Manifest checks, Agent Index checks, clean endpoint checks, CI-friendly JSON |
-| `scan <url>` | Diagnose the AI-readability gap | Score, verdict, findings, scanner payload, shareable HTML report |
+| `scan <url>` (coming soon) | Diagnose the AI-readability gap | Score, verdict, findings, scanner payload, shareable HTML report |
 
 ## Scope
 
-Default validation mode checks `index-ai` Level 1 and Level 2a. `scan` calls
-the remote Agent View scanner service for a broader AI-readiness diagnostic.
-For the full list of what each feature does and does not check, see
-[Scope](/guide/scope).
+Default validation mode checks `index-ai` Level 1, Level 2a, and Level 2b.
+`scan` (coming soon) will call the remote Agent View scanner service for a
+broader AI-readiness diagnostic once the agent-view.com service is
+publicly available. For the full list of what each feature does and does
+not check, see [Scope](/guide/scope).

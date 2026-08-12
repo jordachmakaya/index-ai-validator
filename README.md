@@ -21,7 +21,7 @@
 
 This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
 
-- **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
+- **`index-ai scan <url>` (coming soon)**: A remote diagnostic against the Agent View scanner service. It is not yet publicly available — it depends on the agent-view.com service, which has not launched yet. Once live, it will retrieve an objective agent-readiness score (`/100`), assess key dimensions (access, extractability, citability, safety, agent layer), list actionable findings, and generate a premium standalone HTML report. See [`scan` — remote Agent View diagnostic](#scan--remote-agent-view-diagnostic) below.
 - **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a|l2b>` to audit specific compliance targets, including Level 2b Agent Graph DAG relations.
 - **content_sha256 / content_version**: optional node-level content-drift verification and version relay.
 - **AI Fix Prompt**: both HTML reports now include a one-click, copy-to-clipboard remediation prompt for coding agents.
@@ -35,11 +35,14 @@ two different questions:
 
 - **Default validation mode** — is a site's already-implemented `index-ai`
   layer correct? Local, free, no dependency beyond the target site itself.
-  Checks Level 1 AI Manifest and Level 2a Agent Index. There is no Level 3
-  / MCP check implemented.
-- **`scan`** — how AI-ready is a site overall, and what would upgrading to
-  the full Agent View add? Calls the remote Agent View scanner service and
-  returns an AI-readiness score, a verdict, and findings.
+  Checks Level 1 AI Manifest, Level 2a Agent Index, and optional Level 2b
+  Agent Graph relations. There is no Level 3 / MCP check implemented. This
+  is the feature shipped in this release.
+- **`scan`** (coming soon) — how AI-ready is a site overall, and what would
+  upgrading to the full Agent View add? It depends on the agent-view.com
+  service, which has not launched publicly yet. Once available, it will
+  call the remote Agent View scanner service and return an AI-readiness
+  score, a verdict, and findings.
 
 Most sites are built for browsers, so agents have to read browser-first
 HTML to understand them. `index-ai` is a machine-readable layer built for
@@ -50,24 +53,28 @@ agents instead.
 ## Quick start
 
 ```bash
-index-ai scan https://example.com       # remote Agent View diagnostic
 index-ai https://example.com            # default validation mode, no keyword
 index-ai validate https://example.com   # same as above, explicit keyword
+index-ai scan https://example.com       # remote Agent View diagnostic (coming soon)
 ```
 
 ## Which one should I use?
 
-- **`scan <url>`** — use it for a diagnostic of the AI-readability gap.
-  Returns a score `/100`, findings, and a shareable HTML report.
 - **Default validation mode** (no command keyword — `index-ai <url>`) — use
   it once you have implemented `index-ai` and want to check it. Returns a
   local conformance check for the AI Manifest, Agent Index, clean endpoints,
-  `content_chars`, discovery, and safety heuristics.
+  `content_chars`, discovery, and safety heuristics. This is the feature
+  shipped in this release.
+- **`scan <url>`** (coming soon) — use it for a diagnostic of the
+  AI-readability gap. Will return a score `/100`, findings, and a
+  shareable HTML report once the agent-view.com service is publicly
+  available.
 
 ## Features
 
-- **Two commands, two jobs** — a free remote diagnostic (`scan`) and a free
-  local conformance checker (Default validation mode), sharing one binary.
+- **Two commands, two jobs** — a free remote diagnostic (`scan`, coming
+  soon) and a free local conformance checker (Default validation mode,
+  shipped now), sharing one binary.
 - **Deterministic, not LLM-based** — every check and score is rule-based and
   reproducible; no model call is in the loop for either command.
 - **CI-friendly JSON** — stable, typed, machine-readable output; human
@@ -88,7 +95,7 @@ index-ai validate https://example.com   # same as above, explicit keyword
 | --- | --- |
 | [Package README](packages/validator/README.md) | Full option list, JSON shapes, exit codes, and TypeScript usage of both commands |
 | [Documentation site](https://jordachmakaya.github.io/index-ai-validator/) | Guided walkthroughs, CLI reference, and conformance rules |
-| [CLI guide](docs/guide/cli.md) | Flag-by-flag reference for `validate` and `scan` |
+| [CLI guide](docs/guide/cli.md) | Flag-by-flag reference for `validate` and `scan` (coming soon) |
 | [Agent View](https://agent-view.com) | The remote scanner `scan` calls, and the full AI-readiness audit it can point to |
 | [`index-ai` specification](https://github.com/jordachmakaya/index-ai) | The open spec Default validation mode checks |
 
@@ -141,6 +148,12 @@ agent-facing content layer?
 ```
 
 ## `scan` — remote Agent View diagnostic
+
+> **Coming soon.** `scan` is not yet publicly available. It depends on the
+> agent-view.com service, which has not launched yet. See
+> [the CLI reference](https://jordachmakaya.github.io/index-ai-validator/guide/cli.html#scan)
+> for updates. The rest of this section documents `scan` as it will behave
+> once the service is live.
 
 ```bash
 index-ai scan <url>
@@ -202,9 +215,9 @@ optional Level 2b behavior:
 - shallow discovery hints
 - CLI JSON output, human output, and exit codes
 
-`scan` calls the remote Agent View scanner service for a broader
-AI-readiness score, verdict, and findings, including what upgrading to the
-full Agent View would add.
+`scan` (coming soon) calls the remote Agent View scanner service for a
+broader AI-readiness score, verdict, and findings, including what
+upgrading to the full Agent View would add.
 
 Neither command provides legal compliance, production certification, a
 security audit, vulnerability scanning, AI traffic guarantees, SEO ranking

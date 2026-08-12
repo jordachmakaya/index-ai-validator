@@ -25,7 +25,7 @@
 
 This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
 
-- **`index-ai scan <url>`**: A remote diagnostic against the Agent View scanner service. It retrieves an objective agent-readiness score (`/100`), assesses key dimensions (access, extractability, citability, safety, agent layer), lists actionable findings, and generates a premium standalone HTML report.
+- **`index-ai scan <url>` (coming soon)**: A remote diagnostic against the Agent View scanner service. It is not yet publicly available — it depends on the agent-view.com service, which has not launched yet. Once live, it will retrieve an objective agent-readiness score (`/100`), assess key dimensions (access, extractability, citability, safety, agent layer), list actionable findings, and generate a premium standalone HTML report. See [`scan` — remote Agent View diagnostic](#scan--remote-agent-view-diagnostic) below.
 - **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a|l2b>` to audit specific compliance targets, including Level 2b Agent Graph DAG relations.
 - **content_sha256 / content_version**: optional node-level hash verification (content drift detection) and version relay.
 - **AI Fix Prompt**: both HTML reports now include a one-click, copy-to-clipboard remediation prompt for coding agents, built deterministically from stable check codes only.
@@ -44,9 +44,11 @@ agent-facing content layer.
   Runs locally against the target site. Checks the AI Manifest, Agent Index,
   clean endpoints, `content_chars`, discovery hints, and safety heuristics.
 
-- **`scan`** — what is the AI-readability gap?
-  Calls the remote Agent View scanner and returns a deterministic score
-  `/100`, findings, dimensions, and an optional shareable HTML report.
+- **`scan`** (coming soon) — what is the AI-readability gap?
+  It depends on the agent-view.com service, which has not launched
+  publicly yet. Once available, it will call the remote Agent View
+  scanner and return a deterministic score `/100`, findings, dimensions,
+  and an optional shareable HTML report.
 
 Most websites are built for browsers: HTML, scripts, navigation, layout, and
 client-side rendering. AI agents often have to extract meaning from that
@@ -55,11 +57,11 @@ agents instead: a manifest, an Agent Index, and clean text endpoints with
 measured content size.
 
 ```bash
-# Remote Agent View diagnostic
-pnpm dlx @hardmachinelabs/index-ai-validator scan https://example.com
-
-# Local index-ai validation
+# Local index-ai validation (Level 1, Level 2a, Level 2b) — shipped in this release
 pnpm dlx @hardmachinelabs/index-ai-validator https://example.com
+
+# Remote Agent View diagnostic (coming soon — see below)
+pnpm dlx @hardmachinelabs/index-ai-validator scan https://example.com
 
 # Installed usage
 pnpm add -D @hardmachinelabs/index-ai-validator
@@ -68,12 +70,15 @@ pnpm exec index-ai https://example.com
 
 ## Which command should I use?
 
-- **`scan <url>`** — use it for a diagnostic of the AI-readability gap.
-  Returns a score `/100`, findings, and a shareable HTML report.
 - **Default validation mode** (no command keyword — `index-ai <url>`) — use
   it once you have implemented `index-ai` and want to check it. Returns a
   local conformance check for the AI Manifest, Agent Index, clean endpoints,
-  `content_chars`, discovery, and safety heuristics.
+  `content_chars`, discovery, and safety heuristics. This is the feature
+  shipped in this release.
+- **`scan <url>`** (coming soon) — use it for a diagnostic of the
+  AI-readability gap. Will return a score `/100`, findings, and a
+  shareable HTML report once the agent-view.com service is publicly
+  available.
 
 It is a free, experimental developer CLI. It provides the `index-ai` binary
 and the `validateIndexAi()` TypeScript entrypoint.
@@ -407,6 +412,12 @@ Default validation mode does not check:
 
 ## `scan` — remote Agent View diagnostic
 
+> **Coming soon.** `scan` is not yet publicly available. It depends on the
+> agent-view.com service, which has not launched yet. See
+> [the CLI reference](https://jordachmakaya.github.io/index-ai-validator/guide/cli.html#scan)
+> for updates. The rest of this section documents `scan` as it will behave
+> once the service is live.
+
 `scan` calls the remote Agent View scanner service and returns an
 AI-readiness score, a verdict, and a list of findings, including what
 upgrading to the full Agent View would add. It checks a broader model of
@@ -611,7 +622,8 @@ It is built around three simple ideas:
 
 `@hardmachinelabs/index-ai-validator` is the free CLI for the current
 Level 1 and Level 2a implementation (Default validation mode), plus a
-remote AI-readiness diagnostic against a broader model (`scan`).
+remote AI-readiness diagnostic against a broader model (`scan`, coming
+soon).
 
 It does not claim to be a formal standard. It is an experimental project
 built in public to explore how websites can expose cleaner, cheaper, and

@@ -6,7 +6,7 @@ browser and can be sent to someone else as-is.
 
 ```bash
 index-ai https://example.com --html report.html
-index-ai scan https://example.com --html report.html
+index-ai scan https://example.com --html report.html   # coming soon
 ```
 
 Both commands accept `--html`. The HTML report never changes `passed`,
@@ -14,12 +14,18 @@ Both commands accept `--html`. The HTML report never changes `passed`,
 from the same result as the human and JSON output. See
 [Scope](/guide/scope).
 
+> [!warning]
+> `scan` (and its HTML report) is not yet publicly available. It depends
+> on the agent-view.com service, which has not launched yet. See
+> [the CLI reference](/guide/cli#scan) for updates. The Default validation
+> mode report described on this page is fully available today.
+
 ## Which command produces it
 
 | Command | Flag | Default path (no value given) |
 | --- | --- | --- |
 | Default validation mode (`index-ai <url>`) | `--html [path]` | `.report/validate-report.html` |
-| `scan` (`index-ai scan <url>`) | `--html [path]` | `.report/scan-report.html` |
+| `scan` (coming soon) (`index-ai scan <url>`) | `--html [path]` | `.report/scan-report.html` |
 
 With no path after `--html`, the report is written to the default path
 relative to the current working directory, creating that directory if it
@@ -71,16 +77,15 @@ The report renders:
   (generated-at, duration, schema version, readiness, target), and
   resource links.
 
-## `scan` report
-
-![index-ai scan HTML report header — Scanner Verdict Agent-readiness moderate, score 65%, Findings Summary 1 P0 / 1 P1 / 1 P2 / 3 total, Scan metadata, Resources sidebar](../scan_mode_html-report-index-ai.PNG)
+## `scan` report (coming soon)
 
 >[!warning]
->This screenshot predates the T5.30 report redesign and no longer matches
-the current visual layout. See the note above.
-
-The image above is only the header of the report — the full report
-continues below it on the page.
+>`scan` is not yet publicly available. It depends on the agent-view.com
+>service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+>for updates. No screenshot is shown here: the previous one predated the
+>T5.30 report redesign and was removed rather than re-shot a third time for
+>a report that is not shippable yet. The description below documents the
+>`scan` report as it will render once the service is live.
 
 The report renders:
 
@@ -100,7 +105,8 @@ The report renders:
 ## AI Fix Prompt
 
 When a report has failures or blocking findings (either report — Default
-validation mode or `scan`), it includes an **AI Fix Prompt** card: a
+validation mode today, or `scan` once it is publicly available), it
+includes an **AI Fix Prompt** card: a
 button labeled "Copy Prompt" that copies a ready-to-paste remediation
 prompt to the clipboard, for coding agents like Claude Code, Cursor, or
 Windsurf.
@@ -119,10 +125,11 @@ instead, with no Fix Prompt card.
 
 ## Clean, professional, shareable
 
-Both reports are self-contained HTML files with no external dependency at
-view time — the CLI provides a clean, professional HTML report ready to
-be shared with a teammate, a manager, or a client, without asking them to
-install anything or read raw JSON.
+Both reports (the `scan` report once it ships) are self-contained HTML
+files with no external dependency at view time — the CLI provides a
+clean, professional HTML report ready to be shared with a teammate, a
+manager, or a client, without asking them to install anything or read raw
+JSON.
 
 ## Scope
 

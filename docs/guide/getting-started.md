@@ -9,17 +9,22 @@
 They answer different questions.
 
 ```txt
-index-ai scan <url>       Measure whether a site is usable by AI agents.
 index-ai validate <url>   Check whether an Agent View / index-ai implementation is valid.
+index-ai scan <url>       Measure whether a site is usable by AI agents. (coming soon)
 ```
 
-Use `scan` when you want to know:
-
-**Can AI agents access, extract, cite, and understand this website?**
+> [!warning]
+> `scan` is not yet publicly available. It depends on the agent-view.com
+> service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+> for updates. `validate` is fully available today — use it first.
 
 Use `validate` when you want to know:
 
 **Did I implement the Agent View / index-ai layer correctly?**
+
+Use `scan` when you want to know (once it is available):
+
+**Can AI agents access, extract, cite, and understand this website?**
 
 > [!tip]
 > `validate` is also the default mode.
@@ -31,73 +36,29 @@ Use `validate` when you want to know:
 
 It has two jobs:
 
-1. **`scan`** — a remote Agent View diagnostic for any public website.
-2. **`validate`** — a local conformance check for sites implementing `index-ai`.
+1. **`validate`** — a local conformance check for sites implementing `index-ai`.
+2. **`scan`** (coming soon) — a remote Agent View diagnostic for any public website.
 
 These are related, but they are not the same.
 
-`scan` measures the agent-readiness gap.
-
 `validate` checks the proposed fix: the Agent View / index-ai layer.
+
+`scan` measures the agent-readiness gap, once it is publicly available.
 
 ## Which command should I use?
 
 | If you want to know...                   | Use                                | Why                                                                  |
 | ---------------------------------------- | ---------------------------------- | -------------------------------------------------------------------- |
-| Can AI agents use this website well?     | `scan`                             | It returns an AI-readiness score, verdict, dimensions, and findings. |
-| Is my Agent View implementation correct? | `validate`                         | It checks Level 1 and Level 2a conformance locally.                  |
-| I have not implemented `index-ai` yet    | `scan`                             | It works for any public site.                                        |
+| Is my Agent View implementation correct? | `validate`                         | It checks Level 1, Level 2a, and Level 2b conformance locally.       |
 | I already added an Agent View layer      | `validate`                         | It checks whether the implementation is valid.                       |
-| I want a shareable report                | `scan --html` or `validate --html` | Both modes can generate standalone HTML reports.                     |
+| Can AI agents use this website well?     | `scan` (coming soon)               | It will return an AI-readiness score, verdict, dimensions, and findings. |
+| I have not implemented `index-ai` yet    | `scan` (coming soon)               | It will work for any public site.                                    |
+| I want a shareable report                | `validate --html` (`scan --html` coming soon) | Both modes can generate standalone HTML reports.       |
 | I want automation                        | `--json`                           | Both modes support JSON output.                                      |
 
 ## Quick start
 
-### 1. Measure agent-readiness with `scan`
-
-Run:
-
-```bash
-npx @hardmachinelabs/index-ai-validator scan https://example.com
-```
-
-`scan` calls the remote Agent View scanner.
-
-It is the diagnostic path.
-
-It answers:
-
-**Can AI agents access, extract, cite, and understand this website?**
-
-A scan can return:
-
-* an AI-readiness score;
-* a verdict;
-* prioritized findings;
-* dimension scores;
-* a compact terminal summary;
-* raw JSON for automation;
-* and a shareable HTML report.
-
-Example human output:
-
-```txt
-URL: https://example.com
-Score: 82
-Verdict: good
-P0: 1
-P1: 1
-P2: 0
-```
-
-`Score` is out of 100.
-
-`P0`, `P1`, and `P2` are finding severities, ordered from most urgent to least urgent.
-
-> [!note]
-> `scan` requires the remote scanner service. If the scanner service is unavailable, the CLI can start correctly but still fail with a network error.
-
-### 2. Validate an Agent View implementation with `validate`
+### 1. Validate an Agent View implementation with `validate`
 
 Run:
 
@@ -133,6 +94,58 @@ npx @hardmachinelabs/index-ai-validator validate https://example.com --target-le
 
 `l2b` is not available yet.
 
+### 2. Measure agent-readiness with `scan` (coming soon)
+
+> [!warning]
+> `scan` is not yet publicly available. It depends on the agent-view.com
+> service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+> for updates. The steps below describe `scan` as it will behave once the
+> service is live.
+
+Once available, run:
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com
+```
+
+`scan` will call the remote Agent View scanner.
+
+It is the diagnostic path.
+
+It will answer:
+
+**Can AI agents access, extract, cite, and understand this website?**
+
+A scan will be able to return:
+
+* an AI-readiness score;
+* a verdict;
+* prioritized findings;
+* dimension scores;
+* a compact terminal summary;
+* raw JSON for automation;
+* and a shareable HTML report.
+
+Example human output:
+
+```txt
+URL: https://example.com
+Score: 82
+Verdict: good
+P0: 1
+P1: 1
+P2: 0
+```
+
+`Score` is out of 100.
+
+`P0`, `P1`, and `P2` are finding severities, ordered from most urgent to least urgent.
+
+> [!note]
+> `scan` requires the remote scanner service. Once that service is public,
+> if it is unavailable, the CLI can start correctly but still fail with a
+> network error.
+
 ## See the CLI shape
 
 Run:
@@ -155,7 +168,7 @@ Two modes:
   index-ai validate <url>  Run full validation checks (also the default when no
 subcommand is given).
   index-ai scan <url>      Run the Agent View scanner service against a site and
-print its findings.
+print its findings. (coming soon)
 
 Arguments:
   url                       Site URL to validate, for example
@@ -187,7 +200,7 @@ Commands:
   validate [options] <url>  Validate index-ai Level 1 and Level 2a agent-facing
                             content layers (same as the default mode).
   scan [options] <url>      Scan a site via the Agent View scanner service and
-                            print the scan result.
+                            print the scan result. (coming soon)
 ```
 
 The banner line only appears in an interactive terminal — piped or
@@ -204,7 +217,7 @@ Expected shape:
 ```txt
 Usage: index-ai scan [options] <url>
 
-Scan a site via the Agent View scanner service and print the scan result.
+Scan a site via the Agent View scanner service and print the scan result. (coming soon)
 
 Arguments:
   url              Site URL to scan, for example https://example.com
@@ -219,7 +232,13 @@ Options:
   -h, --help       display help for command
 ```
 
-## `scan`: remote Agent View diagnostic
+## `scan`: remote Agent View diagnostic (coming soon)
+
+> [!warning]
+> `scan` is not yet publicly available. It depends on the agent-view.com
+> service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+> for updates. The rest of this section documents `scan` as it will behave
+> once the service is live.
 
 Use `scan` when you want a fast diagnostic for any public site.
 

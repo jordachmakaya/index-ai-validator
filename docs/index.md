@@ -4,7 +4,7 @@ layout: home
 hero:
   name: index-ai-validator
   text: Is your site readable by AI agents?
-  tagline: A free CLI with two features. Default validation mode checks whether your site correctly exposes the index-ai layer — manifest, Agent Index, clean endpoints, measured content size. `scan` calls the remote Agent View scanner and shows how AI-ready your site is overall. Runs in your terminal. No signup.
+  tagline: A free CLI. Default validation mode checks whether your site correctly exposes the index-ai layer — manifest, Agent Index, clean endpoints, measured content size. `scan` (coming soon) will call the remote Agent View scanner and show how AI-ready your site is overall. Runs in your terminal. No signup.
   actions:
     - theme: brand
       text: Get started
@@ -20,8 +20,8 @@ features:
     details: Inspects the Level 2a graph nodes, fetches each clean llm_url endpoint, and verifies content_chars against the Unicode NFC code-point count.
   - title: Catch leaks before agents do
     details: Flags secret-shaped values, sensitive variable names, and private infrastructure references in the public content you expose to agents.
-  - title: See your AI-readiness score
-    details: Run `scan` to call the remote Agent View scanner — one URL, one score out of 100, one shareable report showing the gap between what humans see and what bots can extract.
+  - title: See your AI-readiness score (coming soon)
+    details: Run `scan` to call the remote Agent View scanner — one URL, one score out of 100, one shareable report showing the gap between what humans see and what bots can extract. Not yet publicly available; depends on the agent-view.com service.
 ---
 
 <br>
@@ -38,12 +38,13 @@ features:
 things:
 
 1. **Is a site's `index-ai` layer already implemented correctly?**
-   Default validation mode — local, no signup, no account.
+   Default validation mode — local, no signup, no account. Available now.
 2. **How AI-ready is a site overall, implemented or not?**
-   `scan` — calls the remote Agent View scanner, returns a score, a
-   verdict, and findings.
+   `scan` (coming soon) — will call the remote Agent View scanner, return
+   a score, a verdict, and findings, once the agent-view.com service is
+   publicly available.
 
-Run either against a real site in one command.
+Run Default validation mode against a real site in one command.
 
 ## What is Agent View?
 
@@ -74,20 +75,27 @@ not a claim to take on faith. Try this:
 3. Then ask the LLM directly: was that information easy to retrieve, and
    why?
 
-Easy or hard, and why, is exactly what this CLI measures. Run `scan` or
-Default validation mode on your own site next.
+Easy or hard, and why, is exactly what this CLI measures. Run Default
+validation mode on your own site next (`scan` is coming soon).
 
 ## Run it
 
 ```bash
-npx @hardmachinelabs/index-ai-validator scan https://example.com
-```
-
-Returns an AI-readiness score out of 100, findings, and an optional shareable HTML report — no implementation required first.
-
-```bash
 npx @hardmachinelabs/index-ai-validator https://example.com
 ```
+
+> [!warning]
+> `scan` is not yet publicly available. It depends on the agent-view.com
+> service, which has not launched yet. See [the CLI reference](/guide/cli#scan)
+> for updates.
+
+```bash
+npx @hardmachinelabs/index-ai-validator scan https://example.com   # coming soon
+```
+
+Once available, `scan` will return an AI-readiness score out of 100,
+findings, and an optional shareable HTML report — no implementation
+required first.
 
 The package name is `@hardmachinelabs/index-ai-validator`. Its CLI binary is installed under two equivalent names, `index-ai` and `index-ai-validator` — either one runs the same executable. Default validation mode runs automatically — there is no command keyword to type. By default it prints a deterministic, summary-first report:
 
@@ -145,7 +153,7 @@ Both commands accept `--json` for a stable machine-readable result, and `--html`
 
 See [JSON Output](/guide/json-output) for field meanings and shapes.
 
-Default validation mode checks Level 1 + Level 2a conformance today. `scan` calls the remote Agent View scanner for a broader AI-readiness diagnostic. Neither is certification, and neither is a traffic promise. → [See the full scope](/guide/scope)
+Default validation mode checks Level 1 + Level 2a conformance today. `scan` (coming soon) will call the remote Agent View scanner for a broader AI-readiness diagnostic. Neither is certification, and neither is a traffic promise. → [See the full scope](/guide/scope)
 
 ## What Default validation mode checks
 
@@ -157,7 +165,7 @@ Default validation mode checks Level 1 + Level 2a conformance today. `scan` call
 - Secret-shaped values and private infrastructure references in public AI-facing content
 - Discovery hints on the homepage, `robots.txt`, and `/llms.txt`
 
-## What `scan` checks
+## What `scan` will check (coming soon)
 
 - Five scored dimensions from the remote Agent View scanner: `access`, `extractability`, `citability`, `safety`, and `agent_layer`
 - The gap between what a human sees (rendered page) and what a bot can extract (raw content)
