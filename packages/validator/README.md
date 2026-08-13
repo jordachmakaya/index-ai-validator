@@ -72,42 +72,9 @@ pnpm add -D @hardmachinelabs/index-ai-validator
 pnpm exec index-ai https://example.com
 ```
 
-## What's New in v0.3.0
+## What's New
 
-This release completes Level 2b validation and changes how `scan` behaves
-while the remote Agent View service is still not publicly available:
-
-- **Level 2b (Agent Graph DAG) support is now complete** for `validate`
-  (`--target-level l2b`): structural DAG checks (root existence,
-  bidirectional parent/children consistency, acyclicity, no orphan
-  references), `content_sha256` / `content_version` node-level
-  verification, 0%-drift HTML/JSON reports, and a dynamic AI Fix Prompt
-  card for coding agents. See
-  [`Default validation mode`](#default-validation-mode--local-conformance-check)
-  below.
-- **`scan` is temporarily gated** behind an instant "coming soon" response
-  instead of attempting a live call to the (not yet publicly launched)
-  `agent-view.com` service. `scan <url>` now returns instantly: a clear
-  message in human mode, or `{"status": "coming_soon", "message": "...",
-  "docs_url": "..."}` in `--json` mode — exit code `0` in both cases.
-  `scan --html` is a silent no-op while gated. All existing `scan`
-  behavior (network calls, error handling, HTML/JSON output shapes)
-  remains fully implemented and tested; it resumes once the service is
-  confirmed reachable. No code was deleted.
-  **Behavior-contract change for existing `scan --json` consumers**:
-  previously, a `scan` attempt against the unreachable service failed
-  with an `error_type`-shaped error object. It now returns a
-  `status: "coming_soon"` object instead — not an error shape. Scripts
-  parsing `scan --json` output should account for the `coming_soon`
-  status.
-- Fixed: the `scan` HTML report's topbar date now uses the actual scan
-  completion time instead of the system clock, so regenerated reports are
-  deterministic.
-- Fixed: `validate` report CTA links that previously pointed to
-  `agent-view.com` (not yet live) — the "index-ai standard" masthead link
-  and the "Learn about Level 3" / "Learn about the agent layer" CTAs — now
-  point to the live spec documentation instead; the "Get the badge" CTA is
-  now labeled "(coming soon)".
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
 
 ## Which command should I use?
 
