@@ -4,7 +4,7 @@ layout: home
 hero:
   name: index-ai-validator
   text: Is your site readable by AI agents?
-  tagline: A free CLI. Default validation mode checks whether your site correctly exposes the index-ai layer — manifest, Agent Index, clean endpoints, measured content size. `scan` (coming soon) will call the remote Agent View scanner and show how AI-ready your site is overall. Runs in your terminal. No signup.
+  tagline: 'AI agents hallucinate about sites, or cite content that was never actually published — because what they read is not what you built for humans. What agents need is a layer that represents your site the way an LLM can actually use it. That is what <a href="https://github.com/jordachmakaya/index-ai">index-ai</a> is: an open spec for adding an agent-readable layer to a site, and this validator checks whether a site implements it correctly.<br><br>A free CLI: Default validation mode checks whether your site correctly exposes the index-ai layer — manifest, Agent Index, clean endpoints, measured content size. `scan` (coming soon) will call the remote Agent View scanner and show how AI-ready your site is overall. Runs in your terminal. No signup.'
   actions:
     - theme: brand
       text: Get started
@@ -34,8 +34,12 @@ features:
 
 ## What is index-ai-validator?
 
-`@hardmachinelabs/index-ai-validator` is a free CLI that checks two
-things:
+`@hardmachinelabs/index-ai-validator` checks whether your site correctly
+implements the open [`index-ai` specification](https://github.com/jordachmakaya/index-ai) —
+the machine-readable layer that tells AI agents what your site actually
+says, instead of leaving them to guess from rendered HTML.
+
+It is a free CLI that checks two things:
 
 1. **Is a site's `index-ai` layer already implemented correctly?**
    Default validation mode — local, no signup, no account. Available now.
