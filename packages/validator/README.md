@@ -1,5 +1,23 @@
 # @hardmachinelabs/index-ai-validator
 
+You've probably watched an AI agent get your site wrong — inventing
+details that aren't there, or citing content you never published. The
+page an agent actually reads is rarely the page you built for humans,
+and there was no way to check the gap before it happened again.
+
+`index-ai` is the open specification for a machine-readable layer built
+for agents instead of browsers — read it at
+[github.com/jordachmakaya/index-ai](https://github.com/jordachmakaya/index-ai).
+`@hardmachinelabs/index-ai-validator` checks whether your site
+implements that spec correctly, locally and for free (Default validation
+mode).
+
+Run it once and know exactly what an agent would see wrong — concrete
+checks and fixes, not a guess. `scan` (coming soon) adds a broader
+AI-readiness score via the remote Agent View service.
+
+![The Agent Web, why this matters: what a human sees versus what agents fetch — useful content is often less than 20-30% of total HTML token weight, agents pay a token tax on markup never meant for them](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/the_Agent_Web_why_this_matter-hardmachinelabs.png)
+
 [![npm version](https://img.shields.io/npm/v/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=npm&color=378add)](https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator)
 [![npm downloads](https://img.shields.io/npm/dm/@hardmachinelabs/index-ai-validator?style=for-the-badge&label=downloads&color=10b981)](https://www.npmjs.com/package/@hardmachinelabs/index-ai-validator)
 [![CI status](https://img.shields.io/github/actions/workflow/status/jordachmakaya/index-ai-validator/ci.yml?style=for-the-badge&label=ci&color=378add)](https://github.com/jordachmakaya/index-ai-validator/actions/workflows/ci.yml)
@@ -16,20 +34,6 @@
 [![Small dependency surface](https://img.shields.io/badge/Surface-small-f59e0b?style=for-the-badge)](https://github.com/jordachmakaya/index-ai-validator)
 
 ![index-ai-validator explained](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/hardmachinelab-index-ai-two-cmd-cli.png)
-
-<br>
-
-![The Agent Web, why this matters: what a human sees versus what agents fetch — useful content is often less than 20-30% of total HTML token weight, agents pay a token tax on markup never meant for them](https://raw.githubusercontent.com/jordachmakaya/index-ai-validator/main/docs/the_Agent_Web_why_this_matter-hardmachinelabs.png)
-
-## What's New in v0.2.0
-
-This release introduces major enhancements, headlined by the new remote **`scan`** diagnostic tool:
-
-- **`index-ai scan <url>` (coming soon)**: A remote diagnostic against the Agent View scanner service. It is not yet publicly available — it depends on the agent-view.com service, which has not launched yet. Once live, it will retrieve an objective agent-readiness score (`/100`), assess key dimensions (access, extractability, citability, safety, agent layer), list actionable findings, and generate a premium standalone HTML report. See [`scan` — remote Agent View diagnostic](#scan--remote-agent-view-diagnostic) below.
-- **Level-Aware Validation**: The local validator now supports `--target-level <l1|l2a|l2b>` to audit specific compliance targets, including Level 2b Agent Graph DAG relations.
-- **content_sha256 / content_version**: optional node-level hash verification (content drift detection) and version relay.
-- **AI Fix Prompt**: both HTML reports now include a one-click, copy-to-clipboard remediation prompt for coding agents, built deterministically from stable check codes only.
-- **Improved CLI UX**: Enhanced terminal output with clean headers, progress spinners, and a robust `--json` error schema.
 
 ---
 
@@ -67,6 +71,43 @@ pnpm dlx @hardmachinelabs/index-ai-validator scan https://example.com
 pnpm add -D @hardmachinelabs/index-ai-validator
 pnpm exec index-ai https://example.com
 ```
+
+## What's New in v0.3.0
+
+This release completes Level 2b validation and changes how `scan` behaves
+while the remote Agent View service is still not publicly available:
+
+- **Level 2b (Agent Graph DAG) support is now complete** for `validate`
+  (`--target-level l2b`): structural DAG checks (root existence,
+  bidirectional parent/children consistency, acyclicity, no orphan
+  references), `content_sha256` / `content_version` node-level
+  verification, 0%-drift HTML/JSON reports, and a dynamic AI Fix Prompt
+  card for coding agents. See
+  [`Default validation mode`](#default-validation-mode--local-conformance-check)
+  below.
+- **`scan` is temporarily gated** behind an instant "coming soon" response
+  instead of attempting a live call to the (not yet publicly launched)
+  `agent-view.com` service. `scan <url>` now returns instantly: a clear
+  message in human mode, or `{"status": "coming_soon", "message": "...",
+  "docs_url": "..."}` in `--json` mode — exit code `0` in both cases.
+  `scan --html` is a silent no-op while gated. All existing `scan`
+  behavior (network calls, error handling, HTML/JSON output shapes)
+  remains fully implemented and tested; it resumes once the service is
+  confirmed reachable. No code was deleted.
+  **Behavior-contract change for existing `scan --json` consumers**:
+  previously, a `scan` attempt against the unreachable service failed
+  with an `error_type`-shaped error object. It now returns a
+  `status: "coming_soon"` object instead — not an error shape. Scripts
+  parsing `scan --json` output should account for the `coming_soon`
+  status.
+- Fixed: the `scan` HTML report's topbar date now uses the actual scan
+  completion time instead of the system clock, so regenerated reports are
+  deterministic.
+- Fixed: `validate` report CTA links that previously pointed to
+  `agent-view.com` (not yet live) — the "index-ai standard" masthead link
+  and the "Learn about Level 3" / "Learn about the agent layer" CTAs — now
+  point to the live spec documentation instead; the "Get the badge" CTA is
+  now labeled "(coming soon)".
 
 ## Which command should I use?
 
@@ -374,7 +415,7 @@ blocked by default.
 
 ### Current scope
 
-Implemented in 0.2.0:
+Implemented in 0.3.0:
 
 - Level 1 AI Manifest validation
 - Level 2a Agent Index validation
@@ -605,8 +646,10 @@ Documentation:
 
 ## About index-ai
 
-`index-ai` is an experimental specification for making public websites
-easier for AI agents to read, inspect, and budget before fetching content.
+[`index-ai`](https://github.com/jordachmakaya/index-ai) is an experimental
+specification for making public websites easier for AI agents to read,
+inspect, and budget before fetching content — see the
+[spec docs](https://jordachmakaya.github.io/index-ai/) for details.
 
 <br>
 
@@ -638,11 +681,13 @@ structured interface.
 
 ## Built by Jordach Makaya
 
-`index-ai` and `@hardmachinelabs/index-ai-validator` are created and
-maintained by Jordach Makaya.
+`index-ai` and `@hardmachinelabs/index-ai-validator` exist because of a
+recurring frustration: watching AI agents hallucinate or mis-cite real web
+content during research — including on sites built by the author
+himself — with no reliable way to check why before it happened again.
 
-Jordach builds AI infrastructure for insurance claims workflows and
-developer tooling around reliable, inspectable AI systems.
+Jordach Makaya creates and maintains both. He also builds AI
+infrastructure for insurance claims workflows.
 
 The validator is part of a broader effort to make AI-facing web
 infrastructure testable instead of vague.
