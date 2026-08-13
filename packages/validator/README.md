@@ -382,7 +382,7 @@ blocked by default.
 
 ### Current scope
 
-Implemented in 0.3.0:
+Implemented in 0.3.1:
 
 - Level 1 AI Manifest validation
 - Level 2a Agent Index validation
