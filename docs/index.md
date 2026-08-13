@@ -4,7 +4,7 @@ layout: home
 hero:
   name: index-ai-validator
   text: Is your site readable by AI agents?
-  tagline: AI agents hallucinate about sites, or cite content that was never actually published — because what they read is not what you built for humans. A free CLI: Default validation mode checks whether your site correctly exposes the <a href="https://github.com/jordachmakaya/index-ai">index-ai</a> layer — manifest, Agent Index, clean endpoints, measured content size. `scan` (coming soon) will call the remote Agent View scanner and show how AI-ready your site is overall. Runs in your terminal. No signup.
+  tagline: 'AI agents hallucinate about sites, or cite content that was never actually published — because what they read is not what you built for humans. A free CLI: Default validation mode checks whether your site correctly exposes the <a href="https://github.com/jordachmakaya/index-ai">index-ai</a> layer — manifest, Agent Index, clean endpoints, measured content size. `scan` (coming soon) will call the remote Agent View scanner and show how AI-ready your site is overall. Runs in your terminal. No signup.'
   actions:
     - theme: brand
       text: Get started
